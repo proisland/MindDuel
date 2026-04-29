@@ -11,21 +11,40 @@ struct SignInView: View {
                 Spacer()
 
                 VStack(spacing: MDSpacing.md) {
-                    Text("MindDuel")
-                        .mdStyle(.display)
-                    Text("tagline", bundle: nil)
-                        .mdStyle(.body)
-                        .foregroundStyle(Color.mdText2)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, MDSpacing.lg)
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.mdAccentDeep)
+                        .frame(width: 62, height: 62)
+                        .overlay(
+                            Text("M")
+                                .font(.system(size: 30, weight: .heavy))
+                                .foregroundStyle(Color.mdText)
+                        )
+
+                    VStack(spacing: MDSpacing.xs) {
+                        Text("MindDuel")
+                            .mdStyle(.title)
+                        Text(String(localized: "tagline"))
+                            .mdStyle(.body)
+                            .foregroundStyle(Color.mdText2)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, MDSpacing.lg)
+                    }
                 }
 
                 Spacer()
 
-                MDButton(.primary, title: String(localized: "sign_in_placeholder")) {
-                    authState.startGuestSession()
+                VStack(spacing: MDSpacing.md) {
+                    MDButton(.primary, title: String(localized: "sign_in_placeholder")) {
+                        authState.startGuestSession()
+                    }
+                    .padding(.horizontal, MDSpacing.lg)
+
+                    Text(String(localized: "sign_in_terms"))
+                        .mdStyle(.footnote)
+                        .foregroundStyle(Color.mdText3)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, MDSpacing.xl)
                 }
-                .padding(.horizontal, MDSpacing.lg)
                 .padding(.bottom, MDSpacing.xl)
             }
         }

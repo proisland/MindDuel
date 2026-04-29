@@ -5,9 +5,14 @@ struct PiGameView: View {
     @StateObject private var engine = GameEngine()
     @State private var currentIndex = 0
     @State private var elapsedSeconds: Double = 0
+    @State private var totalAnswerTime: Double = 0
     @State private var selectedDigit: Int? = nil
     @State private var feedbackIsCorrect: Bool? = nil
     @State private var showQuitModal = false
+
+    private var avgTimeSeconds: Double {
+        engine.correctCount > 0 ? totalAnswerTime / Double(engine.correctCount) : 0
+    }
 
     @Environment(\.dismiss) private var dismiss
 
@@ -31,10 +36,11 @@ struct PiGameView: View {
             Color.mdBg.ignoresSafeArea()
 
             if engine.isRoundOver {
-                RoundEndView(correctCount: engine.correctCount) {
+                RoundEndView(correctCount: engine.correctCount, avgTimeSeconds: avgTimeSeconds) {
                     engine.restart()
                     currentIndex = 0
                     elapsedSeconds = 0
+                    totalAnswerTime = 0
                     feedbackIsCorrect = nil
                     selectedDigit = nil
                 } onHome: {
@@ -167,6 +173,7 @@ struct PiGameView: View {
         Task {
             try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
             if correct {
+                totalAnswerTime += elapsedSeconds
                 engine.recordCorrect()
                 currentIndex += 1
                 elapsedSeconds = 0
@@ -204,14 +211,15 @@ private struct DigitButton: View {
     var body: some View {
         Button(action: action) {
             Text("\(digit)")
-                .font(.system(size: 16, weight: .bold))
+                .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(labelColor)
                 .frame(maxWidth: .infinity)
                 .aspectRatio(1, contentMode: .fit)
                 .background(bgColor)
                 .clipShape(Circle())
-                .overlay(Circle().stroke(borderColor, lineWidth: 1.5))
+                .overlay(Circle().stroke(borderColor, lineWidth: feedbackState == .idle ? 0 : 1.5))
         }
+        .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.15), value: feedbackState)
     }
 

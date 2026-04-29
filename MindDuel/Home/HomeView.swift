@@ -19,11 +19,15 @@ struct HomeView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: MDSpacing.lg) {
                         VStack(alignment: .leading, spacing: MDSpacing.xs) {
-                            Text(String(localized: "welcome_greeting"))
-                                .mdStyle(.caption)
+                            HStack(spacing: MDSpacing.xxs) {
+                                Text(String(localized: "welcome_greeting"))
+                                    .mdStyle(.title)
+                                Text("@\(username)")
+                                    .mdStyle(.title)
+                            }
+                            Text(String(localized: "home_subtitle"))
+                                .mdStyle(.body)
                                 .foregroundStyle(Color.mdText2)
-                            Text("@\(username)")
-                                .mdStyle(.title)
                         }
                         .padding(.horizontal, MDSpacing.md)
                         .padding(.top, MDSpacing.xl)

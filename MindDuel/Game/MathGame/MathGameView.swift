@@ -6,9 +6,14 @@ struct MathGameView: View {
     @State private var problem = MathProblemGenerator.generate()
     @State private var problemCount = 1
     @State private var elapsedSeconds: Double = 0
+    @State private var totalAnswerTime: Double = 0
     @State private var selectedIndex: Int? = nil
     @State private var feedbackIsCorrect: Bool? = nil
     @State private var showQuitModal = false
+
+    private var avgTimeSeconds: Double {
+        engine.correctCount > 0 ? totalAnswerTime / Double(engine.correctCount) : 0
+    }
 
     @Environment(\.dismiss) private var dismiss
 
@@ -19,11 +24,12 @@ struct MathGameView: View {
             Color.mdBg.ignoresSafeArea()
 
             if engine.isRoundOver {
-                RoundEndView(correctCount: engine.correctCount) {
+                RoundEndView(correctCount: engine.correctCount, avgTimeSeconds: avgTimeSeconds) {
                     engine.restart()
                     problem = MathProblemGenerator.generate()
                     problemCount = 1
                     elapsedSeconds = 0
+                    totalAnswerTime = 0
                     feedbackIsCorrect = nil
                     selectedIndex = nil
                 } onHome: {
@@ -152,6 +158,7 @@ struct MathGameView: View {
         Task {
             try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
             if correct {
+                totalAnswerTime += elapsedSeconds
                 engine.recordCorrect()
             } else {
                 engine.recordWrong()
@@ -230,8 +237,12 @@ private struct AnswerButton: View {
                 .frame(height: 56)
                 .background(bgColor)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay(RoundedRectangle(cornerRadius: 14).stroke(borderColor, lineWidth: 1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(borderColor, lineWidth: feedbackState == .idle ? 0 : 1.5)
+                )
         }
+        .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.15), value: feedbackState)
     }
 }

@@ -10,10 +10,10 @@ struct MDPillTag: View {
 
     var body: some View {
         Text(label)
-            .mdStyle(.footnote)
+            .font(.system(size: 9, weight: .bold))
             .foregroundStyle(labelColor)
-            .padding(.horizontal, MDSpacing.sm)
-            .padding(.vertical, MDSpacing.xxs)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 3)
             .background(backgroundColor)
             .clipShape(Capsule())
     }

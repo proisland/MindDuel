@@ -26,6 +26,7 @@ private struct MDTypographyModifier: ViewModifier {
         content
             .font(style.font)
             .foregroundStyle(style.defaultColor)
+            .tracking(style == .micro ? 0.9 : 0)
     }
 }
 
@@ -40,8 +41,8 @@ private extension MDTextStyle {
         case .body:     return .system(size: 13, weight: .bold)
         case .bodyMd:   return .system(size: 12, weight: .bold)
         case .caption:  return .system(size: 11, weight: .semibold)
-        case .footnote: return .system(size: 10, weight: .medium)
-        case .micro:    return .system(size:  9, weight: .medium)
+        case .footnote: return .system(size: 10, weight: .semibold)
+        case .micro:    return .system(size:  9, weight: .bold)
         }
     }
 
