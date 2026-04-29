@@ -54,22 +54,23 @@ struct MathGameView: View {
                 MDAvatar(username: username, size: .sm)
             }
 
-            ScrollView {
-                VStack(spacing: MDSpacing.lg) {
-                    ResourcePillRow(lives: engine.lives, skips: engine.skips)
-                        .padding(.horizontal, MDSpacing.md)
-                        .padding(.top, MDSpacing.md)
+            ResourcePillRow(lives: engine.lives, skips: engine.skips)
+                .padding(.horizontal, MDSpacing.md)
+                .padding(.top, MDSpacing.md)
 
-                    problemCard
+            problemCard
+                .padding(.horizontal, MDSpacing.md)
+                .padding(.top, MDSpacing.lg)
 
-                    answerGrid
-                        .padding(.horizontal, MDSpacing.md)
+            answerGrid
+                .padding(.horizontal, MDSpacing.md)
+                .padding(.top, MDSpacing.md)
 
-                    SkipButton(elapsedSeconds: elapsedSeconds, onSkip: handleSkip)
-                        .disabled(isInteractionBlocked)
-                        .padding(.bottom, MDSpacing.xl)
-                }
-            }
+            SkipButton(elapsedSeconds: elapsedSeconds, onSkip: handleSkip)
+                .disabled(isInteractionBlocked)
+                .padding(.top, MDSpacing.lg)
+
+            Spacer()
         }
         .overlay {
             if engine.isWaitingAfterSkip {
@@ -93,7 +94,6 @@ struct MathGameView: View {
             }
             .padding(.vertical, MDSpacing.sm)
         }
-        .padding(.horizontal, MDSpacing.md)
     }
 
     private var answerGrid: some View {

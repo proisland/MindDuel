@@ -41,7 +41,7 @@ struct PiGameView: View {
                     dismiss()
                 }
             } else {
-                gameContent
+                gameScreen
             }
 
             if showQuitModal {
@@ -59,28 +59,31 @@ struct PiGameView: View {
         .animation(.easeInOut(duration: 0.2), value: showQuitModal)
     }
 
-    private var gameContent: some View {
+    // MARK: – Layout
+
+    private var gameScreen: some View {
         VStack(spacing: 0) {
             MDTopBar(title: String(localized: "mode_pi"), leadingAction: { showQuitModal = true }) {
                 MDAvatar(username: username, size: .sm)
             }
 
-            ScrollView {
-                VStack(spacing: MDSpacing.lg) {
-                    ResourcePillRow(lives: engine.lives, skips: engine.skips)
-                        .padding(.horizontal, MDSpacing.md)
-                        .padding(.top, MDSpacing.md)
+            ResourcePillRow(lives: engine.lives, skips: engine.skips)
+                .padding(.horizontal, MDSpacing.md)
+                .padding(.top, MDSpacing.md)
 
-                    piDisplayCard
+            questionCard
+                .padding(.horizontal, MDSpacing.md)
+                .padding(.top, MDSpacing.lg)
 
-                    digitGrid
-                        .padding(.horizontal, MDSpacing.md)
+            digitGrid
+                .padding(.horizontal, MDSpacing.md)
+                .padding(.top, MDSpacing.md)
 
-                    SkipButton(elapsedSeconds: elapsedSeconds, onSkip: handleSkip)
-                        .disabled(isInteractionBlocked)
-                        .padding(.bottom, MDSpacing.xl)
-                }
-            }
+            SkipButton(elapsedSeconds: elapsedSeconds, onSkip: handleSkip)
+                .disabled(isInteractionBlocked)
+                .padding(.top, MDSpacing.lg)
+
+            Spacer()
         }
         .overlay {
             if engine.isWaitingAfterSkip {
@@ -89,7 +92,7 @@ struct PiGameView: View {
         }
     }
 
-    private var piDisplayCard: some View {
+    private var questionCard: some View {
         MDPrimaryCard {
             VStack(spacing: MDSpacing.xs) {
                 Text(String(format: String(localized: "pi_digits_guessed"), currentIndex))
@@ -98,13 +101,12 @@ struct PiGameView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
 
                 Text(piSequenceDisplay)
-                    .font(.system(size: 22, weight: .heavy, design: .monospaced))
+                    .font(.system(size: 24, weight: .heavy, design: .monospaced))
                     .foregroundStyle(Color.mdText)
                     .frame(maxWidth: .infinity, alignment: .center)
             }
             .padding(.vertical, MDSpacing.sm)
         }
-        .padding(.horizontal, MDSpacing.md)
     }
 
     private var digitGrid: some View {
@@ -112,10 +114,7 @@ struct PiGameView: View {
         let columns = Array(repeating: GridItem(.flexible(), spacing: MDSpacing.sm), count: 5)
         return LazyVGrid(columns: columns, spacing: MDSpacing.sm) {
             ForEach(digits, id: \.self) { digit in
-                DigitButton(
-                    digit: digit,
-                    feedbackState: buttonFeedbackState(for: digit)
-                ) {
+                DigitButton(digit: digit, feedbackState: buttonFeedbackState(for: digit)) {
                     handleDigitTap(digit)
                 }
                 .disabled(isInteractionBlocked)
@@ -143,6 +142,8 @@ struct PiGameView: View {
             }
     }
 
+    // MARK: – State helpers
+
     private var isInteractionBlocked: Bool {
         engine.isRoundOver || engine.isWaitingAfterSkip || feedbackIsCorrect != nil
     }
@@ -156,12 +157,13 @@ struct PiGameView: View {
         }
     }
 
+    // MARK: – Actions
+
     private func handleDigitTap(_ digit: Int) {
-        guard !engine.isRoundOver, !engine.isWaitingAfterSkip, feedbackIsCorrect == nil else { return }
+        guard !isInteractionBlocked else { return }
         selectedDigit = digit
         let correct = digit == targetDigit
         feedbackIsCorrect = correct
-
         Task {
             try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
             if correct {
@@ -184,22 +186,34 @@ struct PiGameView: View {
     }
 
     private func handleTimerTick() {
-        guard !engine.isRoundOver, !engine.isWaitingAfterSkip, feedbackIsCorrect == nil else { return }
+        guard !isInteractionBlocked else { return }
         elapsedSeconds = min(elapsedSeconds + 0.1, 10.0)
-        if elapsedSeconds >= 10.0 {
-            handleSkip()
-        }
+        if elapsedSeconds >= 10.0 { handleSkip() }
     }
 }
 
-enum DigitFeedbackState: Equatable {
-    case idle, correct, wrong
-}
+// MARK: – Digit button
+
+enum DigitFeedbackState: Equatable { case idle, correct, wrong }
 
 private struct DigitButton: View {
     let digit: Int
     let feedbackState: DigitFeedbackState
     let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text("\(digit)")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(labelColor)
+                .frame(maxWidth: .infinity)
+                .aspectRatio(1, contentMode: .fit)
+                .background(bgColor)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(borderColor, lineWidth: 1.5))
+        }
+        .animation(.easeInOut(duration: 0.15), value: feedbackState)
+    }
 
     private var bgColor: Color {
         switch feedbackState {
@@ -208,7 +222,6 @@ private struct DigitButton: View {
         case .wrong:   return .mdRedSoft
         }
     }
-
     private var borderColor: Color {
         switch feedbackState {
         case .idle:    return .mdBorder2
@@ -216,26 +229,11 @@ private struct DigitButton: View {
         case .wrong:   return .mdRed
         }
     }
-
-    private var textColor: Color {
+    private var labelColor: Color {
         switch feedbackState {
         case .idle:    return .mdText
         case .correct: return .mdGreen
         case .wrong:   return .mdRed
         }
-    }
-
-    var body: some View {
-        Button(action: action) {
-            Text("\(digit)")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(textColor)
-                .frame(maxWidth: .infinity)
-                .aspectRatio(1, contentMode: .fit)
-                .background(bgColor)
-                .clipShape(Circle())
-                .overlay(Circle().stroke(borderColor, lineWidth: 1))
-        }
-        .animation(.easeInOut(duration: 0.15), value: feedbackState)
     }
 }
