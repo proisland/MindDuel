@@ -3,6 +3,7 @@ import SwiftUI
 struct HomeView: View {
     let username: String
     @EnvironmentObject private var authState: AuthState
+    @State private var activeMode: GameMode? = nil
 
     var body: some View {
         ZStack {
@@ -11,8 +12,7 @@ struct HomeView: View {
             VStack(spacing: 0) {
                 MDTopBar(title: "MindDuel") {
                     Button { authState.signOut() } label: {
-                        Image(systemName: "person.circle")
-                            .foregroundStyle(Color.mdText2)
+                        MDAvatar(username: username, size: .sm)
                     }
                 }
 
@@ -22,43 +22,32 @@ struct HomeView: View {
                             Text(String(localized: "welcome_greeting"))
                                 .mdStyle(.caption)
                                 .foregroundStyle(Color.mdText2)
-                            Text(username)
+                            Text("@\(username)")
                                 .mdStyle(.title)
                         }
-                        .padding(.horizontal, MDSpacing.lg)
+                        .padding(.horizontal, MDSpacing.md)
                         .padding(.top, MDSpacing.xl)
 
-                        MDPrimaryCard {
-                            HStack(spacing: MDSpacing.md) {
-                                MDPillTag(label: "π", variant: .accent)
-                                VStack(alignment: .leading, spacing: MDSpacing.xs) {
-                                    Text(String(localized: "mode_pi"))
-                                        .mdStyle(.heading)
-                                    Text(String(localized: "mode_pi_desc"))
-                                        .mdStyle(.caption)
-                                        .foregroundStyle(Color.mdText2)
-                                }
-                                Spacer()
+                        HStack(spacing: MDSpacing.sm) {
+                            MDModeCard(mode: .pi, maxLevel: 20) {
+                                activeMode = .pi
+                            }
+                            MDModeCard(mode: .math, maxLevel: 10) {
+                                activeMode = .math
                             }
                         }
-                        .padding(.horizontal, MDSpacing.lg)
-
-                        MDPrimaryCard {
-                            HStack(spacing: MDSpacing.md) {
-                                MDPillTag(label: "∑", variant: .pink)
-                                VStack(alignment: .leading, spacing: MDSpacing.xs) {
-                                    Text(String(localized: "mode_math"))
-                                        .mdStyle(.heading)
-                                    Text(String(localized: "mode_math_desc"))
-                                        .mdStyle(.caption)
-                                        .foregroundStyle(Color.mdText2)
-                                }
-                                Spacer()
-                            }
-                        }
-                        .padding(.horizontal, MDSpacing.lg)
+                        .padding(.horizontal, MDSpacing.md)
                     }
+                    .padding(.bottom, MDSpacing.xl)
                 }
+            }
+        }
+        .fullScreenCover(item: $activeMode) { mode in
+            switch mode {
+            case .pi:
+                PiGameView(username: username)
+            case .math:
+                MathGameView(username: username)
             }
         }
     }
