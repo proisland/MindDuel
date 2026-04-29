@@ -28,10 +28,10 @@ struct MDModeCard: View {
         }
     }
 
-    private var titleKey: String {
+    private var localizedTitle: String {
         switch mode {
-        case .pi: return "mode_pi"
-        case .math: return "mode_math"
+        case .pi: return String(localized: "mode_pi")
+        case .math: return String(localized: "mode_math")
         }
     }
 
@@ -52,7 +52,7 @@ struct MDModeCard: View {
                         .foregroundStyle(Color.mdText)
                 }
 
-                Text(String(localized: String.LocalizationValue(titleKey)))
+                Text(verbatim: localizedTitle)
                     .mdStyle(.bodyMd)
 
                 Text("\(score)p")

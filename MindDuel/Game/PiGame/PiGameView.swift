@@ -197,7 +197,7 @@ struct PiGameView: View {
     }
 }
 
-enum DigitFeedbackState {
+enum DigitFeedbackState: Equatable {
     case idle, correct, wrong
 }
 

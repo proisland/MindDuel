@@ -194,7 +194,7 @@ struct MathGameView: View {
     }
 }
 
-enum AnswerFeedbackState {
+enum AnswerFeedbackState: Equatable {
     case idle, correct, wrong
 }
 
