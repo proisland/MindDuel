@@ -1,7 +1,7 @@
 import AuthenticationServices
 
 struct AuthService {
-    static func handleCredential(
+    @MainActor static func handleCredential(
         _ credential: ASAuthorizationAppleIDCredential,
         authState: AuthState
     ) {
