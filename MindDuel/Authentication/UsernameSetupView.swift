@@ -36,21 +36,16 @@ struct UsernameSetupView: View {
     }
 
     private var topBar: some View {
-        HStack {
-            Text("MindDuel")
-                .mdStyle(.heading)
-            Spacer()
+        MDTopBar(title: "MindDuel") {
             Button { } label: {
                 Image(systemName: "gearshape.fill")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(Color.mdText2)
-                    .frame(width: 36, height: 36)
+                    .frame(width: 28, height: 28)
                     .background(Color.mdSurface2)
                     .clipShape(Circle())
             }
         }
-        .padding(.horizontal, MDSpacing.md)
-        .frame(height: 56)
     }
 
     private var content: some View {

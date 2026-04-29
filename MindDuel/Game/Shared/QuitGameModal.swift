@@ -6,13 +6,18 @@ struct QuitGameModal: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.8)
+            Color.black.opacity(0.85)
                 .ignoresSafeArea()
 
             VStack(spacing: MDSpacing.md) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 32))
-                    .foregroundStyle(Color.mdAmber)
+                ZStack {
+                    Circle()
+                        .fill(Color.mdAmberSoft)
+                        .frame(width: 64, height: 64)
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 28))
+                        .foregroundStyle(Color.mdAmber)
+                }
 
                 VStack(spacing: MDSpacing.xs) {
                     Text(String(localized: "quit_game_title"))
