@@ -237,8 +237,12 @@ private struct AnswerButton: View {
                 .frame(height: 56)
                 .background(bgColor)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay(RoundedRectangle(cornerRadius: 14).stroke(borderColor, lineWidth: 1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(borderColor, lineWidth: feedbackState == .idle ? 0 : 1.5)
+                )
         }
+        .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.15), value: feedbackState)
     }
 }

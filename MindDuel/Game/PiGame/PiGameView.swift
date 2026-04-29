@@ -217,8 +217,9 @@ private struct DigitButton: View {
                 .aspectRatio(1, contentMode: .fit)
                 .background(bgColor)
                 .clipShape(Circle())
-                .overlay(Circle().stroke(borderColor, lineWidth: 1.5))
+                .overlay(Circle().stroke(borderColor, lineWidth: feedbackState == .idle ? 0 : 1.5))
         }
+        .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.15), value: feedbackState)
     }
 
