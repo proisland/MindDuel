@@ -79,11 +79,11 @@ struct PiGameView: View {
                 .padding(.horizontal, MDSpacing.md)
                 .padding(.top, MDSpacing.md)
 
+            Spacer()
+
             SkipButton(elapsedSeconds: elapsedSeconds, onSkip: handleSkip)
                 .disabled(isInteractionBlocked)
-                .padding(.top, MDSpacing.lg)
-
-            Spacer()
+                .padding(.bottom, MDSpacing.xl)
         }
         .overlay {
             if engine.isWaitingAfterSkip {

@@ -13,9 +13,9 @@ struct SkipButton: View {
         VStack(spacing: 6) {
             Button(action: onSkip) {
                 Image(systemName: "forward.fill")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(Color.mdText2)
-                    .frame(width: 44, height: 44)
+                    .frame(width: 56, height: 56)
                     .background(Color.mdSurface2)
                     .clipShape(Circle())
                     .overlay(Circle().stroke(Color.mdAccent, lineWidth: 1.5))
