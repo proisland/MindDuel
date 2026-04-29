@@ -1,8 +1,8 @@
 # Design Document
 ## MindDuel – Sosialt hjernetrim for iPhone
 
-**Versjon:** 1.0
-**Dato:** 2026-04-29
+**Versjon:** 1.1
+**Dato:** 2026-04-29 (oppdatert med UI-bilder)
 **Status:** Klar for utvikling
 **Basert på PRD:** v0.1
 
@@ -109,13 +109,16 @@ Egendefinert SVG-ikonsett i lineær stil. Alle ikoner har 2px stroke og runde li
 
 | Token | Verdi |
 |---|---|
-| `xs` | 4 pt |
-| `sm` | 8 pt |
-| `md` | 14 pt |
-| `lg` | 18 pt |
-| `xl` | 24 pt |
+| `xxs` | 4 pt |
+| `xs` | 8 pt |
+| `sm` | 12 pt |
+| `md` | 16 pt |
+| `lg` | 24 pt |
+| `xl` | 32 pt |
+| `xxl` | 48 pt |
+| `xxxl` | 64 pt |
 
-Standard horisontal padding på skjerm: 14 pt.
+Standard horisontal padding på skjerm: 16 pt (MDSpacing.md).
 
 ### 2.5 Corner radius
 
@@ -233,7 +236,7 @@ Fast plassering øverst på spillskjerm. Hjerte (rødt) til venstre, hopp (indig
 
 ### 3.8 Skip-button
 
-Stor sirkulær knapp, 44×44 pt, plassert sentrert nederst på spillskjerm. `surface-2` bakgrunn, 1.5 pt indigo kant. Skip-ikon i `text-2` farge, 16×16 pt. Timer (med klokke-ikon) er stablet under knappen, 11 pt 600.
+Stor sirkulær knapp, 56×56 pt, plassert sentrert mot bunnen av spillskjerm (med avstand via Spacer). `surface-2` bakgrunn, 1.5 pt indigo kant. Skip-ikon i `text-2` farge, 20 pt 800. Timer (med klokke-ikon) er stablet under knappen, 11 pt 600. Layout: VStack med 6 pt spacing mellom knapp og timer-label.
 
 ### 3.9 Sifferknapp og svarknapp
 
@@ -288,21 +291,58 @@ Modaler:
 
 ---
 
-## 5. Skjermspesifikasjoner
+## 5. UI-referansebilder
 
-### 5.1 Innlogging
+Alle designskisser er dokumentert som mockup-bilder i `docs/ui-refs/`:
+
+| # | Skjerm | Bildefil |
+|---|--------|----------|
+| 1 | Sign-in | `sign-in.png` |
+| 2 | Username setup | `username-setup.png` |
+| 3 | Onboarding (slide 1: Liv og hopp) | `onboarding.png` |
+| 4 | Home screen | `home.png` |
+| 5 | Pi-modus (solo game) | `game-pi.png` |
+| 6 | Regning-modus (solo game) | `game-math.png` |
+| 7 | Runde ferdig (end screen) | `round-end.png` |
+| 8 | Scoreboard | `scoreboard.png` |
+| 9 | Min profil (self) | `profile-self.png` |
+| 10 | Annens profil (other) | `profile-other.png` |
+| 11 | Flerspillerlobby | `multiplayer-lobby.png` |
+| 12 | Gruppespill (group game) | `group-game.png` |
+| 13 | Forlat spill-modal | `quit-modal.png` |
+| 14 | Innstillinger | `settings.png` |
+
+---
+
+## 6. Skjermspesifikasjoner
+
+### 6.1 Innlogging
+
+**Referanse:** `docs/ui-refs/sign-in.png`
 
 Sentrert komposisjon med stor logo (62×62 indigo blokk med "M"), apptittel og tagline, fulgt av "Sign in with Apple"-knapp i hvit pille. Vilkår-tekst i bunn.
 
-### 5.2 Velg brukernavn
+### 6.2 Velg brukernavn
+
+**Referanse:** `docs/ui-refs/username-setup.png`
 
 Tittel "MindDuel" med innstillings-ikon i topbar. Sentral tom avatar-illustrasjon, deretter "Velg ditt tag"-overskrift med undertekst. Inputfelt med @-prefiks og live-validering (grønn ramme + check-ikon når gyldig). Tre valideringsregler vises som grønne check-rader. Primærknapp "Fortsett" deaktiveres til alle regler er oppfylt og brukernavnet er tilgjengelig.
 
-### 5.3 Onboarding
+### 6.3 Onboarding
 
-4 skjermbilder med hopp-over-lenke øverst til høyre, sentrert ikon-illustrasjon, overskrift, beskrivelse, fremdriftsindikator (utvidet aktiv prikk + tre runde inaktive) og "Neste"-primærknapp.
+**Referanse:** `docs/ui-refs/onboarding.png`
 
-### 5.4 Hjemskjerm
+4 skjermbilder med "Hopp over"-lenke øverst til høyre, sentrert ikon-illustrasjon, overskrift, beskrivelse, fremdriftsindikator (første prikk utvidet/fyllt + tre runde inaktive) og "Neste"-primærknapp nederst.
+
+**Slide 1 (Liv og hopp):**
+- Stort rødt/amber sirkeland med hjerte-ikon sentrert
+- "Liv og hopp" overskrift
+- Tekst: "Du har 5 liv og 5 hopp. Feil svar bruker ett liv. Hopp lar deg skippe uten straff."
+- Dot-indikatorer viser 1/4
+
+### 6.4 Hjemskjerm
+
+**Referanse:** `docs/ui-refs/home.png`
 
 ```
 [God dag, @petter]                            [P]
@@ -342,7 +382,9 @@ Siste aktivitet                  Se alle
 - Aktivitetsfeed er individuelle kort, ikke en sammenhengende liste
 - Online-prikk vises på avatar når relevant (grønn på `surface`-kant)
 
-### 5.5 Spillskjerm – Pi-modus
+### 6.5 Spillskjerm – Pi-modus
+
+**Referanse:** `docs/ui-refs/game-pi.png`
 
 ```
 [‹]   Pi-modus   [P]
@@ -361,7 +403,9 @@ Siste aktivitet                  Se alle
          ⏱ 0,0 sek
 ```
 
-### 5.6 Spillskjerm – Regning
+### 6.6 Spillskjerm – Regning
+
+**Referanse:** `docs/ui-refs/game-math.png`
 
 ```
 [‹]   Regning   [P]
@@ -380,14 +424,18 @@ Siste aktivitet                  Se alle
          ⏱ 1,8 sek
 ```
 
-### 5.7 Spillskjerm – Gruppespill
+### 6.7 Spillskjerm – Gruppespill
+
+**Referanse:** `docs/ui-refs/group-game.png`
 
 Samme som solo, med tillegg av:
 - Rom-ID i topbar i stedet for modus-tittel ("● Gruppespill")
 - Spillerrekkefølge-rad: aktiv spiller fremhevet med `accent-deep` ramme og "DIN TUR"-label, neste spillere dempet (40% opacity)
 - "● LIVE"-indikator i topbar (grønn prikk + tekst)
 
-### 5.8 Rundeslutt
+### 6.8 Rundeslutt
+
+**Referanse:** `docs/ui-refs/round-end.png`
 
 ```
         [🏆 trofé]
@@ -410,84 +458,129 @@ VENNER
 - Padding 14 pt på alle sider, og 16 pt nederst for å gi knappene pust
 - Kun topp 2-3 venner vises – ikke en lang liste
 
-### 5.9 Scoreboard
+### 6.9 Scoreboard
 
-Topbar med tilbake-knapp og "Scoreboard"-tittel. Tre-fane segmentert kontroll: Venner / Lokalt / Globalt. Liste med rader som viser rang, avatar, brukernavn, alder, og snittpoeng. Førsteplass har gull-bakgrunn, brukeren har indigo-bakgrunn. Flaggede brukere viser flagg-ikon ved navnet.
+**Referanse:** `docs/ui-refs/scoreboard.png`
 
-### 5.10 Min profil
+Topbar med tilbake-knapp og "Scoreboard"-tittel. Tre-fane segmentert kontroll: Venner / Lokalt / Globalt. Liste med rader som viser rang, avatar, brukernavn, alder, og snittpoeng. 
+
+**Styling:**
+- Rang 1 (topp scorer): gull/amber-bakgrunn (`amber-soft`)
+- Brukerens egen rad: indigo-bakgrunn (`accent-soft`), merkert "Deg" i stedet for alder
+- Andre rader: standard `surface-2`
+- Flaggede brukere viser rød flagg-ikon ved siden av navn
+
+### 6.10 Min profil
+
+**Referanse:** `docs/ui-refs/profile-self.png`
 
 ```
-[Min profil]                          [⚙]
+[‹]  Min profil                         [⚙]
 
-       [P]  ← stor avatar
-     @petter
-  Medlem siden januar 2025
+            [P]  ← 56×56 avatar
+          @petter
+     Medlem siden januar 2025
 
 FREMGANG
-[Pi: 2 847p, Nivå 12/20]  [∑: 1 340p, Nivå 4/10]
-                          (begge med progress bars)
+[π Pi-modus]         [∑ Regning]
+ 2 847p, Nivå 12/20  1 340p, Nivå 4/10
+ (begge med progress bars)
 
 STATISTIKK
-Runder spilt   ·  147
-Venner         ·  8
-Alder          ·  34 år
+Runder spilt  ·  147
+Venner        ·  8
+Alder         ·  34 år
 
 VENNER
 [MK] [SR] [AL] [+]
 ```
 
-### 5.11 Annens profil
+### 6.11 Annens profil
+
+**Referanse:** `docs/ui-refs/profile-other.png`
 
 Samme struktur som Min profil, men:
 - Tilbake-knapp i topbar i stedet for spacer
 - Innstillings-ikon erstattes av tom spacer
-- Stats-seksjonen viser "Sist aktiv" i stedet for "Venner"-tall
+- Avatar er 56×56 pt
+- Undertekst under brukernavn viser **alder + lokasjon** (f.eks. "28 år · Stavanger") i stedet for "Medlem siden"
+- Stats-seksjonen viser "Sist aktiv" i stedet for "Venner"-tall (f.eks. "Nå", "5t siden")
 - To handlingsknapper nederst: "Utfordre" (ghost) + "+ Venn" (primær)
 
-### 5.12 Flerspillerlobby
+### 6.12 Flerspillerlobby
+
+**Referanse:** `docs/ui-refs/multiplayer-lobby.png`
 
 ```
-[‹]   Flerspiller            [#4F2A]
+[‹]   Flerspiller                      [#4F2A]
 
 MODUS
-[π Pi-modus]    [∑ Regning]
- (aktiv)         (dempet 50%)
+[π Pi-modus]      [∑ Regning]
+ (aktiv)           (dempet 50%)
 
 STARTNIVÅ
-[Fra start (#1)              ›]
+[Fra start (#1)                    ›]
 
 SPILLERE (3/8)
-[P @petter (Romvert)    ✓ Klar]
-[MK @magnus             ✓ Klar]
-[SR @sara               ⏳ Venter]
+[P @petter (Romvert)    ✓ Klar grønn]
+[MK @magnus             ✓ Klar grønn]
+[SR @sara               ⏳ Venter amber]
 [+  Inviter spiller]
 
-[Venter på @sara…]              ← deaktivert
+[Venter på @sara…]                ← deaktivert
 ```
 
-### 5.13 Innstillinger
+**Detaljer:**
+- Room-kode (`#4F2A`) vises som pill i topbar, høyre side
+- Modus: Aktiv har blå/indigo kant, inaktiv er dempet grå
+- Spillere har avatar + navn + rolle-label (Romvert), deretter status
+- Status-badger: ✓ "Klar" i grønt, ⏳ "Venter" i amber
+- "Fortsett"-knappen deaktiveres til alle er "Klar"
+
+### 6.13 Innstillinger
+
+**Referanse:** `docs/ui-refs/settings.png`
 
 Tre seksjoner med mellomtitler:
 
-**KONTO:** Varsler (toggle), Mørk modus (System), Språk (Norsk)
+**KONTO:** 
+- Varsler (toggle, på)
+- Mørk modus (System-innstilling)
+- Språk (Norsk)
 
-**ABONNEMENT:** Plan-status med "Oppgrader"-knapp
+**ABONNEMENT:** 
+- "Gratis plan: 10 oppgaver per dag"
+- "Oppgrader"-primærknapp
 
-**PERSONVERN:** Vilkår og personvern, Slett konto og data (rød)
+**PERSONVERN:** 
+- Vilkår og personvern (chevron)
+- Slett konto og data (rød/danger)
 
 Nederst: "Logg ut"-danger-knapp.
 
-Hver innstillingsrad har et avrundet-firkantet ikon i `accent-soft`-fargen til venstre.
+Hver innstillingsrad har et avrundet-firkantet ikon (7 pt radius) i `accent-soft`-fargen til venstre, med navn og verdi/toggle/chevron til høyre.
 
-### 5.14 Modaler
+### 6.14 Modaler
 
-**Forlat spill:** Bakgrunnsspill dempes til 20% opacity. Modal med advarsel-ikon (oransje), tittel "Forlate spillet?", forklaring, og to knapper: "Forlat spillet" (danger) + "Fortsett å spille" (ghost).
+#### Forlat spill
 
-**Logg ut:** Lignende struktur, men på innstillingsbakgrunn. Wave-ikon, "Logg ut?"-tittel, primær + ghost knapper.
+**Referanse:** `docs/ui-refs/quit-modal.png`
+
+Bakgrunnsspill dempes til ~85% opacity. Modal sentrert med:
+- Stor advarsel-ikon i cirkel med amber-bakgrunn
+- "Forlate spillet?" tittel (Heading)
+- "Du mister fremdriften i denne runden." undertekst
+- To knapper: "Forlat spillet" (danger) + "Fortsett å spille" (ghost)
+
+Transition: Fade + scale-in fra 95% over 200 ms.
+
+#### Logg ut
+
+Lignende struktur, men på innstillingsbakgrunn. Farevarslings-ikon, "Logg ut?"-tittel, to knapper.
 
 ---
 
-## 6. Animasjoner og overganger
+## 7. Animasjoner og overganger
 
 | Hendelse | Animasjon | Varighet |
 |---|---|---|
@@ -503,7 +596,7 @@ Alle animasjoner respekterer `preferredReducedMotion`.
 
 ---
 
-## 7. Haptisk tilbakemelding
+## 8. Haptisk tilbakemelding
 
 | Hendelse | Type | iOS API |
 |---|---|---|
@@ -514,7 +607,7 @@ Alle animasjoner respekterer `preferredReducedMotion`.
 
 ---
 
-## 8. Tilgjengelighet
+## 9. Tilgjengelighet
 
 | Område | Krav |
 |---|---|
@@ -527,13 +620,13 @@ Alle animasjoner respekterer `preferredReducedMotion`.
 
 ---
 
-## 9. Lokalisering
+## 10. Lokalisering
 
 All tekst på **norsk** og **engelsk**, automatisk valgt etter systemspråk. Onboarding-illustrasjoner leveres i to språkvarianter.
 
 ---
 
-## 10. Beslutningslogg fra designprosessen
+## 11. Beslutningslogg fra designprosessen
 
 Følgende valg er tatt eksplisitt basert på iterasjon med stakeholder:
 
@@ -552,7 +645,7 @@ Følgende valg er tatt eksplisitt basert på iterasjon med stakeholder:
 
 ---
 
-## 11. Åpne spørsmål
+## 12. Åpne spørsmål
 
 | # | Spørsmål | Status | Beslutning |
 |---|---|---|---|
