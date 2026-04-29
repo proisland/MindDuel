@@ -1,5 +1,4 @@
 import SwiftUI
-import AuthenticationServices
 
 struct SignInView: View {
     @EnvironmentObject private var authState: AuthState
@@ -23,16 +22,9 @@ struct SignInView: View {
 
                 Spacer()
 
-                SignInWithAppleButton(.signIn) { request in
-                    request.requestedScopes = [.fullName, .email]
-                } onCompletion: { result in
-                    guard case .success(let auth) = result,
-                          let credential = auth.credential as? ASAuthorizationAppleIDCredential
-                    else { return }
-                    AuthService.handleCredential(credential, authState: authState)
+                MDButton(.primary, title: String(localized: "sign_in_placeholder")) {
+                    authState.startGuestSession()
                 }
-                .signInWithAppleButtonStyle(.white)
-                .frame(height: 50)
                 .padding(.horizontal, MDSpacing.lg)
                 .padding(.bottom, MDSpacing.xl)
             }

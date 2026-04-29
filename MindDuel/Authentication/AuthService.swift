@@ -1,10 +1,3 @@
-import AuthenticationServices
-
-struct AuthService {
-    @MainActor static func handleCredential(
-        _ credential: ASAuthorizationAppleIDCredential,
-        authState: AuthState
-    ) {
-        authState.completeSignIn(userID: credential.user)
-    }
-}
+// Sign in with Apple will be implemented in a later milestone
+// when an Apple Developer account is available (requires paid enrollment).
+// AuthService will wrap AuthenticationServices when added.

@@ -27,11 +27,7 @@ targets:
           - UIInterfaceOrientationPortrait
         UIUserInterfaceStyle: Dark
         NSLocationWhenInUseUsageDescription: "MindDuel bruker din posisjon kun til å vise spillere i nærheten på scoreboardet."
-    entitlements:
-      path: MindDuel/MindDuel.entitlements
-      properties:
-        com.apple.developer.applesignin:
-          - Default
+    # entitlements: Sign in with Apple added in later milestone (requires paid Apple Developer account)
     settings:
       base:
         SWIFT_VERSION: "5.9"

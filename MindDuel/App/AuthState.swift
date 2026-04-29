@@ -10,9 +10,9 @@ enum AuthPhase {
 final class AuthState: ObservableObject {
     @Published var phase: AuthPhase = .signedOut
 
-    func completeSignIn(userID: String) {
-        // M2+: check backend for existing username before transitioning
-        phase = .needsUsername(userID: userID)
+    func startGuestSession() {
+        // Placeholder until Sign in with Apple is added (requires Apple Developer account)
+        phase = .needsUsername(userID: UUID().uuidString)
     }
 
     func setUsername(_ username: String, userID: String) {

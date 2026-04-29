@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "no",
   "strings" : {
+    "MindDuel" : {
+
+    },
     "choose_username" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -34,9 +37,6 @@
           }
         }
       }
-    },
-    "MindDuel" : {
-
     },
     "mode_math" : {
       "extractionState" : "stale",
@@ -102,6 +102,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gjett neste desimal i π"
+          }
+        }
+      }
+    },
+    "sign_in_placeholder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get started"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kom i gang"
           }
         }
       }
