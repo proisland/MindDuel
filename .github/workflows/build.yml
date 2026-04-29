@@ -1,0 +1,48 @@
+name: iOS CI
+
+on:
+  push:
+    branches: [main, "milestone/**"]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Build & Test
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -scheme MindDuel \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            -configuration Debug \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            DEVELOPMENT_TEAM=""
+
+      - name: Test
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -scheme MindDuel \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            -configuration Debug \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            DEVELOPMENT_TEAM=""

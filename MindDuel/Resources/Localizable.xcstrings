@@ -1,0 +1,66 @@
+{
+  "sourceLanguage" : "no",
+  "strings" : {
+    "tagline" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mental challenges. Social competition." } },
+        "no" : { "stringUnit" : { "state" : "translated", "value" : "Mentale utfordringer. Sosial konkurranse." } }
+      }
+    },
+    "choose_username" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose username" } },
+        "no" : { "stringUnit" : { "state" : "translated", "value" : "Velg brukernavn" } }
+      }
+    },
+    "username_hint" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "3–20 characters, letters, numbers and underscore only." } },
+        "no" : { "stringUnit" : { "state" : "translated", "value" : "3–20 tegn, kun bokstaver, tall og understrek." } }
+      }
+    },
+    "username_placeholder" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "your_username" } },
+        "no" : { "stringUnit" : { "state" : "translated", "value" : "ditt_brukernavn" } }
+      }
+    },
+    "continue_action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Continue" } },
+        "no" : { "stringUnit" : { "state" : "translated", "value" : "Fortsett" } }
+      }
+    },
+    "welcome_greeting" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Welcome back," } },
+        "no" : { "stringUnit" : { "state" : "translated", "value" : "Hei," } }
+      }
+    },
+    "mode_pi" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pi Mode" } },
+        "no" : { "stringUnit" : { "state" : "translated", "value" : "Pi-modus" } }
+      }
+    },
+    "mode_pi_desc" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Guess the next decimal of π" } },
+        "no" : { "stringUnit" : { "state" : "translated", "value" : "Gjett neste desimal i π" } }
+      }
+    },
+    "mode_math" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Math Mode" } },
+        "no" : { "stringUnit" : { "state" : "translated", "value" : "Regning-modus" } }
+      }
+    },
+    "mode_math_desc" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Solve equations as fast as you can" } },
+        "no" : { "stringUnit" : { "state" : "translated", "value" : "Løs regnestykker så raskt som mulig" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

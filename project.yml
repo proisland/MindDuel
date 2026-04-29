@@ -1,0 +1,78 @@
+name: MindDuel
+
+options:
+  bundleIdPrefix: no.mindduel
+  deploymentTarget:
+    iOS: "16.0"
+  defaultConfig: Debug
+  createIntermediateGroups: true
+  xcodeVersion: "16"
+
+configs:
+  Debug: debug
+  Release: release
+
+targets:
+  MindDuel:
+    type: application
+    platform: iOS
+    sources:
+      - path: MindDuel
+    info:
+      path: MindDuel/Info.plist
+      properties:
+        CFBundleDisplayName: MindDuel
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIUserInterfaceStyle: Dark
+        NSLocationWhenInUseUsageDescription: "MindDuel bruker din posisjon kun til å vise spillere i nærheten på scoreboardet."
+    entitlements:
+      path: MindDuel/MindDuel.entitlements
+      properties:
+        com.apple.developer.applesignin:
+          - Default
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+        PRODUCT_BUNDLE_IDENTIFIER: no.mindduel.app
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_STYLE: Automatic
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+        ENABLE_PREVIEWS: YES
+      configs:
+        Debug:
+          DEBUG_INFORMATION_FORMAT: dwarf
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+        Release:
+          DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+          SWIFT_COMPILATION_MODE: wholemodule
+          COPY_PHASE_STRIP: NO
+
+  MindDuelTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: MindDuelTests
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+        PRODUCT_BUNDLE_IDENTIFIER: no.mindduel.tests
+        DEVELOPMENT_TEAM: ""
+    dependencies:
+      - target: MindDuel
+
+  MindDuelUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: MindDuelUITests
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+        PRODUCT_BUNDLE_IDENTIFIER: no.mindduel.uitests
+        DEVELOPMENT_TEAM: ""
+    dependencies:
+      - target: MindDuel
