@@ -35,9 +35,9 @@ struct MDButton: View {
             .frame(maxWidth: .infinity)
             .frame(height: 50)
             .background(backgroundColor)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .clipShape(Capsule())
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
+                Capsule()
                     .stroke(borderColor, lineWidth: variant == .ghost ? 1 : 0)
             )
         }

@@ -21,6 +21,86 @@
         }
       }
     },
+    "choose_your_tag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose your tag"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Velg ditt tag"
+          }
+        }
+      }
+    },
+    "tag_subtitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How the arena will know you."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slik vil arenaen kjenne deg."
+          }
+        }
+      }
+    },
+    "rule_length" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3–20 characters"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3–20 tegn"
+          }
+        }
+      }
+    },
+    "rule_chars" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Letters, numbers, underscore"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bokstaver, tall, understrek"
+          }
+        }
+      }
+    },
+    "rule_available" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tag is available"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tag er tilgjengelig"
+          }
+        }
+      }
+    },
     "continue_action" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -156,18 +236,17 @@
       }
     },
     "username_placeholder" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "your_username"
+            "value" : "your_tag"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ditt_brukernavn"
+            "value" : "ditt_tag"
           }
         }
       }
