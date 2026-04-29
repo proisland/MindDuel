@@ -23,16 +23,14 @@ struct PiGameView: View {
         if currentIndex <= 10 {
             return "3." + revealed + "…"
         }
-        let suffix = String(revealed.suffix(8))
-        return "…" + suffix + "…"
+        return "…" + String(revealed.suffix(8)) + "…"
     }
 
     var body: some View {
         ZStack {
             Color.mdBg.ignoresSafeArea()
 
-            switch engine.phase {
-            case .roundOver:
+            if engine.isRoundOver {
                 RoundEndView(correctCount: engine.correctCount) {
                     engine.restart()
                     currentIndex = 0
@@ -42,7 +40,7 @@ struct PiGameView: View {
                 } onHome: {
                     dismiss()
                 }
-            default:
+            } else {
                 gameContent
             }
 
@@ -85,7 +83,7 @@ struct PiGameView: View {
             }
         }
         .overlay {
-            if case .waitingAfterSkip = engine.phase {
+            if engine.isWaitingAfterSkip {
                 waitingOverlay
             }
         }
@@ -146,23 +144,20 @@ struct PiGameView: View {
     }
 
     private var isInteractionBlocked: Bool {
-        switch engine.phase {
-        case .playing: return feedbackIsCorrect != nil
-        default: return true
-        }
+        engine.isRoundOver || engine.isWaitingAfterSkip || feedbackIsCorrect != nil
     }
 
     private func buttonFeedbackState(for digit: Int) -> DigitFeedbackState {
-        guard selectedDigit == digit else { return .idle }
+        guard let sel = selectedDigit, sel == digit else { return .idle }
         switch feedbackIsCorrect {
-        case true: return .correct
+        case true:  return .correct
         case false: return .wrong
-        case nil: return .idle
+        default:    return .idle
         }
     }
 
     private func handleDigitTap(_ digit: Int) {
-        guard case .playing = engine.phase, feedbackIsCorrect == nil else { return }
+        guard !engine.isRoundOver, !engine.isWaitingAfterSkip, feedbackIsCorrect == nil else { return }
         selectedDigit = digit
         let correct = digit == targetDigit
         feedbackIsCorrect = correct
@@ -182,14 +177,14 @@ struct PiGameView: View {
     }
 
     private func handleSkip() {
-        guard case .playing = engine.phase else { return }
+        guard !engine.isRoundOver, !engine.isWaitingAfterSkip else { return }
         elapsedSeconds = 0
         currentIndex += 1
         engine.useSkip()
     }
 
     private func handleTimerTick() {
-        guard case .playing = engine.phase, feedbackIsCorrect == nil else { return }
+        guard !engine.isRoundOver, !engine.isWaitingAfterSkip, feedbackIsCorrect == nil else { return }
         elapsedSeconds = min(elapsedSeconds + 0.1, 10.0)
         if elapsedSeconds >= 10.0 {
             handleSkip()
@@ -208,25 +203,25 @@ private struct DigitButton: View {
 
     private var bgColor: Color {
         switch feedbackState {
-        case .idle: return .mdSurface2
+        case .idle:    return .mdSurface2
         case .correct: return .mdGreenSoft
-        case .wrong: return .mdRedSoft
+        case .wrong:   return .mdRedSoft
         }
     }
 
     private var borderColor: Color {
         switch feedbackState {
-        case .idle: return .mdBorder2
+        case .idle:    return .mdBorder2
         case .correct: return .mdGreen
-        case .wrong: return .mdRed
+        case .wrong:   return .mdRed
         }
     }
 
     private var textColor: Color {
         switch feedbackState {
-        case .idle: return .mdText
+        case .idle:    return .mdText
         case .correct: return .mdGreen
-        case .wrong: return .mdRed
+        case .wrong:   return .mdRed
         }
     }
 
@@ -241,6 +236,6 @@ private struct DigitButton: View {
                 .clipShape(Circle())
                 .overlay(Circle().stroke(borderColor, lineWidth: 1))
         }
-        .animation(.easeInOut(duration: 0.15), value: feedbackState == .idle)
+        .animation(.easeInOut(duration: 0.15), value: feedbackState)
     }
 }

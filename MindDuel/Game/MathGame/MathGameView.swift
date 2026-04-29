@@ -18,8 +18,7 @@ struct MathGameView: View {
         ZStack {
             Color.mdBg.ignoresSafeArea()
 
-            switch engine.phase {
-            case .roundOver:
+            if engine.isRoundOver {
                 RoundEndView(correctCount: engine.correctCount) {
                     engine.restart()
                     problem = MathProblemGenerator.generate()
@@ -30,7 +29,7 @@ struct MathGameView: View {
                 } onHome: {
                     dismiss()
                 }
-            default:
+            } else {
                 gameContent
             }
 
@@ -73,7 +72,7 @@ struct MathGameView: View {
             }
         }
         .overlay {
-            if case .waitingAfterSkip = engine.phase {
+            if engine.isWaitingAfterSkip {
                 waitingOverlay
             }
         }
@@ -132,23 +131,20 @@ struct MathGameView: View {
     }
 
     private var isInteractionBlocked: Bool {
-        switch engine.phase {
-        case .playing: return feedbackIsCorrect != nil
-        default: return true
-        }
+        engine.isRoundOver || engine.isWaitingAfterSkip || feedbackIsCorrect != nil
     }
 
     private func answerFeedbackState(for index: Int) -> AnswerFeedbackState {
-        guard selectedIndex == index else { return .idle }
+        guard let sel = selectedIndex, sel == index else { return .idle }
         switch feedbackIsCorrect {
-        case true: return .correct
+        case true:  return .correct
         case false: return .wrong
-        case nil: return .idle
+        default:    return .idle
         }
     }
 
     private func handleAnswerTap(_ index: Int) {
-        guard case .playing = engine.phase, feedbackIsCorrect == nil else { return }
+        guard !engine.isRoundOver, !engine.isWaitingAfterSkip, feedbackIsCorrect == nil else { return }
         selectedIndex = index
         let correct = problem.options[index] == problem.correctAnswer
         feedbackIsCorrect = correct
@@ -160,7 +156,7 @@ struct MathGameView: View {
             } else {
                 engine.recordWrong()
             }
-            guard case .playing = engine.phase else {
+            guard !engine.isRoundOver else {
                 selectedIndex = nil
                 feedbackIsCorrect = nil
                 return
@@ -168,19 +164,17 @@ struct MathGameView: View {
             nextProblem()
             selectedIndex = nil
             feedbackIsCorrect = nil
-            elapsedSeconds = 0
         }
     }
 
     private func handleSkip() {
-        guard case .playing = engine.phase else { return }
+        guard !engine.isRoundOver, !engine.isWaitingAfterSkip else { return }
         elapsedSeconds = 0
         engine.useSkip()
-        // Problem will be advanced when user taps to continue
     }
 
     private func handleTimerTick() {
-        guard case .playing = engine.phase, feedbackIsCorrect == nil else { return }
+        guard !engine.isRoundOver, !engine.isWaitingAfterSkip, feedbackIsCorrect == nil else { return }
         elapsedSeconds = min(elapsedSeconds + 0.1, 10.0)
         if elapsedSeconds >= 10.0 {
             handleSkip()
@@ -205,25 +199,25 @@ private struct AnswerButton: View {
 
     private var bgColor: Color {
         switch feedbackState {
-        case .idle: return .mdSurface2
+        case .idle:    return .mdSurface2
         case .correct: return .mdGreenSoft
-        case .wrong: return .mdRedSoft
+        case .wrong:   return .mdRedSoft
         }
     }
 
     private var borderColor: Color {
         switch feedbackState {
-        case .idle: return .mdBorder2
+        case .idle:    return .mdBorder2
         case .correct: return .mdGreen
-        case .wrong: return .mdRed
+        case .wrong:   return .mdRed
         }
     }
 
     private var textColor: Color {
         switch feedbackState {
-        case .idle: return .mdText
+        case .idle:    return .mdText
         case .correct: return .mdGreen
-        case .wrong: return .mdRed
+        case .wrong:   return .mdRed
         }
     }
 
@@ -238,6 +232,6 @@ private struct AnswerButton: View {
                 .clipShape(RoundedRectangle(cornerRadius: 14))
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(borderColor, lineWidth: 1))
         }
-        .animation(.easeInOut(duration: 0.15), value: feedbackState == .idle)
+        .animation(.easeInOut(duration: 0.15), value: feedbackState)
     }
 }

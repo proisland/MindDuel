@@ -13,13 +13,20 @@ enum RoundEndReason {
 }
 
 @MainActor final class GameEngine: ObservableObject {
-    static let initialLives = 5
-    static let initialSkips = 5
-
-    @Published private(set) var lives = initialLives
-    @Published private(set) var skips = initialSkips
+    @Published private(set) var lives = 5
+    @Published private(set) var skips = 5
     @Published private(set) var phase: GamePhase = .playing
     @Published private(set) var correctCount = 0
+
+    var isRoundOver: Bool {
+        if case .roundOver = phase { return true }
+        return false
+    }
+
+    var isWaitingAfterSkip: Bool {
+        if case .waitingAfterSkip = phase { return true }
+        return false
+    }
 
     func recordCorrect() {
         correctCount += 1
@@ -51,8 +58,8 @@ enum RoundEndReason {
     }
 
     func restart() {
-        lives = Self.initialLives
-        skips = Self.initialSkips
+        lives = 5
+        skips = 5
         correctCount = 0
         phase = .playing
     }
