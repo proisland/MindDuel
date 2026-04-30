@@ -261,7 +261,7 @@ struct MathGameView: View {
 
 enum AnswerFeedbackState: Equatable { case idle, correct, wrong }
 
-private struct AnswerButton: View {
+struct AnswerButton: View {
     let label: String
     let feedbackState: AnswerFeedbackState
     let action: () -> Void

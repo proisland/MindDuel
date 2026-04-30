@@ -251,7 +251,7 @@ struct PiGameView: View {
 
 enum DigitFeedbackState: Equatable { case idle, correct, wrong }
 
-private struct DigitButton: View {
+struct DigitButton: View {
     let digit: Int
     let feedbackState: DigitFeedbackState
     let action: () -> Void
