@@ -1,5 +1,4 @@
 import SwiftUI
-import UserNotifications
 
 struct SettingsView: View {
     let onSignOut: () -> Void
@@ -37,7 +36,6 @@ struct SettingsView: View {
                                     })
                             }
 
-                            // Dark mode / color scheme
                             toggleRow(
                                 icon: "circle.lefthalf.filled", iconBg: .mdAccentSoft, iconColor: .mdAccent,
                                 label: String(localized: "settings_dark_mode_label")
@@ -51,7 +49,6 @@ struct SettingsView: View {
                                 .tint(Color.mdAccent)
                             }
 
-                            // Language picker
                             Button { showLanguagePicker = true } label: {
                                 staticRow(
                                     icon: "globe", iconBg: .mdAccentSoft, iconColor: .mdAccent,
@@ -60,23 +57,6 @@ struct SettingsView: View {
                                 )
                             }
                             .buttonStyle(.plain)
-                            .confirmationDialog(
-                                String(localized: "settings_language_picker_title"),
-                                isPresented: $showLanguagePicker,
-                                titleVisibility: .visible
-                            ) {
-                                Button("Norsk") { setLanguage("nb") }
-                                Button("English") { setLanguage("en") }
-                                Button(role: .cancel) { }
-                            }
-                            .alert(
-                                String(localized: "settings_language_restart_title"),
-                                isPresented: $showLanguageRestartAlert
-                            ) {
-                                Button("OK", role: .cancel) { }
-                            } message: {
-                                Text(String(localized: "settings_language_restart_message"))
-                            }
                         }
 
                         settingsSection(String(localized: "settings_subscription_section")) {
@@ -114,7 +94,6 @@ struct SettingsView: View {
                             debugSection
                         }
 
-                        // Version footer – tap 5× to unlock debug section
                         Text("MindDuel M4")
                             .mdStyle(.micro)
                             .foregroundStyle(Color.mdText3.opacity(showDebugSection ? 0.6 : 0.2))
@@ -136,9 +115,26 @@ struct SettingsView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: showSignOutModal)
         .animation(.easeInOut(duration: 0.2), value: showDebugSection)
+        .confirmationDialog(
+            String(localized: "settings_language_picker_title"),
+            isPresented: $showLanguagePicker,
+            titleVisibility: .visible
+        ) {
+            Button("Norsk") { setLanguage("nb") }
+            Button("English") { setLanguage("en") }
+            Button(role: .cancel) { }
+        }
+        .alert(
+            String(localized: "settings_language_restart_title"),
+            isPresented: $showLanguageRestartAlert
+        ) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(String(localized: "settings_language_restart_message"))
+        }
     }
 
-    // MARK: – Language helpers
+    // MARK: – Language
 
     private var currentLanguageLabel: String {
         switch selectedLanguageCode {
@@ -179,42 +175,6 @@ struct SettingsView: View {
                 )
             }
             .buttonStyle(.plain)
-
-            Button {
-                scheduleTestNotification()
-            } label: {
-                staticRow(
-                    icon: "bell.badge.fill", iconBg: .mdAmberSoft, iconColor: .mdAmber,
-                    label: String(localized: "debug_test_notification_action"),
-                    value: ""
-                )
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    private func scheduleTestNotification() {
-        let body = String(localized: "test_notification_body")
-        Task { @MainActor in
-            let center = UNUserNotificationCenter.current()
-            let granted: Bool
-            do {
-                granted = try await center.requestAuthorization(options: [.alert, .sound, .badge])
-            } catch {
-                return
-            }
-            guard granted else { return }
-            let content = UNMutableNotificationContent()
-            content.title = "MindDuel"
-            content.body = body
-            content.sound = .default
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 3, repeats: false)
-            let request = UNNotificationRequest(
-                identifier: UUID().uuidString,
-                content: content,
-                trigger: trigger
-            )
-            try? await center.add(request)
         }
     }
 
