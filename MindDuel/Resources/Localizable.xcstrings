@@ -790,6 +790,24 @@
         "nb" : { "stringUnit" : { "state" : "translated", "value" : "System" } }
       }
     },
+    "settings_color_scheme_dark" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Dark" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Mørkt" } }
+      }
+    },
+    "settings_color_scheme_light" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Light" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Lyst" } }
+      }
+    },
+    "settings_color_scheme_system" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "System" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "System" } }
+      }
+    },
     "settings_language_label" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Language" } },
@@ -800,6 +818,30 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Norwegian" } },
         "nb" : { "stringUnit" : { "state" : "translated", "value" : "Norsk" } }
+      }
+    },
+    "settings_language_picker_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select Language" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Velg språk" } }
+      }
+    },
+    "settings_language_system" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "System" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "System" } }
+      }
+    },
+    "settings_language_restart_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Restart App" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Start appen på nytt" } }
+      }
+    },
+    "settings_language_restart_message" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Close and reopen MindDuel to apply the new language." } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Lukk og åpne MindDuel igjen for å bruke det nye språket." } }
       }
     },
     "settings_subscription_section" : {

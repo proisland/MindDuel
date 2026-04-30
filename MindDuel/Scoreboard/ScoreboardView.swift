@@ -135,6 +135,7 @@ struct ScoreboardView: View {
                     globalSection(entries: filteredGlobalEntries)
                 }
             }
+            .id(selectedTab)          // force full re-render on tab switch
             .padding(.horizontal, MDSpacing.md)
             .padding(.top, MDSpacing.md)
             .padding(.bottom, MDSpacing.xl)

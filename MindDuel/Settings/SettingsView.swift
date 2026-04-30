@@ -4,9 +4,12 @@ import UserNotifications
 struct SettingsView: View {
     let onSignOut: () -> Void
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
+    @AppStorage("colorSchemePreference") private var colorSchemePreference = "system"
+    @AppStorage("selectedLanguageCode") private var selectedLanguageCode = "system"
     @State private var notificationsEnabled = UserDefaults.standard.bool(forKey: "notificationsEnabled")
     @State private var showSignOutModal = false
+    @State private var showLanguagePicker = false
+    @State private var showLanguageRestartAlert = false
     @State private var debugTapCount = 0
     @State private var showDebugSection = false
 
@@ -33,21 +36,47 @@ struct SettingsView: View {
                                         UserDefaults.standard.set(val, forKey: "notificationsEnabled")
                                     })
                             }
-                            staticRow(
-                                icon: "moon.fill", iconBg: .mdAccentSoft, iconColor: .mdAccent,
-                                label: String(localized: "settings_dark_mode_label"),
-                                value: String(localized: "settings_dark_mode_value")
-                            )
-                            Button {
-                                if let url = URL(string: "app-settings:") { openURL(url) }
-                            } label: {
+
+                            // Dark mode / color scheme
+                            toggleRow(
+                                icon: "circle.lefthalf.filled", iconBg: .mdAccentSoft, iconColor: .mdAccent,
+                                label: String(localized: "settings_dark_mode_label")
+                            ) {
+                                Picker("", selection: $colorSchemePreference) {
+                                    Text(String(localized: "settings_color_scheme_dark")).tag("dark")
+                                    Text(String(localized: "settings_color_scheme_light")).tag("light")
+                                    Text(String(localized: "settings_color_scheme_system")).tag("system")
+                                }
+                                .pickerStyle(.menu)
+                                .tint(Color.mdAccent)
+                            }
+
+                            // Language picker
+                            Button { showLanguagePicker = true } label: {
                                 staticRow(
                                     icon: "globe", iconBg: .mdAccentSoft, iconColor: .mdAccent,
                                     label: String(localized: "settings_language_label"),
-                                    value: String(localized: "settings_language_value")
+                                    value: currentLanguageLabel
                                 )
                             }
                             .buttonStyle(.plain)
+                            .confirmationDialog(
+                                String(localized: "settings_language_picker_title"),
+                                isPresented: $showLanguagePicker,
+                                titleVisibility: .visible
+                            ) {
+                                Button("Norsk") { setLanguage("nb") }
+                                Button("English") { setLanguage("en") }
+                                Button(role: .cancel) { }
+                            }
+                            .alert(
+                                String(localized: "settings_language_restart_title"),
+                                isPresented: $showLanguageRestartAlert
+                            ) {
+                                Button("OK", role: .cancel) { }
+                            } message: {
+                                Text(String(localized: "settings_language_restart_message"))
+                            }
                         }
 
                         settingsSection(String(localized: "settings_subscription_section")) {
@@ -107,6 +136,22 @@ struct SettingsView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: showSignOutModal)
         .animation(.easeInOut(duration: 0.2), value: showDebugSection)
+    }
+
+    // MARK: – Language helpers
+
+    private var currentLanguageLabel: String {
+        switch selectedLanguageCode {
+        case "nb": return "Norsk"
+        case "en": return "English"
+        default:   return String(localized: "settings_language_system")
+        }
+    }
+
+    private func setLanguage(_ code: String) {
+        selectedLanguageCode = code
+        UserDefaults.standard.set([code], forKey: "AppleLanguages")
+        showLanguageRestartAlert = true
     }
 
     // MARK: – Debug section
@@ -217,6 +262,9 @@ struct SettingsView: View {
             if !value.isEmpty {
                 Text(value).mdStyle(.caption).foregroundStyle(Color.mdText3)
             }
+            Image(systemName: "chevron.right")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.mdText3)
         }
         .padding(MDSpacing.sm)
         .background(Color.mdSurface2)
