@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 import UserNotifications
 
 struct SettingsView: View {
@@ -42,7 +41,8 @@ struct SettingsView: View {
                                 value: String(localized: "settings_dark_mode_value")
                             )
                             Button {
-                                if let url = URL(string: UIApplication.openSettingsURLString) {
+                                // "app-settings:" is the value of UIApplication.openSettingsURLString
+                                if let url = URL(string: "app-settings:") {
                                     openURL(url)
                                 }
                             } label: {
@@ -149,16 +149,20 @@ struct SettingsView: View {
 
     private func scheduleTestNotification() {
         let body = String(localized: "test_notification_body")
-        Task {
-            guard (try? await UNUserNotificationCenter.current()
-                .requestAuthorization(options: [.alert, .sound, .badge])) == true else { return }
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+            guard granted else { return }
             let content = UNMutableNotificationContent()
             content.title = "MindDuel"
             content.body = body
             content.sound = .default
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 3, repeats: false)
-            let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
-            try? await UNUserNotificationCenter.current().add(request)
+            let request = UNNotificationRequest(
+                identifier: UUID().uuidString,
+                content: content,
+                trigger: trigger
+            )
+            center.add(request)
         }
     }
 
