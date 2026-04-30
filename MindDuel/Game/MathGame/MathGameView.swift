@@ -222,7 +222,7 @@ struct MathGameView: View {
 
     private func handleTimerTick() {
         guard !engine.isRoundOver, !engine.isWaitingAfterSkip,
-              feedbackIsCorrect == nil else { return }
+              feedbackIsCorrect == nil, !progression.isQuotaExhausted else { return }
         elapsedSeconds = min(elapsedSeconds + 0.1, 10.0)
         if elapsedSeconds >= 10.0 { handleSkip() }
     }
