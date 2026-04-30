@@ -30,8 +30,7 @@ struct RoundEndView: View {
 
                     Text("\(displayedScore)p")
                         .mdStyle(.display)
-                        .contentTransition(.numericText(value: Double(displayedScore)))
-                        .animation(.easeOut(duration: 0.6), value: displayedScore)
+                        .animation(.easeOut(duration: 0.05), value: displayedScore)
 
                     if isPersonalBest {
                         HStack(spacing: MDSpacing.xxs) {

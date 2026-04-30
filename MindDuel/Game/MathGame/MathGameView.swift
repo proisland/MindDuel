@@ -60,9 +60,9 @@ struct MathGameView: View {
         }
         .onReceive(timer) { _ in handleTimerTick() }
         .animation(.easeInOut(duration: 0.2), value: showQuitModal)
-        .onChange(of: engine.isRoundOver) { over in
+        .onChange(of: engine.isRoundOver, perform: { over in
             if over && roundResult == nil { finaliseRound(won: false) }
-        }
+        })
     }
 
     // MARK: – Layout
