@@ -2,36 +2,45 @@ import SwiftUI
 
 struct MathGameView: View {
     let username: String
-    @StateObject private var engine = GameEngine()
-    @State private var problem = MathProblemGenerator.generate()
-    @State private var problemCount = 1
-    @State private var elapsedSeconds: Double = 0
-    @State private var totalAnswerTime: Double = 0
-    @State private var selectedIndex: Int? = nil
+    @StateObject private var engine      = GameEngine()
+    @StateObject private var progression = ProgressionStore.shared
+    @State private var problem:           MathProblem
+    @State private var problemCount      = 1
+    @State private var elapsedSeconds:   Double = 0
+    @State private var totalAnswerTime:  Double = 0
+    @State private var selectedIndex:    Int?   = nil
     @State private var feedbackIsCorrect: Bool? = nil
-    @State private var showQuitModal = false
-
-    private var avgTimeSeconds: Double {
-        engine.correctCount > 0 ? totalAnswerTime / Double(engine.correctCount) : 0
-    }
+    @State private var showQuitModal     = false
+    @State private var roundResult:      ProgressionStore.RoundResult? = nil
+    @State private var startLevel:       Int
 
     @Environment(\.dismiss) private var dismiss
 
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
+    init(username: String) {
+        self.username = username
+        let lvl = ProgressionStore.shared.mathLevel
+        _startLevel = State(initialValue: lvl)
+        _problem    = State(initialValue: MathProblemGenerator.generate(level: lvl))
+    }
+
+    private var avgTime: Double {
+        engine.correctCount > 0 ? totalAnswerTime / Double(engine.correctCount) : 0
+    }
+
     var body: some View {
         ZStack {
             Color.mdBg.ignoresSafeArea()
 
-            if engine.isRoundOver {
-                RoundEndView(correctCount: engine.correctCount, avgTimeSeconds: avgTimeSeconds) {
-                    engine.restart()
-                    problem = MathProblemGenerator.generate()
-                    problemCount = 1
-                    elapsedSeconds = 0
-                    totalAnswerTime = 0
-                    feedbackIsCorrect = nil
-                    selectedIndex = nil
+            if engine.isRoundOver, let result = roundResult {
+                RoundEndView(
+                    correctCount: engine.correctCount,
+                    avgTimeSeconds: avgTime,
+                    score: result.score,
+                    isPersonalBest: result.isPersonalBest
+                ) {
+                    resetRound()
                 } onHome: {
                     dismiss()
                 }
@@ -42,17 +51,21 @@ struct MathGameView: View {
             if showQuitModal {
                 QuitGameModal {
                     showQuitModal = false
+                    finaliseRound(won: false)
                     engine.quit()
                 } onContinue: {
                     showQuitModal = false
                 }
             }
         }
-        .onReceive(timer) { _ in
-            handleTimerTick()
-        }
+        .onReceive(timer) { _ in handleTimerTick() }
         .animation(.easeInOut(duration: 0.2), value: showQuitModal)
+        .onChange(of: engine.isRoundOver) { over in
+            if over && roundResult == nil { finaliseRound(won: false) }
+        }
     }
+
+    // MARK: – Layout
 
     private var gameContent: some View {
         VStack(spacing: 0) {
@@ -79,8 +92,13 @@ struct MathGameView: View {
                 .padding(.bottom, MDSpacing.xl)
         }
         .overlay {
-            if engine.isWaitingAfterSkip {
-                waitingOverlay
+            if engine.isWaitingAfterSkip { waitingOverlay }
+        }
+        .overlay(alignment: .top) {
+            if progression.isQuotaExhausted {
+                quotaExhaustedBanner
+                    .padding(.top, 60)
+                    .padding(.horizontal, MDSpacing.md)
             }
         }
     }
@@ -88,11 +106,11 @@ struct MathGameView: View {
     private var problemCard: some View {
         MDPrimaryCard {
             VStack(spacing: MDSpacing.xs) {
-                Text(String(format: String(localized: "math_level_problem"), 1, problemCount))
+                Text(String(format: String(localized: "math_level_problem"),
+                            progression.mathLevel, problemCount))
                     .mdStyle(.caption)
                     .foregroundStyle(Color.mdText2)
                     .frame(maxWidth: .infinity, alignment: .center)
-
                 Text(problem.display)
                     .font(.system(size: 24, weight: .heavy, design: .monospaced))
                     .foregroundStyle(Color.mdText)
@@ -112,7 +130,7 @@ struct MathGameView: View {
                 ) {
                     handleAnswerTap(index)
                 }
-                .disabled(isInteractionBlocked)
+                .disabled(isInteractionBlocked || progression.isQuotaExhausted)
             }
         }
     }
@@ -136,6 +154,23 @@ struct MathGameView: View {
             }
     }
 
+    private var quotaExhaustedBanner: some View {
+        HStack(spacing: MDSpacing.sm) {
+            Image(systemName: "lock.fill")
+                .foregroundStyle(Color.mdAmber)
+            Text(String(localized: "quota_exhausted_message"))
+                .mdStyle(.bodyMd)
+            Spacer()
+            MDButton(.ghost, title: String(localized: "back_to_home_action")) { dismiss() }
+                .frame(width: 80)
+        }
+        .padding(MDSpacing.md)
+        .background(Color.mdAmberSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    // MARK: – State helpers
+
     private var isInteractionBlocked: Bool {
         engine.isRoundOver || engine.isWaitingAfterSkip || feedbackIsCorrect != nil
     }
@@ -149,10 +184,14 @@ struct MathGameView: View {
         }
     }
 
+    // MARK: – Actions
+
     private func handleAnswerTap(_ index: Int) {
-        guard !engine.isRoundOver, !engine.isWaitingAfterSkip, feedbackIsCorrect == nil else { return }
-        selectedIndex = index
-        let correct = problem.options[index] == problem.correctAnswer
+        guard !engine.isRoundOver, !engine.isWaitingAfterSkip,
+              feedbackIsCorrect == nil, !progression.isQuotaExhausted else { return }
+        progression.consumeQuestion()
+        selectedIndex     = index
+        let correct       = problem.options[index] == problem.correctAnswer
         feedbackIsCorrect = correct
 
         Task {
@@ -160,16 +199,17 @@ struct MathGameView: View {
             if correct {
                 totalAnswerTime += elapsedSeconds
                 engine.recordCorrect()
+                progression.advanceMathLevel()   // may increment level
             } else {
                 engine.recordWrong()
             }
             guard !engine.isRoundOver else {
-                selectedIndex = nil
+                selectedIndex     = nil
                 feedbackIsCorrect = nil
                 return
             }
             nextProblem()
-            selectedIndex = nil
+            selectedIndex     = nil
             feedbackIsCorrect = nil
         }
     }
@@ -181,52 +221,50 @@ struct MathGameView: View {
     }
 
     private func handleTimerTick() {
-        guard !engine.isRoundOver, !engine.isWaitingAfterSkip, feedbackIsCorrect == nil else { return }
+        guard !engine.isRoundOver, !engine.isWaitingAfterSkip,
+              feedbackIsCorrect == nil else { return }
         elapsedSeconds = min(elapsedSeconds + 0.1, 10.0)
-        if elapsedSeconds >= 10.0 {
-            handleSkip()
-        }
+        if elapsedSeconds >= 10.0 { handleSkip() }
     }
 
     private func nextProblem() {
-        problem = MathProblemGenerator.generate()
-        problemCount += 1
+        problem        = MathProblemGenerator.generate(level: progression.mathLevel)
+        problemCount  += 1
         elapsedSeconds = 0
+    }
+
+    private func finaliseRound(won: Bool) {
+        guard roundResult == nil else { return }
+        roundResult = progression.applyMathRound(
+            correctCount: engine.correctCount,
+            level: startLevel,
+            avgTime: avgTime,
+            won: won
+        )
+    }
+
+    private func resetRound() {
+        let lvl    = progression.mathLevel
+        startLevel = lvl
+        problem    = MathProblemGenerator.generate(level: lvl)
+        problemCount      = 1
+        elapsedSeconds    = 0
+        totalAnswerTime   = 0
+        feedbackIsCorrect = nil
+        selectedIndex     = nil
+        roundResult       = nil
+        engine.restart()
     }
 }
 
-enum AnswerFeedbackState: Equatable {
-    case idle, correct, wrong
-}
+// MARK: – Answer button
+
+enum AnswerFeedbackState: Equatable { case idle, correct, wrong }
 
 private struct AnswerButton: View {
     let label: String
     let feedbackState: AnswerFeedbackState
     let action: () -> Void
-
-    private var bgColor: Color {
-        switch feedbackState {
-        case .idle:    return .mdSurface2
-        case .correct: return .mdGreenSoft
-        case .wrong:   return .mdRedSoft
-        }
-    }
-
-    private var borderColor: Color {
-        switch feedbackState {
-        case .idle:    return .mdBorder2
-        case .correct: return .mdGreen
-        case .wrong:   return .mdRed
-        }
-    }
-
-    private var textColor: Color {
-        switch feedbackState {
-        case .idle:    return .mdText
-        case .correct: return .mdGreen
-        case .wrong:   return .mdRed
-        }
-    }
 
     var body: some View {
         Button(action: action) {
@@ -244,5 +282,27 @@ private struct AnswerButton: View {
         }
         .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.15), value: feedbackState)
+    }
+
+    private var bgColor: Color {
+        switch feedbackState {
+        case .idle:    return .mdSurface2
+        case .correct: return .mdGreenSoft
+        case .wrong:   return .mdRedSoft
+        }
+    }
+    private var borderColor: Color {
+        switch feedbackState {
+        case .idle:    return .clear
+        case .correct: return .mdGreen
+        case .wrong:   return .mdRed
+        }
+    }
+    private var textColor: Color {
+        switch feedbackState {
+        case .idle:    return .mdText
+        case .correct: return .mdGreen
+        case .wrong:   return .mdRed
+        }
     }
 }

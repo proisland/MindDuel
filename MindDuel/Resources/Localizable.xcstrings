@@ -1,6 +1,36 @@
 {
   "sourceLanguage" : "no",
   "strings" : {
+    "quota_exhausted_message" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Daily limit reached. Come back tomorrow!" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Daglig kvote brukt opp. Kom tilbake i morgen!" } }
+      }
+    },
+    "quota_upgrade_action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Upgrade" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Oppgrader" } }
+      }
+    },
+    "quota_warning_subtitle" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Upgrade for unlimited questions" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Oppgrader for ubegrenset tilgang" } }
+      }
+    },
+    "quota_warning_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld of %lld questions used today" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "%lld av %lld oppgaver brukt i dag" } }
+      }
+    },
+    "round_personal_best" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Personal best!" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Personlig rekord!" } }
+      }
+    },
     "MindDuel" : {
 
     },
