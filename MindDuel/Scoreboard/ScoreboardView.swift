@@ -5,10 +5,9 @@ struct ScoreboardView: View {
     @StateObject private var social = SocialStore.shared
     @StateObject private var progression = ProgressionStore.shared
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedTab = 0
+    @State private var selectedTab = 2          // default: Globalt
     @State private var selectedProfile: UserProfile? = nil
-
-    private var ownTotalScore: Int { progression.piBestScore + progression.mathBestScore }
+    @State private var searchText = ""
 
     private var ownEntry: UserProfile {
         UserProfile(
@@ -40,6 +39,13 @@ struct ScoreboardView: View {
                     .padding(.horizontal, MDSpacing.md)
                     .padding(.top, MDSpacing.md)
 
+                // Search bar (shown on Lokalt and Globalt tabs)
+                if selectedTab != 0 {
+                    searchBar
+                        .padding(.horizontal, MDSpacing.md)
+                        .padding(.top, MDSpacing.sm)
+                }
+
                 leaderboardList
             }
         }
@@ -48,13 +54,16 @@ struct ScoreboardView: View {
         }
     }
 
-    // MARK: – Tabs
+    // MARK: – Segmented control
 
     private var segmentedControl: some View {
         HStack(spacing: 0) {
             ForEach(Array(tabs.enumerated()), id: \.offset) { i, label in
                 Button {
-                    withAnimation(.easeInOut(duration: 0.15)) { selectedTab = i }
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        selectedTab = i
+                        searchText = ""
+                    }
                 } label: {
                     Text(label)
                         .mdStyle(.bodyMd)
@@ -80,6 +89,34 @@ struct ScoreboardView: View {
         ]
     }
 
+    // MARK: – Search bar
+
+    private var searchBar: some View {
+        HStack(spacing: MDSpacing.xs) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.mdText3)
+            TextField(String(localized: "search_username_placeholder"), text: $searchText)
+                .mdStyle(.bodyMd)
+                .foregroundStyle(Color.mdText)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+            if !searchText.isEmpty {
+                Button { searchText = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.mdText3)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, MDSpacing.sm)
+        .padding(.vertical, MDSpacing.xs)
+        .background(Color.mdSurface2)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.mdBorder2, lineWidth: 0.5))
+    }
+
     // MARK: – List
 
     private var leaderboardList: some View {
@@ -88,7 +125,11 @@ struct ScoreboardView: View {
                 if selectedTab == 0 {
                     friendsSection
                 } else {
-                    globalSection(entries: selectedTab == 2 ? social.globalLeaderboard : social.globalLeaderboard)
+                    let base = social.globalLeaderboard
+                    let filtered = searchText.isEmpty
+                        ? base
+                        : base.filter { $0.username.localizedCaseInsensitiveContains(searchText) }
+                    globalSection(entries: filtered)
                 }
             }
             .padding(.horizontal, MDSpacing.md)
@@ -96,6 +137,8 @@ struct ScoreboardView: View {
             .padding(.bottom, MDSpacing.xl)
         }
     }
+
+    // MARK: – Friends section
 
     @ViewBuilder
     private var friendsSection: some View {
@@ -122,20 +165,32 @@ struct ScoreboardView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, MDSpacing.lg)
             } else {
-                ForEach(Array(ranked.enumerated()), id: \.element.profile.id) { idx, item in
+                ForEach(Array(ranked.enumerated()), id: \.element.profile.id) { _, item in
                     leaderboardRow(rank: item.rank, profile: item.profile, isOwn: item.isOwn)
                 }
             }
         }
     }
 
+    // MARK: – Global section
+
     @ViewBuilder
     private func globalSection(entries: [UserProfile]) -> some View {
-        let ranked = buildRanked(entries, own: ownEntry)
-        ForEach(Array(ranked.enumerated()), id: \.element.profile.id) { _, item in
-            leaderboardRow(rank: item.rank, profile: item.profile, isOwn: item.isOwn)
+        if entries.isEmpty {
+            Text("@\(searchText) …")
+                .mdStyle(.body)
+                .foregroundStyle(Color.mdText3)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.vertical, MDSpacing.lg)
+        } else {
+            let ranked = buildRanked(entries, own: ownEntry)
+            ForEach(Array(ranked.enumerated()), id: \.element.profile.id) { _, item in
+                leaderboardRow(rank: item.rank, profile: item.profile, isOwn: item.isOwn)
+            }
         }
     }
+
+    // MARK: – Shared helpers
 
     private func sectionHeader(_ text: String) -> some View {
         Text(text)
@@ -164,10 +219,9 @@ struct ScoreboardView: View {
             if !isOwn { selectedProfile = profile }
         } label: {
             HStack(spacing: MDSpacing.sm) {
-                // Rank
                 Text("\(rank)")
                     .mdStyle(.bodyMd)
-                    .foregroundStyle(rank == 1 ? Color.mdAmber : Color.mdText3)
+                    .foregroundStyle(rank == 1 && !isOwn ? Color.mdAmber : Color.mdText3)
                     .frame(width: 24, alignment: .center)
 
                 MDAvatar(username: profile.username, size: .sm)
@@ -197,7 +251,7 @@ struct ScoreboardView: View {
 
                 Text("\(profile.totalScore)p")
                     .mdStyle(.bodyMd)
-                    .foregroundStyle(rank == 1 ? Color.mdAmber : Color.mdText2)
+                    .foregroundStyle(rank == 1 && !isOwn ? Color.mdAmber : Color.mdText2)
             }
             .padding(.horizontal, MDSpacing.md)
             .padding(.vertical, MDSpacing.sm)
@@ -210,12 +264,12 @@ struct ScoreboardView: View {
     }
 
     private func rowBackground(rank: Int, isOwn: Bool) -> Color {
-        if isOwn   { return .mdAccentSoft }
-        if rank == 1 { return .mdAmberSoft }
+        if isOwn        { return .mdAccentSoft }
+        if rank == 1    { return .mdAmberSoft }
         return .mdSurface2
     }
 
-    // MARK: – Helpers
+    // MARK: – Rank builder
 
     private struct RankedEntry {
         let rank: Int
@@ -225,13 +279,13 @@ struct ScoreboardView: View {
 
     private func buildRanked(_ list: [UserProfile], own: UserProfile) -> [RankedEntry] {
         var combined = list
-        let ownPresent = combined.contains { $0.username == own.username }
-        if !ownPresent { combined.append(own) }
-
-        let sorted = combined.sorted { $0.totalScore > $1.totalScore }
-        return sorted.enumerated().map { idx, p in
-            RankedEntry(rank: idx + 1, profile: p, isOwn: p.username == own.username)
+        if !combined.contains(where: { $0.username == own.username }) {
+            combined.append(own)
         }
+        return combined
+            .sorted { $0.totalScore > $1.totalScore }
+            .enumerated()
+            .map { idx, p in RankedEntry(rank: idx + 1, profile: p, isOwn: p.username == own.username) }
     }
 }
 

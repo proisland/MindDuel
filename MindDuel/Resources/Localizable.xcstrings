@@ -646,6 +646,12 @@
         "nb" : { "stringUnit" : { "state" : "translated", "value" : "Nå" } }
       }
     },
+    "search_username_placeholder" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Search by username" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Søk etter brukernavn" } }
+      }
+    },
     "scoreboard_title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Scoreboard" } },

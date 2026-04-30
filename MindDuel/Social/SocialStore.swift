@@ -41,10 +41,20 @@ struct UserProfile: Identifiable {
 
     private init() {
         let d = UserDefaults.standard
-        friendUsernames       = Set(d.stringArray(forKey: "friendUsernames") ?? [])
-        sentRequestUsernames  = Set(d.stringArray(forKey: "sentRequestUsernames") ?? [])
-        let pendingNames      = d.stringArray(forKey: "pendingRequestUsernames") ?? []
-        pendingRequests       = pendingNames.compactMap { n in SocialStore.mockUsers.first { $0.username == n } }
+        friendUsernames      = Set(d.stringArray(forKey: "friendUsernames") ?? [])
+        sentRequestUsernames = Set(d.stringArray(forKey: "sentRequestUsernames") ?? [])
+        let pendingNames     = d.stringArray(forKey: "pendingRequestUsernames") ?? []
+        pendingRequests      = pendingNames.compactMap { n in SocialStore.mockUsers.first { $0.username == n } }
+
+        // Seed one mock incoming request on first launch so the feature is testable
+        if !d.bool(forKey: "didSeedMockRequest") {
+            d.set(true, forKey: "didSeedMockRequest")
+            if let magnus = SocialStore.mockUsers.first(where: { $0.username == "magnus" }),
+               !friendUsernames.contains("magnus") {
+                pendingRequests = [magnus]
+                d.set(["magnus"], forKey: "pendingRequestUsernames")
+            }
+        }
     }
 
     // MARK: – Queries
