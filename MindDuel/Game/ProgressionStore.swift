@@ -67,6 +67,12 @@ import SwiftUI
         set(dailyUsed: min(Self.dailyQuota, dailyUsed + 1))
     }
 
+    func resetDailyQuota() {
+        set(dailyUsed: 0)
+        quotaResetEpoch = Date().timeIntervalSince1970
+        UserDefaults.standard.set(quotaResetEpoch, forKey: "quotaResetEpoch")
+    }
+
     // MARK: – Score calculation
 
     func piScore(correctCount: Int, avgTime: Double) -> Int {

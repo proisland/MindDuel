@@ -117,52 +117,55 @@ struct ProfileView: View {
     // MARK: – Friends row
 
     private var friendsRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: MDSpacing.sm) {
-                ForEach(social.friends) { friend in
-                    Button { selectedFriend = friend } label: {
-                        VStack(spacing: MDSpacing.xxs) {
-                            MDAvatar(username: friend.username, size: .sm)
-                            Text("@\(friend.username)")
-                                .mdStyle(.micro)
-                                .foregroundStyle(Color.mdText3)
-                                .lineLimit(1)
-                        }
+        VStack(spacing: MDSpacing.sm) {
+            // Pending requests with accept / decline
+            ForEach(social.pendingRequests) { req in
+                HStack(spacing: MDSpacing.sm) {
+                    MDAvatar(username: req.username, size: .sm)
+                    Text("@\(req.username)")
+                        .mdStyle(.caption)
+                        .foregroundStyle(Color.mdText)
+                    Spacer()
+                    MDButton(.ghost, title: String(localized: "decline_action")) {
+                        social.declineRequest(from: req.username)
                     }
-                    .buttonStyle(.plain)
-                }
-
-                // Pending requests badge
-                if !social.pendingRequests.isEmpty {
-                    VStack(spacing: MDSpacing.xxs) {
-                        ZStack(alignment: .topTrailing) {
-                            Circle()
-                                .fill(Color.mdSurface2)
-                                .frame(width: 26, height: 26)
-                                .overlay(Circle().stroke(Color.mdBorder2, lineWidth: 0.5))
-                            Image(systemName: "person.badge.plus")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(Color.mdAccent)
-                                .frame(width: 26, height: 26)
-                            Text("\(social.pendingRequests.count)")
-                                .font(.system(size: 8, weight: .bold))
-                                .foregroundStyle(.white)
-                                .padding(2)
-                                .background(Color.mdRed)
-                                .clipShape(Circle())
-                                .offset(x: 4, y: -4)
-                        }
-                        Text(String(localized: "pending_requests_label"))
-                            .mdStyle(.micro)
-                            .foregroundStyle(Color.mdAccent)
+                    .frame(width: 72)
+                    MDButton(.primary, title: String(localized: "accept_action")) {
+                        social.acceptRequest(from: req.username)
                     }
+                    .frame(width: 72)
                 }
+                .padding(.horizontal, MDSpacing.md)
+                .padding(.vertical, MDSpacing.sm)
+                .background(Color.mdSurface2)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdBorder2, lineWidth: 0.5))
+            }
 
-                if social.friends.isEmpty && social.pendingRequests.isEmpty {
+            // Accepted friends (horizontal scroll)
+            if social.friends.isEmpty {
+                if social.pendingRequests.isEmpty {
                     Text(String(localized: "no_friends_yet"))
                         .mdStyle(.caption)
                         .foregroundStyle(Color.mdText3)
                         .padding(.vertical, MDSpacing.sm)
+                }
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: MDSpacing.sm) {
+                        ForEach(social.friends) { friend in
+                            Button { selectedFriend = friend } label: {
+                                VStack(spacing: MDSpacing.xxs) {
+                                    MDAvatar(username: friend.username, size: .sm)
+                                    Text("@\(friend.username)")
+                                        .mdStyle(.micro)
+                                        .foregroundStyle(Color.mdText3)
+                                        .lineLimit(1)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
                 }
             }
         }

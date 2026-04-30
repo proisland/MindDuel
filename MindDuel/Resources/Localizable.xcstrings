@@ -718,6 +718,36 @@
         "nb" : { "stringUnit" : { "state" : "translated", "value" : "Avslå" } }
       }
     },
+    "debug_section_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Debug" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Debug" } }
+      }
+    },
+    "debug_reset_quota_action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reset daily quota" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Nullstill daglig kvote" } }
+      }
+    },
+    "debug_reset_social_action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reset social data + re-seed" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Nullstill sosiale data + reseed" } }
+      }
+    },
+    "debug_test_notification_action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Send test notification (3 s)" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Send testvarsling (3 sek)" } }
+      }
+    },
+    "test_notification_body" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This is a test notification from MindDuel" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Dette er en testvarsling fra MindDuel" } }
+      }
+    },
     "no_friends_yet" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "No friends yet" } },

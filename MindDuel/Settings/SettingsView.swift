@@ -1,10 +1,16 @@
 import SwiftUI
+import UserNotifications
 
 struct SettingsView: View {
     let onSignOut: () -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
+    @StateObject private var progression = ProgressionStore.shared
+    @StateObject private var social = SocialStore.shared
     @State private var notificationsEnabled = UserDefaults.standard.bool(forKey: "notificationsEnabled")
     @State private var showSignOutModal = false
+    @State private var debugTapCount = 0
+    @State private var showDebugSection = false
 
     var body: some View {
         ZStack {
@@ -34,11 +40,18 @@ struct SettingsView: View {
                                 label: String(localized: "settings_dark_mode_label"),
                                 value: String(localized: "settings_dark_mode_value")
                             )
-                            staticRow(
-                                icon: "globe", iconBg: .mdAccentSoft, iconColor: .mdAccent,
-                                label: String(localized: "settings_language_label"),
-                                value: String(localized: "settings_language_value")
-                            )
+                            Button {
+                                if let url = URL(string: UIApplication.openSettingsURLString) {
+                                    openURL(url)
+                                }
+                            } label: {
+                                staticRow(
+                                    icon: "globe", iconBg: .mdAccentSoft, iconColor: .mdAccent,
+                                    label: String(localized: "settings_language_label"),
+                                    value: String(localized: "settings_language_value")
+                                )
+                            }
+                            .buttonStyle(.plain)
                         }
 
                         settingsSection(String(localized: "settings_subscription_section")) {
@@ -71,6 +84,21 @@ struct SettingsView: View {
                         }
                         .padding(.horizontal, MDSpacing.md)
                         .padding(.top, MDSpacing.xs)
+
+                        if showDebugSection {
+                            debugSection
+                        }
+
+                        // Version footer – tap 5× to unlock debug section
+                        Text("MindDuel M4")
+                            .mdStyle(.micro)
+                            .foregroundStyle(Color.mdText3.opacity(showDebugSection ? 0.6 : 0.2))
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.top, MDSpacing.sm)
+                            .onTapGesture {
+                                debugTapCount += 1
+                                if debugTapCount >= 5 { showDebugSection = true }
+                            }
                     }
                     .padding(.top, MDSpacing.lg)
                     .padding(.bottom, MDSpacing.xl)
@@ -82,6 +110,55 @@ struct SettingsView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: showSignOutModal)
+        .animation(.easeInOut(duration: 0.2), value: showDebugSection)
+    }
+
+    // MARK: – Debug section
+
+    private var debugSection: some View {
+        settingsSection(String(localized: "debug_section_title")) {
+            Button {
+                progression.resetDailyQuota()
+            } label: {
+                staticRow(icon: "arrow.counterclockwise", iconBg: .mdAmberSoft, iconColor: .mdAmber,
+                          label: String(localized: "debug_reset_quota_action"),
+                          value: "0 / \(ProgressionStore.dailyQuota)")
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                social.resetForTesting()
+            } label: {
+                staticRow(icon: "person.2.fill", iconBg: .mdAmberSoft, iconColor: .mdAmber,
+                          label: String(localized: "debug_reset_social_action"),
+                          value: "")
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                scheduleTestNotification()
+            } label: {
+                staticRow(icon: "bell.badge.fill", iconBg: .mdAmberSoft, iconColor: .mdAmber,
+                          label: String(localized: "debug_test_notification_action"),
+                          value: "")
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func scheduleTestNotification() {
+        let body = String(localized: "test_notification_body")
+        Task {
+            guard (try? await UNUserNotificationCenter.current()
+                .requestAuthorization(options: [.alert, .sound, .badge])) == true else { return }
+            let content = UNMutableNotificationContent()
+            content.title = "MindDuel"
+            content.body = body
+            content.sound = .default
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 3, repeats: false)
+            let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+            try? await UNUserNotificationCenter.current().add(request)
+        }
     }
 
     // MARK: – Section builder
@@ -125,7 +202,9 @@ struct SettingsView: View {
             iconBox(icon, bg: iconBg, color: iconColor)
             Text(label).mdStyle(.caption).foregroundStyle(Color.mdText)
             Spacer()
-            Text(value).mdStyle(.caption).foregroundStyle(Color.mdText3)
+            if !value.isEmpty {
+                Text(value).mdStyle(.caption).foregroundStyle(Color.mdText3)
+            }
         }
         .padding(MDSpacing.sm)
         .background(Color.mdSurface2)

@@ -111,4 +111,18 @@ struct UserProfile: Identifiable {
     private func savePending() {
         UserDefaults.standard.set(pendingRequests.map(\.username), forKey: "pendingRequestUsernames")
     }
+
+    func resetForTesting() {
+        let d = UserDefaults.standard
+        friendUsernames = []
+        sentRequestUsernames = []
+        d.set([String](), forKey: "friendUsernames")
+        d.set([String](), forKey: "sentRequestUsernames")
+        d.set(false, forKey: "didSeedMockRequest")
+        if let magnus = Self.mockUsers.first(where: { $0.username == "magnus" }) {
+            pendingRequests = [magnus]
+            d.set(["magnus"], forKey: "pendingRequestUsernames")
+            d.set(true, forKey: "didSeedMockRequest")
+        }
+    }
 }
