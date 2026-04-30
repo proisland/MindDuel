@@ -174,7 +174,7 @@ struct ScoreboardView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.vertical, MDSpacing.lg)
         } else {
-            ForEach(Array(ranked.enumerated()), id: \.element.profile.id) { _, item in
+            ForEach(ranked, id: \.profile.id) { item in
                 leaderboardRow(rank: item.rank, profile: item.profile, isOwn: item.isOwn)
             }
         }
@@ -191,8 +191,7 @@ struct ScoreboardView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.vertical, MDSpacing.lg)
         } else {
-            let ranked = buildRanked(entries, own: ownEntry)
-            ForEach(Array(ranked.enumerated()), id: \.element.profile.id) { _, item in
+            ForEach(buildRanked(entries, own: ownEntry), id: \.profile.id) { item in
                 leaderboardRow(rank: item.rank, profile: item.profile, isOwn: item.isOwn)
             }
         }
