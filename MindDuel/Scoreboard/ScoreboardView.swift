@@ -119,17 +119,20 @@ struct ScoreboardView: View {
 
     // MARK: – List
 
+    private var filteredGlobalEntries: [UserProfile] {
+        let base = social.globalLeaderboard
+        return searchText.isEmpty
+            ? base
+            : base.filter { $0.username.localizedCaseInsensitiveContains(searchText) }
+    }
+
     private var leaderboardList: some View {
         ScrollView {
             LazyVStack(spacing: MDSpacing.xs) {
                 if selectedTab == 0 {
                     friendsSection
                 } else {
-                    let base = social.globalLeaderboard
-                    let filtered = searchText.isEmpty
-                        ? base
-                        : base.filter { $0.username.localizedCaseInsensitiveContains(searchText) }
-                    globalSection(entries: filtered)
+                    globalSection(entries: filteredGlobalEntries)
                 }
             }
             .padding(.horizontal, MDSpacing.md)
@@ -157,17 +160,22 @@ struct ScoreboardView: View {
             }
 
             sectionHeader(String(localized: "scoreboard_friends_tab"))
-            let ranked = buildRanked(social.friendsLeaderboard, own: ownEntry)
-            if ranked.isEmpty {
-                Text(String(localized: "no_friends_yet"))
-                    .mdStyle(.body)
-                    .foregroundStyle(Color.mdText3)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, MDSpacing.lg)
-            } else {
-                ForEach(Array(ranked.enumerated()), id: \.element.profile.id) { _, item in
-                    leaderboardRow(rank: item.rank, profile: item.profile, isOwn: item.isOwn)
-                }
+            rankedFriendsSection
+        }
+    }
+
+    @ViewBuilder
+    private var rankedFriendsSection: some View {
+        let ranked = buildRanked(social.friendsLeaderboard, own: ownEntry)
+        if ranked.isEmpty {
+            Text(String(localized: "no_friends_yet"))
+                .mdStyle(.body)
+                .foregroundStyle(Color.mdText3)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.vertical, MDSpacing.lg)
+        } else {
+            ForEach(Array(ranked.enumerated()), id: \.element.profile.id) { _, item in
+                leaderboardRow(rank: item.rank, profile: item.profile, isOwn: item.isOwn)
             }
         }
     }
