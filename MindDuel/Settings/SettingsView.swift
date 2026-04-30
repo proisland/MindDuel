@@ -122,7 +122,6 @@ struct SettingsView: View {
         ) {
             Button("Norsk") { setLanguage("nb") }
             Button("English") { setLanguage("en") }
-            Button(role: .cancel) { }
         }
         .alert(
             String(localized: "settings_language_restart_title"),
