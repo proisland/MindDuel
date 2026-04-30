@@ -5,8 +5,6 @@ struct SettingsView: View {
     let onSignOut: () -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
-    @StateObject private var progression = ProgressionStore.shared
-    @StateObject private var social = SocialStore.shared
     @State private var notificationsEnabled = UserDefaults.standard.bool(forKey: "notificationsEnabled")
     @State private var showSignOutModal = false
     @State private var debugTapCount = 0
@@ -41,10 +39,7 @@ struct SettingsView: View {
                                 value: String(localized: "settings_dark_mode_value")
                             )
                             Button {
-                                // "app-settings:" is the value of UIApplication.openSettingsURLString
-                                if let url = URL(string: "app-settings:") {
-                                    openURL(url)
-                                }
+                                if let url = URL(string: "app-settings:") { openURL(url) }
                             } label: {
                                 staticRow(
                                     icon: "globe", iconBg: .mdAccentSoft, iconColor: .mdAccent,
@@ -119,29 +114,35 @@ struct SettingsView: View {
     private var debugSection: some View {
         settingsSection(String(localized: "debug_section_title")) {
             Button {
-                progression.resetDailyQuota()
+                ProgressionStore.shared.resetDailyQuota()
             } label: {
-                staticRow(icon: "arrow.counterclockwise", iconBg: .mdAmberSoft, iconColor: .mdAmber,
-                          label: String(localized: "debug_reset_quota_action"),
-                          value: "0 / \(ProgressionStore.dailyQuota)")
+                staticRow(
+                    icon: "arrow.counterclockwise", iconBg: .mdAmberSoft, iconColor: .mdAmber,
+                    label: String(localized: "debug_reset_quota_action"),
+                    value: "0 / \(ProgressionStore.dailyQuota)"
+                )
             }
             .buttonStyle(.plain)
 
             Button {
-                social.resetForTesting()
+                SocialStore.shared.resetForTesting()
             } label: {
-                staticRow(icon: "person.2.fill", iconBg: .mdAmberSoft, iconColor: .mdAmber,
-                          label: String(localized: "debug_reset_social_action"),
-                          value: "")
+                staticRow(
+                    icon: "person.2.fill", iconBg: .mdAmberSoft, iconColor: .mdAmber,
+                    label: String(localized: "debug_reset_social_action"),
+                    value: ""
+                )
             }
             .buttonStyle(.plain)
 
             Button {
                 scheduleTestNotification()
             } label: {
-                staticRow(icon: "bell.badge.fill", iconBg: .mdAmberSoft, iconColor: .mdAmber,
-                          label: String(localized: "debug_test_notification_action"),
-                          value: "")
+                staticRow(
+                    icon: "bell.badge.fill", iconBg: .mdAmberSoft, iconColor: .mdAmber,
+                    label: String(localized: "debug_test_notification_action"),
+                    value: ""
+                )
             }
             .buttonStyle(.plain)
         }
@@ -149,8 +150,14 @@ struct SettingsView: View {
 
     private func scheduleTestNotification() {
         let body = String(localized: "test_notification_body")
-        let center = UNUserNotificationCenter.current()
-        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+        Task { @MainActor in
+            let center = UNUserNotificationCenter.current()
+            let granted: Bool
+            do {
+                granted = try await center.requestAuthorization(options: [.alert, .sound, .badge])
+            } catch {
+                return
+            }
             guard granted else { return }
             let content = UNMutableNotificationContent()
             content.title = "MindDuel"
@@ -162,7 +169,7 @@ struct SettingsView: View {
                 content: content,
                 trigger: trigger
             )
-            center.add(request)
+            try? await center.add(request)
         }
     }
 
