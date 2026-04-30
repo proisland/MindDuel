@@ -37,6 +37,11 @@ struct MultiplayerLobbyView: View {
             }
         }
         .onDisappear { store.leaveRoom() }
+        .onChange(of: showGame) { isShowing in
+            if !isShowing && store.currentRoom == nil {
+                dismiss()
+            }
+        }
         .fullScreenCover(isPresented: $showGame) {
             MultiplayerGameView(ownUsername: ownUsername)
         }
@@ -49,6 +54,7 @@ struct MultiplayerLobbyView: View {
             if let room = store.currentRoom {
                 Text(String(format: String(localized: "multiplayer_room_code_format"), room.id))
                     .mdStyle(.micro)
+                    .lineLimit(1)
                     .foregroundStyle(Color.mdAccent)
                     .padding(.horizontal, MDSpacing.xs)
                     .padding(.vertical, 4)
@@ -113,7 +119,7 @@ struct MultiplayerLobbyView: View {
                 ForEach(room.players) { player in
                     playerRow(player, isLast: player.id == room.players.last?.id)
                 }
-                inviteRow
+                inviteRow(room: room)
             }
             .background(Color.mdSurface2)
             .clipShape(RoundedRectangle(cornerRadius: 14))
@@ -157,23 +163,30 @@ struct MultiplayerLobbyView: View {
         }
     }
 
-    private var inviteRow: some View {
-        VStack(spacing: 0) {
+    private func inviteRow(room: MultiplayerRoom) -> some View {
+        let shareText = String(format: String(localized: "multiplayer_invite_share_format"), room.id)
+        return VStack(spacing: 0) {
             Divider().background(Color.mdBorder2)
-            HStack(spacing: MDSpacing.sm) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 7).fill(Color.mdSurface2).frame(width: 24, height: 24)
-                    Image(systemName: "plus")
+            ShareLink(item: shareText) {
+                HStack(spacing: MDSpacing.sm) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 7).fill(Color.mdAccentSoft).frame(width: 24, height: 24)
+                        Image(systemName: "person.badge.plus")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.mdAccent)
+                    }
+                    Text(String(localized: "multiplayer_invite_label"))
+                        .mdStyle(.caption)
+                        .foregroundStyle(Color.mdText2)
+                    Spacer()
+                    Image(systemName: "square.and.arrow.up")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(Color.mdText3)
                 }
-                Text(String(localized: "multiplayer_invite_label"))
-                    .mdStyle(.caption)
-                    .foregroundStyle(Color.mdText3)
-                Spacer()
+                .padding(.horizontal, MDSpacing.md)
+                .padding(.vertical, MDSpacing.sm)
             }
-            .padding(.horizontal, MDSpacing.md)
-            .padding(.vertical, MDSpacing.sm)
+            .buttonStyle(.plain)
         }
     }
 

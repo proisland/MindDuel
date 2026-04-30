@@ -1,10 +1,12 @@
 import SwiftUI
+import UserNotifications
 
 @MainActor final class MultiplayerStore: ObservableObject {
     static let shared = MultiplayerStore()
 
     @Published var currentRoom: MultiplayerRoom?
-    @Published var pendingInviteCount: Int = 1   // mock – one pending invite on first launch
+    @Published var pendingInviteCount: Int = 1
+    @Published var recentActivity: [MultiplayerActivityItem] = []
 
     private var botTask: Task<Void, Never>?
 
@@ -51,7 +53,8 @@ import SwiftUI
         applyResult(to: &room, playerID: "me", correct: correct, answerTime: answerTime)
         advanceTurn(&room)
         currentRoom = room
-        scheduleBotTurn()
+        if room.status == .finished { recordActivity(room) }
+        else { scheduleBotTurn() }
     }
 
     func useSkip() {
@@ -61,7 +64,8 @@ import SwiftUI
         if room.players[idx].skips == 0 { room.players[idx].isEliminated = true }
         advanceTurn(&room)
         currentRoom = room
-        scheduleBotTurn()
+        if room.status == .finished { recordActivity(room) }
+        else { scheduleBotTurn() }
     }
 
     func leaveRoom() {
@@ -115,7 +119,13 @@ import SwiftUI
         applyResult(to: &room, playerIdx: idx, correct: correct, answerTime: answerTime)
         advanceTurn(&room)
         currentRoom = room
-        scheduleBotTurn()
+
+        if room.status == .finished {
+            recordActivity(room)
+        } else {
+            if room.isMyTurn { sendTurnNotification() }
+            scheduleBotTurn()
+        }
     }
 
     private func applyResult(to room: inout MultiplayerRoom, playerID: String, correct: Bool, answerTime: Double) {
@@ -142,5 +152,35 @@ import SwiftUI
             return
         }
         room.currentTurnIndex = (room.currentTurnIndex + 1) % active.count
+    }
+
+    private func recordActivity(_ room: MultiplayerRoom) {
+        guard let me = room.players.first(where: { $0.isYou }) else { return }
+        let opponent = room.players.first(where: { !$0.isYou })
+        let item = MultiplayerActivityItem(
+            opponentUsername: opponent?.username ?? "bot",
+            mode: room.mode,
+            didWin: room.winner?.isYou == true,
+            score: me.score,
+            timestamp: Date()
+        )
+        recentActivity.insert(item, at: 0)
+        if recentActivity.count > 10 { recentActivity = Array(recentActivity.prefix(10)) }
+    }
+
+    private func sendTurnNotification() {
+        Task {
+            let center = UNUserNotificationCenter.current()
+            let granted = (try? await center.requestAuthorization(options: [.alert, .sound])) ?? false
+            guard granted else { return }
+            let content = UNMutableNotificationContent()
+            content.title = String(localized: "notification_your_turn_title")
+            content.body = String(localized: "notification_your_turn_body")
+            content.sound = .default
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
+            let request = UNNotificationRequest(identifier: UUID().uuidString,
+                                                content: content, trigger: trigger)
+            try? await center.add(request)
+        }
     }
 }

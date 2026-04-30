@@ -1035,6 +1035,72 @@
         "en" : { "stringUnit" : { "state" : "translated", "value" : "@%@ won" } },
         "nb" : { "stringUnit" : { "state" : "translated", "value" : "@%@ vant" } }
       }
+    },
+    "multiplayer_eliminated_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You're out!" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Du er ute!" } }
+      }
+    },
+    "multiplayer_eliminated_subtitle" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The game continues for the other players." } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Spillet fortsetter for de andre spillerne." } }
+      }
+    },
+    "multiplayer_leave_action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Leave game" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Forlat spillet" } }
+      }
+    },
+    "multiplayer_invite_share_format" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Join my MindDuel game! Room code: %@" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Bli med i mitt MindDuel-spill! Spillkode: %@" } }
+      }
+    },
+    "notification_your_turn_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your turn!" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Din tur!" } }
+      }
+    },
+    "notification_your_turn_body" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "It's your turn in the group game." } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Det er din tur i gruppespillet." } }
+      }
+    },
+    "recent_activity_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Recent activity" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Siste aktivitet" } }
+      }
+    },
+    "recent_activity_see_all" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "See all" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Se alle" } }
+      }
+    },
+    "activity_won_format" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You beat @%@" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Du vant mot @%@" } }
+      }
+    },
+    "activity_lost_format" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You lost to @%@" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Du tapte mot @%@" } }
+      }
+    },
+    "time_just_now" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "now" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "nå" } }
+      }
     }
   },
   "version" : "1.0"

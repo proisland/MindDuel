@@ -102,6 +102,12 @@ struct HomeView: View {
                         // Scoreboard shortcut
                         scoreboardCard
                             .padding(.horizontal, MDSpacing.md)
+
+                        // Recent activity
+                        if !multiplayer.recentActivity.isEmpty {
+                            recentActivitySection
+                                .padding(.horizontal, MDSpacing.md)
+                        }
                     }
                     .padding(.bottom, MDSpacing.xl)
                 }
@@ -202,5 +208,57 @@ struct HomeView: View {
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.mdBorder2, lineWidth: 0.5))
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: – Recent activity section
+
+    private var recentActivitySection: some View {
+        VStack(alignment: .leading, spacing: MDSpacing.sm) {
+            HStack {
+                Text(String(localized: "recent_activity_title"))
+                    .mdStyle(.bodyMd)
+                    .foregroundStyle(Color.mdText)
+                Spacer()
+                Text(String(localized: "recent_activity_see_all"))
+                    .mdStyle(.caption)
+                    .foregroundStyle(Color.mdAccent)
+            }
+
+            VStack(spacing: MDSpacing.xs) {
+                ForEach(multiplayer.recentActivity.prefix(3)) { item in
+                    activityRow(item)
+                }
+            }
+        }
+    }
+
+    private func activityRow(_ item: MultiplayerActivityItem) -> some View {
+        HStack(spacing: MDSpacing.sm) {
+            ZStack(alignment: .bottomTrailing) {
+                MDAvatar(username: item.opponentUsername, size: .sm)
+                Circle()
+                    .fill(item.didWin ? Color.mdGreen : Color.mdRed)
+                    .frame(width: 8, height: 8)
+                    .offset(x: 2, y: 2)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.didWin
+                     ? String(format: String(localized: "activity_won_format"), item.opponentUsername)
+                     : String(format: String(localized: "activity_lost_format"), item.opponentUsername))
+                    .mdStyle(.caption)
+                    .foregroundStyle(Color.mdText)
+                Text("\(item.mode == .pi ? String(localized: "mode_pi") : String(localized: "mode_math")) · +\(item.score)p")
+                    .mdStyle(.micro)
+                    .foregroundStyle(Color.mdText3)
+            }
+            Spacer()
+            Text(item.timeAgoString)
+                .mdStyle(.micro)
+                .foregroundStyle(Color.mdText3)
+        }
+        .padding(MDSpacing.sm)
+        .background(Color.mdSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.mdBorder2, lineWidth: 0.5))
     }
 }

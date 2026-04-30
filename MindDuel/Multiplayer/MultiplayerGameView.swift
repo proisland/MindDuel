@@ -75,7 +75,15 @@ struct MultiplayerGameView: View {
 
     private var liveTopBar: some View {
         HStack(spacing: 0) {
-            Button { showQuitModal = true } label: {
+            Button {
+                let eliminated = store.currentRoom?.players.first(where: { $0.isYou })?.isEliminated == true
+                if eliminated {
+                    store.leaveRoom()
+                    dismiss()
+                } else {
+                    showQuitModal = true
+                }
+            } label: {
                 Image(systemName: "chevron.left")
                     .foregroundStyle(Color.mdText2)
             }
@@ -97,12 +105,12 @@ struct MultiplayerGameView: View {
             if let room = store.currentRoom {
                 Text(String(format: String(localized: "multiplayer_room_code_format"), room.id))
                     .mdStyle(.micro)
+                    .lineLimit(1)
                     .foregroundStyle(Color.mdAccent)
                     .padding(.horizontal, MDSpacing.xs)
                     .padding(.vertical, 4)
                     .background(Color.mdAccentSoft)
                     .clipShape(Capsule())
-                    .frame(width: 44, height: 44)
             } else {
                 Color.clear.frame(width: 44, height: 44)
             }
@@ -184,10 +192,30 @@ struct MultiplayerGameView: View {
     // MARK: – Waiting for other player
 
     private func waitingContent(room: MultiplayerRoom) -> some View {
-        VStack(spacing: MDSpacing.md) {
+        let iAmEliminated = room.players.first(where: { $0.isYou })?.isEliminated == true
+        return VStack(spacing: MDSpacing.md) {
             Spacer()
 
-            if let current = room.currentPlayer {
+            if iAmEliminated {
+                VStack(spacing: MDSpacing.sm) {
+                    Image(systemName: "heart.slash.fill")
+                        .font(.system(size: 44))
+                        .foregroundStyle(Color.mdRed)
+                    Text(String(localized: "multiplayer_eliminated_title"))
+                        .mdStyle(.heading)
+                        .foregroundStyle(Color.mdText)
+                    Text(String(localized: "multiplayer_eliminated_subtitle"))
+                        .mdStyle(.body)
+                        .foregroundStyle(Color.mdText2)
+                        .multilineTextAlignment(.center)
+                    MDButton(.ghost, title: String(localized: "multiplayer_leave_action")) {
+                        store.leaveRoom()
+                        dismiss()
+                    }
+                    .padding(.horizontal, MDSpacing.lg)
+                    .padding(.top, MDSpacing.xs)
+                }
+            } else if let current = room.currentPlayer {
                 VStack(spacing: MDSpacing.sm) {
                     MDAvatar(username: current.username, size: .lg)
                     Text(String(format: String(localized: "multiplayer_waiting_for_format"),

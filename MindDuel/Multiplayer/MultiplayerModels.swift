@@ -1,5 +1,24 @@
 import SwiftUI
 
+struct MultiplayerActivityItem: Identifiable {
+    let id = UUID()
+    let opponentUsername: String
+    let mode: GameMode
+    let didWin: Bool
+    let score: Int
+    let timestamp: Date
+
+    var timeAgoString: String {
+        let seconds = Int(-timestamp.timeIntervalSinceNow)
+        if seconds < 60 { return String(localized: "time_just_now") }
+        let minutes = seconds / 60
+        if minutes < 60 { return "\(minutes)m" }
+        let hours = minutes / 60
+        if hours < 24 { return "\(hours)t" }
+        return "\(hours / 24)d"
+    }
+}
+
 struct MultiplayerPlayer: Identifiable, Equatable {
     let id: String
     let username: String
