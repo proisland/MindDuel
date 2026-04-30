@@ -222,7 +222,7 @@ struct PiGameView: View {
     }
 
     private func handleTimerTick() {
-        guard !isInteractionBlocked else { return }
+        guard !isInteractionBlocked, !progression.isQuotaExhausted else { return }
         elapsedSeconds = min(elapsedSeconds + 0.1, 10.0)
         if elapsedSeconds >= 10.0 { handleSkip() }
     }

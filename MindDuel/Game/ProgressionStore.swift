@@ -23,22 +23,28 @@ import SwiftUI
     @Published private(set) var mathBestScore: Int
 
     @Published private(set) var dailyUsed: Int
+    @Published private(set) var totalRoundsPlayed: Int
+    @Published private(set) var isFlagged: Bool
 
     private var quotaResetEpoch: Double
+    private var fastRoundCount: Int
 
     // MARK: – Init
 
     private init() {
         let d = UserDefaults.standard
-        piPosition       = d.integer(forKey: "piPosition")
-        piFloor          = d.integer(forKey: "piFloor")
-        piBestScore      = d.integer(forKey: "piBestScore")
-        let storedLevel  = d.integer(forKey: "mathLevel")
-        mathLevel        = storedLevel < 1 ? 1 : storedLevel
+        piPosition        = d.integer(forKey: "piPosition")
+        piFloor           = d.integer(forKey: "piFloor")
+        piBestScore       = d.integer(forKey: "piBestScore")
+        let storedLevel   = d.integer(forKey: "mathLevel")
+        mathLevel         = storedLevel < 1 ? 1 : storedLevel
         mathLevelProgress = d.integer(forKey: "mathLevelProgress")
-        mathBestScore    = d.integer(forKey: "mathBestScore")
-        dailyUsed        = d.integer(forKey: "dailyUsed")
-        quotaResetEpoch  = d.double(forKey: "quotaResetEpoch")
+        mathBestScore     = d.integer(forKey: "mathBestScore")
+        dailyUsed         = d.integer(forKey: "dailyUsed")
+        quotaResetEpoch   = d.double(forKey: "quotaResetEpoch")
+        totalRoundsPlayed = d.integer(forKey: "totalRoundsPlayed")
+        isFlagged         = d.bool(forKey: "isFlagged")
+        fastRoundCount    = d.integer(forKey: "fastRoundCount")
         checkResetQuota()
     }
 
@@ -59,6 +65,12 @@ import SwiftUI
     func consumeQuestion() {
         checkResetQuota()
         set(dailyUsed: min(Self.dailyQuota, dailyUsed + 1))
+    }
+
+    func resetDailyQuota() {
+        set(dailyUsed: 0)
+        quotaResetEpoch = Date().timeIntervalSince1970
+        UserDefaults.standard.set(quotaResetEpoch, forKey: "quotaResetEpoch")
     }
 
     // MARK: – Score calculation
@@ -93,6 +105,8 @@ import SwiftUI
         }
         let pb = score > 0 && score > piBestScore
         if pb { set(piBestScore: score) }
+        incrementRounds()
+        checkAntiCheat(avgTime: avgTime, correctCount: correctCount)
         return RoundResult(score: score, isPersonalBest: pb)
     }
 
@@ -119,10 +133,29 @@ import SwiftUI
         }
         let pb = score > 0 && score > mathBestScore
         if pb { set(mathBestScore: score) }
+        incrementRounds()
+        checkAntiCheat(avgTime: avgTime, correctCount: correctCount)
         return RoundResult(score: score, isPersonalBest: pb)
     }
 
+    // MARK: – Anti-cheat
+
+    private func checkAntiCheat(avgTime: Double, correctCount: Int) {
+        guard correctCount >= 3, avgTime > 0, avgTime < 0.4 else { return }
+        fastRoundCount += 1
+        UserDefaults.standard.set(fastRoundCount, forKey: "fastRoundCount")
+        if fastRoundCount >= 5 && !isFlagged {
+            isFlagged = true
+            UserDefaults.standard.set(true, forKey: "isFlagged")
+        }
+    }
+
     // MARK: – Private setters (keep published + UserDefaults in sync)
+
+    private func incrementRounds() {
+        totalRoundsPlayed += 1
+        UserDefaults.standard.set(totalRoundsPlayed, forKey: "totalRoundsPlayed")
+    }
 
     private func set(piPosition val: Int) {
         piPosition = val
