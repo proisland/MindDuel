@@ -585,6 +585,252 @@
           }
         }
       }
+    },
+    "profile_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "My Profile" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Min profil" } }
+      }
+    },
+    "progress_section_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "PROGRESS" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "FREMGANG" } }
+      }
+    },
+    "stats_section_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "STATISTICS" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "STATISTIKK" } }
+      }
+    },
+    "friends_section_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "FRIENDS" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "VENNER" } }
+      }
+    },
+    "stats_rounds_played_label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Rounds played" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Runder spilt" } }
+      }
+    },
+    "stats_friends_count_label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Friends" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Venner" } }
+      }
+    },
+    "stats_member_since_label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Member since" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Medlem siden" } }
+      }
+    },
+    "stats_member_since_april" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Member since April 2025" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Medlem siden april 2025" } }
+      }
+    },
+    "stats_last_active_label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Last active" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Sist aktiv" } }
+      }
+    },
+    "last_active_now" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Now" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Nå" } }
+      }
+    },
+    "scoreboard_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Scoreboard" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Scoreboard" } }
+      }
+    },
+    "scoreboard_subtitle" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Compare scores with others" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Sammenlign poeng med andre" } }
+      }
+    },
+    "scoreboard_friends_tab" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Friends" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Venner" } }
+      }
+    },
+    "scoreboard_local_tab" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Local" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Lokalt" } }
+      }
+    },
+    "scoreboard_global_tab" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Global" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Globalt" } }
+      }
+    },
+    "challenge_action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Challenge" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Utfordre" } }
+      }
+    },
+    "add_friend_action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "+ Friend" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "+ Venn" } }
+      }
+    },
+    "friend_request_sent_label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Request sent" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Forespørsel sendt" } }
+      }
+    },
+    "pending_requests_label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Requests" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Forespørsler" } }
+      }
+    },
+    "accept_action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Accept" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Godta" } }
+      }
+    },
+    "decline_action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Decline" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Avslå" } }
+      }
+    },
+    "no_friends_yet" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No friends yet" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Ingen venner ennå" } }
+      }
+    },
+    "your_label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Deg" } }
+      }
+    },
+    "settings_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Innstillinger" } }
+      }
+    },
+    "settings_account_section" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "ACCOUNT" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "KONTO" } }
+      }
+    },
+    "settings_notifications_label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Notifications" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Varsler" } }
+      }
+    },
+    "settings_dark_mode_label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Dark mode" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Mørk modus" } }
+      }
+    },
+    "settings_dark_mode_value" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "System" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "System" } }
+      }
+    },
+    "settings_language_label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Language" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Språk" } }
+      }
+    },
+    "settings_language_value" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Norwegian" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Norsk" } }
+      }
+    },
+    "settings_subscription_section" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "SUBSCRIPTION" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "ABONNEMENT" } }
+      }
+    },
+    "settings_free_plan_label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Free plan: 10 questions per day" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Gratis plan: 10 oppgaver per dag" } }
+      }
+    },
+    "settings_privacy_section" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "PRIVACY" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "PERSONVERN" } }
+      }
+    },
+    "settings_terms_label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Terms and Privacy" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Vilkår og personvern" } }
+      }
+    },
+    "settings_delete_account_label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete account and data" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Slett konto og data" } }
+      }
+    },
+    "settings_signout_action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sign out" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Logg ut" } }
+      }
+    },
+    "signout_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sign out?" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Logg ut?" } }
+      }
+    },
+    "signout_message" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Are you sure you want to sign out?" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Er du sikker på at du vil logge ut?" } }
+      }
+    },
+    "flagged_explanation_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Flagged for review" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Flagget for gjennomgang" } }
+      }
+    },
+    "flagged_explanation_body" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Activity on this account has been flagged. Average response time under 400 ms over many rounds is suspicious." } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Aktiviteten på denne kontoen er flagget for gjennomgang. Snittsvartid under 400 ms over mange runder er mistenkelig." } }
+      }
+    },
+    "other_profile_subtitle_format" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld years · %@" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "%lld år · %@" } }
+      }
     }
   },
   "version" : "1.0"

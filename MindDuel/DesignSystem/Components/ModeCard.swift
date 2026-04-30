@@ -5,6 +5,7 @@ struct MDModeCard: View {
     var score: Int = 0
     var level: Int = 1
     var maxLevel: Int
+    var compact: Bool = false
     let action: () -> Void
 
     private var iconSymbol: String {
@@ -42,13 +43,15 @@ struct MDModeCard: View {
 
     var body: some View {
         Button(action: action) {
+            let iconSize: CGFloat = compact ? 38 : 44
+            let iconFont: CGFloat = compact ? 18 : 22
             VStack(spacing: 7) {
                 ZStack {
                     Circle()
                         .fill(iconBg)
-                        .frame(width: 44, height: 44)
+                        .frame(width: iconSize, height: iconSize)
                     Text(iconSymbol)
-                        .font(.system(size: 22, weight: .heavy))
+                        .font(.system(size: iconFont, weight: .heavy))
                         .foregroundStyle(Color.mdText)
                 }
 
@@ -81,7 +84,7 @@ struct MDModeCard: View {
                     .mdStyle(.micro)
                     .foregroundStyle(Color.mdText3)
             }
-            .padding(.vertical, 14)
+            .padding(.vertical, compact ? 11 : 14)
             .padding(.horizontal, 11)
             .frame(maxWidth: .infinity)
             .background(Color.mdSurface)

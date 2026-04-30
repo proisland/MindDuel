@@ -1,0 +1,263 @@
+import SwiftUI
+
+struct ScoreboardView: View {
+    let ownUsername: String
+    @StateObject private var social = SocialStore.shared
+    @StateObject private var progression = ProgressionStore.shared
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedTab = 0
+    @State private var selectedProfile: UserProfile? = nil
+
+    private var ownTotalScore: Int { progression.piBestScore + progression.mathBestScore }
+
+    private var ownEntry: UserProfile {
+        UserProfile(
+            id: "me",
+            username: ownUsername,
+            piScore: progression.piBestScore,
+            mathScore: progression.mathBestScore,
+            piLevel: progression.piPosition / 100 + 1,
+            mathLevel: progression.mathLevel,
+            roundsPlayed: progression.totalRoundsPlayed,
+            age: nil, city: nil,
+            memberSince: "april 2025",
+            lastActive: String(localized: "last_active_now"),
+            isFriend: false,
+            isFlagged: progression.isFlagged
+        )
+    }
+
+    var body: some View {
+        ZStack {
+            Color.mdBg.ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                MDTopBar(title: String(localized: "scoreboard_title"), leadingAction: { dismiss() }) {
+                    EmptyView()
+                }
+
+                segmentedControl
+                    .padding(.horizontal, MDSpacing.md)
+                    .padding(.top, MDSpacing.md)
+
+                leaderboardList
+            }
+        }
+        .sheet(item: $selectedProfile) { profile in
+            OtherProfileView(profile: profile, ownUsername: ownUsername)
+        }
+    }
+
+    // MARK: – Tabs
+
+    private var segmentedControl: some View {
+        HStack(spacing: 0) {
+            ForEach(Array(tabs.enumerated()), id: \.offset) { i, label in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) { selectedTab = i }
+                } label: {
+                    Text(label)
+                        .mdStyle(.bodyMd)
+                        .foregroundStyle(selectedTab == i ? Color.mdText : Color.mdText3)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, MDSpacing.xs)
+                        .background(selectedTab == i ? Color.mdSurface2 : Color.clear)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(4)
+        .background(Color.mdBgDeep)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var tabs: [String] {
+        [
+            String(localized: "scoreboard_friends_tab"),
+            String(localized: "scoreboard_local_tab"),
+            String(localized: "scoreboard_global_tab"),
+        ]
+    }
+
+    // MARK: – List
+
+    private var leaderboardList: some View {
+        ScrollView {
+            LazyVStack(spacing: MDSpacing.xs) {
+                if selectedTab == 0 {
+                    friendsSection
+                } else {
+                    globalSection(entries: selectedTab == 2 ? social.globalLeaderboard : social.globalLeaderboard)
+                }
+            }
+            .padding(.horizontal, MDSpacing.md)
+            .padding(.top, MDSpacing.md)
+            .padding(.bottom, MDSpacing.xl)
+        }
+    }
+
+    @ViewBuilder
+    private var friendsSection: some View {
+        if social.pendingRequests.isEmpty && social.friends.isEmpty {
+            emptyFriendsView
+        } else {
+            if !social.pendingRequests.isEmpty {
+                sectionHeader(String(localized: "pending_requests_label"))
+                ForEach(social.pendingRequests) { req in
+                    FriendRequestRow(profile: req) {
+                        social.acceptRequest(from: req.username)
+                    } onDecline: {
+                        social.declineRequest(from: req.username)
+                    }
+                }
+            }
+
+            sectionHeader(String(localized: "scoreboard_friends_tab"))
+            let ranked = buildRanked(social.friendsLeaderboard, own: ownEntry)
+            if ranked.isEmpty {
+                Text(String(localized: "no_friends_yet"))
+                    .mdStyle(.body)
+                    .foregroundStyle(Color.mdText3)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, MDSpacing.lg)
+            } else {
+                ForEach(Array(ranked.enumerated()), id: \.element.profile.id) { idx, item in
+                    leaderboardRow(rank: item.rank, profile: item.profile, isOwn: item.isOwn)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func globalSection(entries: [UserProfile]) -> some View {
+        let ranked = buildRanked(entries, own: ownEntry)
+        ForEach(Array(ranked.enumerated()), id: \.element.profile.id) { _, item in
+            leaderboardRow(rank: item.rank, profile: item.profile, isOwn: item.isOwn)
+        }
+    }
+
+    private func sectionHeader(_ text: String) -> some View {
+        Text(text)
+            .mdStyle(.micro)
+            .foregroundStyle(Color.mdText3)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, MDSpacing.xs)
+    }
+
+    private var emptyFriendsView: some View {
+        VStack(spacing: MDSpacing.sm) {
+            Image(systemName: "person.2.slash")
+                .font(.system(size: 32))
+                .foregroundStyle(Color.mdText3)
+            Text(String(localized: "no_friends_yet"))
+                .mdStyle(.body)
+                .foregroundStyle(Color.mdText3)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, MDSpacing.xxl)
+    }
+
+    @ViewBuilder
+    private func leaderboardRow(rank: Int, profile: UserProfile, isOwn: Bool) -> some View {
+        Button {
+            if !isOwn { selectedProfile = profile }
+        } label: {
+            HStack(spacing: MDSpacing.sm) {
+                // Rank
+                Text("\(rank)")
+                    .mdStyle(.bodyMd)
+                    .foregroundStyle(rank == 1 ? Color.mdAmber : Color.mdText3)
+                    .frame(width: 24, alignment: .center)
+
+                MDAvatar(username: profile.username, size: .sm)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: MDSpacing.xxs) {
+                        Text("@\(profile.username)")
+                            .mdStyle(.caption)
+                            .foregroundStyle(Color.mdText)
+                        if isOwn {
+                            MDPillTag(label: String(localized: "your_label"), variant: .accent)
+                        }
+                        if profile.isFlagged {
+                            Image(systemName: "flag.fill")
+                                .font(.system(size: 9))
+                                .foregroundStyle(Color.mdRed)
+                        }
+                    }
+                    if let age = profile.age, let city = profile.city {
+                        Text("\(age) · \(city)")
+                            .mdStyle(.micro)
+                            .foregroundStyle(Color.mdText3)
+                    }
+                }
+
+                Spacer()
+
+                Text("\(profile.totalScore)p")
+                    .mdStyle(.bodyMd)
+                    .foregroundStyle(rank == 1 ? Color.mdAmber : Color.mdText2)
+            }
+            .padding(.horizontal, MDSpacing.md)
+            .padding(.vertical, MDSpacing.sm)
+            .background(rowBackground(rank: rank, isOwn: isOwn))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdBorder2, lineWidth: 0.5))
+        }
+        .buttonStyle(.plain)
+        .disabled(isOwn)
+    }
+
+    private func rowBackground(rank: Int, isOwn: Bool) -> Color {
+        if isOwn   { return .mdAccentSoft }
+        if rank == 1 { return .mdAmberSoft }
+        return .mdSurface2
+    }
+
+    // MARK: – Helpers
+
+    private struct RankedEntry {
+        let rank: Int
+        let profile: UserProfile
+        let isOwn: Bool
+    }
+
+    private func buildRanked(_ list: [UserProfile], own: UserProfile) -> [RankedEntry] {
+        var combined = list
+        let ownPresent = combined.contains { $0.username == own.username }
+        if !ownPresent { combined.append(own) }
+
+        let sorted = combined.sorted { $0.totalScore > $1.totalScore }
+        return sorted.enumerated().map { idx, p in
+            RankedEntry(rank: idx + 1, profile: p, isOwn: p.username == own.username)
+        }
+    }
+}
+
+// MARK: – Friend request row
+
+private struct FriendRequestRow: View {
+    let profile: UserProfile
+    let onAccept: () -> Void
+    let onDecline: () -> Void
+
+    var body: some View {
+        HStack(spacing: MDSpacing.sm) {
+            MDAvatar(username: profile.username, size: .sm)
+            Text("@\(profile.username)")
+                .mdStyle(.caption)
+                .foregroundStyle(Color.mdText)
+            Spacer()
+            MDButton(.ghost, title: String(localized: "decline_action"), action: onDecline)
+                .frame(width: 68)
+            MDButton(.primary, title: String(localized: "accept_action"), action: onAccept)
+                .frame(width: 68)
+        }
+        .padding(.horizontal, MDSpacing.md)
+        .padding(.vertical, MDSpacing.sm)
+        .background(Color.mdSurface2)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdBorder2, lineWidth: 0.5))
+    }
+}

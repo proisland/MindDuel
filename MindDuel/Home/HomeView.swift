@@ -1,10 +1,25 @@
 import SwiftUI
 
+private enum HomeDestination: Identifiable {
+    case profile
+    case scoreboard
+    var id: String {
+        switch self {
+        case .profile:    return "profile"
+        case .scoreboard: return "scoreboard"
+        }
+    }
+}
+
 struct HomeView: View {
     let username: String
     @EnvironmentObject private var authState: AuthState
     @StateObject private var progression = ProgressionStore.shared
+    @StateObject private var social = SocialStore.shared
     @State private var activeMode: GameMode? = nil
+    @State private var activeDestination: HomeDestination? = nil
+
+    private var pendingBadge: Int { social.totalPendingCount }
 
     var body: some View {
         ZStack {
@@ -12,9 +27,21 @@ struct HomeView: View {
 
             VStack(spacing: 0) {
                 MDTopBar(title: "MindDuel") {
-                    Button { authState.signOut() } label: {
-                        MDAvatar(username: username, size: .sm)
+                    Button { activeDestination = .profile } label: {
+                        ZStack(alignment: .topTrailing) {
+                            MDAvatar(username: username, size: .sm)
+                            if pendingBadge > 0 {
+                                Text("\(pendingBadge)")
+                                    .font(.system(size: 8, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .padding(2)
+                                    .background(Color.mdRed)
+                                    .clipShape(Circle())
+                                    .offset(x: 4, y: -4)
+                            }
+                        }
                     }
+                    .buttonStyle(.plain)
                 }
 
                 ScrollView {
@@ -61,6 +88,10 @@ struct HomeView: View {
                             ) { activeMode = .math }
                         }
                         .padding(.horizontal, MDSpacing.md)
+
+                        // Scoreboard shortcut
+                        scoreboardCard
+                            .padding(.horizontal, MDSpacing.md)
                     }
                     .padding(.bottom, MDSpacing.xl)
                 }
@@ -73,5 +104,43 @@ struct HomeView: View {
             case .math: MathGameView(username: username)
             }
         }
+        .fullScreenCover(item: $activeDestination) { dest in
+            switch dest {
+            case .profile:    ProfileView(username: username, onSignOut: { authState.signOut() })
+            case .scoreboard: ScoreboardView(ownUsername: username)
+            }
+        }
+    }
+
+    // MARK: – Scoreboard card
+
+    private var scoreboardCard: some View {
+        Button { activeDestination = .scoreboard } label: {
+            HStack(spacing: MDSpacing.sm) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10).fill(Color.mdAccentSoft).frame(width: 40, height: 40)
+                    Image(systemName: "chart.bar.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(Color.mdAccent)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(String(localized: "scoreboard_title"))
+                        .mdStyle(.bodyMd)
+                        .foregroundStyle(Color.mdText)
+                    Text(String(localized: "scoreboard_subtitle"))
+                        .mdStyle(.caption)
+                        .foregroundStyle(Color.mdText3)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color.mdText3)
+            }
+            .padding(MDSpacing.md)
+            .background(Color.mdSurface)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.mdBorder2, lineWidth: 0.5))
+        }
+        .buttonStyle(.plain)
     }
 }
