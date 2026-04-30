@@ -3,10 +3,14 @@ import SwiftUI
 private enum HomeDestination: Identifiable {
     case profile
     case scoreboard
+    case multiplayerHost
+    case multiplayerJoin
     var id: String {
         switch self {
-        case .profile:    return "profile"
-        case .scoreboard: return "scoreboard"
+        case .profile:        return "profile"
+        case .scoreboard:     return "scoreboard"
+        case .multiplayerHost: return "multiplayerHost"
+        case .multiplayerJoin: return "multiplayerJoin"
         }
     }
 }
@@ -15,11 +19,13 @@ struct HomeView: View {
     let username: String
     @EnvironmentObject private var authState: AuthState
     @StateObject private var progression = ProgressionStore.shared
-    @StateObject private var social = SocialStore.shared
+    @StateObject private var social      = SocialStore.shared
+    @StateObject private var multiplayer = MultiplayerStore.shared
     @State private var activeMode: GameMode? = nil
     @State private var activeDestination: HomeDestination? = nil
 
     private var pendingBadge: Int { social.totalPendingCount }
+    private var inviteBadge: Int  { multiplayer.pendingInviteCount }
 
     var body: some View {
         ZStack {
@@ -89,6 +95,10 @@ struct HomeView: View {
                         }
                         .padding(.horizontal, MDSpacing.md)
 
+                        // Multiplayer card
+                        multiplayerCard
+                            .padding(.horizontal, MDSpacing.md)
+
                         // Scoreboard shortcut
                         scoreboardCard
                             .padding(.horizontal, MDSpacing.md)
@@ -106,10 +116,60 @@ struct HomeView: View {
         }
         .fullScreenCover(item: $activeDestination) { dest in
             switch dest {
-            case .profile:    ProfileView(username: username, onSignOut: { authState.signOut() })
-            case .scoreboard: ScoreboardView(ownUsername: username)
+            case .profile:         ProfileView(username: username, onSignOut: { authState.signOut() })
+            case .scoreboard:      ScoreboardView(ownUsername: username)
+            case .multiplayerHost: MultiplayerLobbyView(ownUsername: username, startAsHost: true)
+            case .multiplayerJoin: MultiplayerLobbyView(ownUsername: username, startAsHost: false)
             }
         }
+    }
+
+    // MARK: – Multiplayer card
+
+    private var multiplayerCard: some View {
+        VStack(alignment: .leading, spacing: MDSpacing.sm) {
+            HStack(spacing: MDSpacing.sm) {
+                ZStack(alignment: .topTrailing) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10).fill(Color.mdPinkSoft).frame(width: 40, height: 40)
+                        Image(systemName: "person.2.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Color.mdPink)
+                    }
+                    if inviteBadge > 0 {
+                        Text("\(inviteBadge)")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(2)
+                            .background(Color.mdRed)
+                            .clipShape(Circle())
+                            .offset(x: 4, y: -4)
+                    }
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(String(localized: "multiplayer_title"))
+                        .mdStyle(.bodyMd)
+                        .foregroundStyle(Color.mdText)
+                    Text(String(localized: "multiplayer_subtitle"))
+                        .mdStyle(.caption)
+                        .foregroundStyle(Color.mdText3)
+                }
+                Spacer()
+            }
+
+            HStack(spacing: MDSpacing.sm) {
+                MDButton(.primary, title: String(localized: "multiplayer_create_action")) {
+                    activeDestination = .multiplayerHost
+                }
+                MDButton(.ghost, title: String(localized: "multiplayer_join_action")) {
+                    activeDestination = .multiplayerJoin
+                }
+            }
+        }
+        .padding(MDSpacing.md)
+        .background(Color.mdSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.mdBorder2, lineWidth: 0.5))
     }
 
     // MARK: – Scoreboard card
