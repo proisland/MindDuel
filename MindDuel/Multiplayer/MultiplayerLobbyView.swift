@@ -25,6 +25,7 @@ struct MultiplayerLobbyView: View {
                             if isHost(room) && room.mode == .math { startLevelSection(room: room) }
                             playersSection(room: room)
                             startButton(room: room)
+                            leaveButton
                         }
                     }
                     .padding(.top, MDSpacing.lg)
@@ -178,7 +179,10 @@ struct MultiplayerLobbyView: View {
     }
 
     private func playerRow(_ player: MultiplayerPlayer) -> some View {
-        HStack(spacing: MDSpacing.sm) {
+        let mode = store.currentRoom?.mode ?? .pi
+        let level = mode == .pi ? player.piLevel : player.mathLevel
+        let score = mode == .pi ? player.piBestScore : player.mathBestScore
+        return HStack(spacing: MDSpacing.sm) {
             MDAvatar(username: player.username, size: .sm)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: MDSpacing.xxs) {
@@ -186,6 +190,10 @@ struct MultiplayerLobbyView: View {
                     if player.isHost { MDPillTag(label: String(localized: "multiplayer_host_label"), variant: .accent) }
                     if player.isYou  { MDPillTag(label: String(localized: "your_label"), variant: .neutral) }
                 }
+                Text(String(format: String(localized: "multiplayer_player_stats_format"),
+                            level, score))
+                    .mdStyle(.micro)
+                    .foregroundStyle(Color.mdText3)
             }
             Spacer()
             if player.isReady {
@@ -237,6 +245,15 @@ struct MultiplayerLobbyView: View {
                 if !progression.isQuotaExhausted { store.toggleReady() }
             }
             .disabled(youReady || progression.isQuotaExhausted)
+        }
+    }
+
+    // MARK: – Leave lobby (issue #23)
+
+    private var leaveButton: some View {
+        MDButton(.ghost, title: String(localized: "multiplayer_leave_lobby_action")) {
+            store.leaveRoom()
+            dismiss()
         }
     }
 

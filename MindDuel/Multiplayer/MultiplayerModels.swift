@@ -36,6 +36,13 @@ struct MultiplayerPlayer: Identifiable, Equatable, Codable {
     var correctCount: Int = 0
     var isEliminated: Bool = false
     var isYou: Bool = false
+    /// Lobby stats shown next to each player (issue #21). Mode-dependent —
+    /// the lobby renders piLevel/piBestScore for Pi rooms and math counterparts
+    /// for Math rooms. Defaults keep saved-room decoding stable.
+    var piLevel: Int = 1
+    var mathLevel: Int = 1
+    var piBestScore: Int = 0
+    var mathBestScore: Int = 0
 }
 
 enum RoomStatus: String, Codable { case lobby, playing, finished }

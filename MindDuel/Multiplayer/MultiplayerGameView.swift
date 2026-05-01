@@ -213,6 +213,7 @@ struct MultiplayerGameView: View {
     private func playerChip(_ player: MultiplayerPlayer, room: MultiplayerRoom) -> some View {
         let isActive = room.currentPlayer?.id == player.id
         let isMine   = player.isYou
+        let isMultiplayer = room.players.count > 1
         return VStack(spacing: 4) {
             ZStack {
                 MDAvatar(username: player.username, size: .sm)
@@ -233,6 +234,25 @@ struct MultiplayerGameView: View {
                 Text("\(player.score)p")
                     .font(.system(size: 8, weight: .semibold))
                     .foregroundStyle(player.isEliminated ? Color.mdText3.opacity(0.4) : Color.mdText3)
+            }
+            if isMultiplayer {
+                livesRow(for: player)
+            }
+        }
+    }
+
+    /// Five-dot lives indicator under each player's chip (issue #36).
+    /// Dimmed when the player is eliminated or has 0 lives left.
+    private func livesRow(for player: MultiplayerPlayer) -> some View {
+        let maxLives = 5
+        let remaining = max(0, min(maxLives, player.lives))
+        return HStack(spacing: 2) {
+            ForEach(0..<maxLives, id: \.self) { i in
+                Image(systemName: i < remaining ? "heart.fill" : "heart")
+                    .font(.system(size: 7, weight: .bold))
+                    .foregroundStyle(player.isEliminated
+                                     ? Color.mdRed.opacity(0.3)
+                                     : (i < remaining ? Color.mdRed : Color.mdText3.opacity(0.4)))
             }
         }
     }
