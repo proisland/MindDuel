@@ -190,10 +190,11 @@ import SwiftUI
 
     func recordMultiplayerScore(mode: GameMode, score: Int, correctCount: Int = 0) {
         if mode == .pi {
-            if score > piBestScore { set(piBestScore: score) }
+            // Accumulate so every game contributes, regardless of round size
+            if score > 0 { set(piBestScore: piBestScore + score) }
             if correctCount > 0 { set(piPosition: piPosition + correctCount) }
         } else {
-            if score > mathBestScore { set(mathBestScore: score) }
+            if score > 0 { set(mathBestScore: mathBestScore + score) }
             for _ in 0..<correctCount { advanceMathLevel() }
         }
         incrementRounds()

@@ -47,6 +47,7 @@ struct MultiplayerRoom: Identifiable {
     var players: [MultiplayerPlayer]
     var status: RoomStatus
     var currentTurnIndex: Int = 0
+    var myPiDigitIndex: Int = 0  // persists pi progress across rejoin
 
     var activePlayers: [MultiplayerPlayer] { players.filter { !$0.isEliminated } }
 

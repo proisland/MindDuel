@@ -124,6 +124,9 @@ import UserNotifications
             if !backgroundRooms.contains(where: { $0.id == room.id }) {
                 backgroundRooms.append(room)
             }
+            // Register at OS level immediately — survives app kill.
+            // Delay 1s if already user's turn, else 30s for bots to finish.
+            scheduleGameReminderNotification(delay: room.isMyTurn ? 1 : 30)
             startBackgroundSimulation(roomID: room.id)
         }
         currentRoom = nil
@@ -181,16 +184,16 @@ import UserNotifications
 
     // MARK: – Notifications
 
-    func scheduleGameReminderNotification() {
+    func scheduleGameReminderNotification(delay: Double = 30) {
         Task {
             let center = UNUserNotificationCenter.current()
             let granted = (try? await center.requestAuthorization(options: [.alert, .sound])) ?? false
             guard granted else { return }
             let content = UNMutableNotificationContent()
             content.title = String(localized: "notification_your_turn_title")
-            content.body = String(localized: "notification_game_waiting_body")
+            content.body = String(localized: "notification_your_turn_body")
             content.sound = .default
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 15, repeats: false)
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, delay), repeats: false)
             let request = UNNotificationRequest(identifier: "game-reminder", content: content, trigger: trigger)
             try? await center.add(request)
         }

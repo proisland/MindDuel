@@ -72,6 +72,7 @@ struct MultiplayerGameView: View {
         }
         .onAppear {
             store.cancelGameReminderNotification()
+            currentDigitIndex = store.currentRoom?.myPiDigitIndex ?? 0
             refreshQuestion()
         }
         .onDisappear {
@@ -482,7 +483,10 @@ struct MultiplayerGameView: View {
         feedbackIsCorrect = correct
         Task {
             try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
-            if correct { currentDigitIndex += 1 }
+            if correct {
+                currentDigitIndex += 1
+                store.currentRoom?.myPiDigitIndex = currentDigitIndex
+            }
             selectedIndex = nil
             feedbackIsCorrect = nil
             elapsedSeconds = 0

@@ -32,41 +32,69 @@ struct ActiveGamesView: View {
     }
 
     private func roomRow(_ room: MultiplayerRoom) -> some View {
-        Button {
+        let modeColor: Color = room.mode == .pi ? .mdAccent : .mdPink
+        let modeIcon = room.mode == .pi ? "π" : "∑"
+        let modeName = room.mode == .pi
+            ? String(localized: "mode_pi")
+            : String(localized: "mode_math")
+        let isMyTurn = room.isMyTurn
+
+        return Button {
             store.rejoin(roomID: room.id)
             showGame = true
         } label: {
             HStack(spacing: MDSpacing.sm) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 10).fill(Color.mdPinkSoft).frame(width: 40, height: 40)
-                    Image(systemName: "person.2.fill")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Color.mdPink)
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(room.mode == .pi ? Color.mdAccentSoft : Color.mdPinkSoft)
+                        .frame(width: 40, height: 40)
+                    Text(modeIcon)
+                        .font(.system(size: 18, weight: .heavy))
+                        .foregroundStyle(modeColor)
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(String(format: String(localized: "multiplayer_room_code_format"), room.id))
-                        .mdStyle(.bodyMd)
-                        .foregroundStyle(Color.mdText)
+                    HStack(spacing: MDSpacing.xs) {
+                        Text(String(format: String(localized: "multiplayer_room_code_format"), room.id))
+                            .mdStyle(.bodyMd)
+                            .foregroundStyle(Color.mdText)
+                        Text(modeName)
+                            .mdStyle(.micro)
+                            .foregroundStyle(modeColor)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(room.mode == .pi ? Color.mdAccentSoft : Color.mdPinkSoft)
+                            .clipShape(Capsule())
+                    }
                     let opponents = room.players.filter { !$0.isYou }.map { "@\($0.username)" }.joined(separator: ", ")
                     Text(opponents)
                         .mdStyle(.caption)
                         .foregroundStyle(Color.mdText3)
                 }
                 Spacer()
-                HStack(spacing: MDSpacing.xxs) {
-                    Circle().fill(Color.mdGreen).frame(width: 6, height: 6)
-                    Text(String(localized: "multiplayer_live_label"))
-                        .mdStyle(.micro)
-                        .foregroundStyle(Color.mdGreen)
+                VStack(alignment: .trailing, spacing: 2) {
+                    if isMyTurn {
+                        Text(String(localized: "multiplayer_your_turn_label"))
+                            .mdStyle(.micro)
+                            .foregroundStyle(Color.mdGreen)
+                    } else {
+                        HStack(spacing: MDSpacing.xxs) {
+                            Circle().fill(Color.mdGreen).frame(width: 6, height: 6)
+                            Text(String(localized: "multiplayer_live_label"))
+                                .mdStyle(.micro)
+                                .foregroundStyle(Color.mdGreen)
+                        }
+                    }
                 }
                 Image(systemName: "chevron.right")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Color.mdText3)
             }
             .padding(MDSpacing.md)
-            .background(Color.mdSurface)
+            .background(isMyTurn ? Color.mdGreen.opacity(0.06) : Color.mdSurface)
             .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdBorder2, lineWidth: 0.5))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(
+                isMyTurn ? Color.mdGreen.opacity(0.5) : Color.mdBorder2,
+                lineWidth: isMyTurn ? 1 : 0.5))
         }
         .buttonStyle(.plain)
     }
