@@ -51,12 +51,19 @@ struct PiGameView: View {
             }
 
             if showQuitModal {
-                QuitGameModal {
-                    showQuitModal = false
-                    engine.quit()
-                } onContinue: {
-                    showQuitModal = false
-                }
+                QuitGameModal(
+                    onSaveAndExit: {
+                        showQuitModal = false
+                        dismiss()
+                    },
+                    onQuit: {
+                        showQuitModal = false
+                        engine.quit()
+                    },
+                    onContinue: {
+                        showQuitModal = false
+                    }
+                )
             }
         }
         .onReceive(timer) { _ in

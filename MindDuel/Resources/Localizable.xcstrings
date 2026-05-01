@@ -347,6 +347,22 @@
         }
       }
     },
+    "save_exit_action" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save and exit"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lagre og gå ut"
+          }
+        }
+      }
+    },
     "quit_confirm_action" : {
       "localizations" : {
         "en" : {

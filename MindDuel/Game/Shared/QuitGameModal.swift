@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct QuitGameModal: View {
+    var onSaveAndExit: (() -> Void)? = nil
     let onQuit: () -> Void
     let onContinue: () -> Void
 
@@ -29,6 +30,9 @@ struct QuitGameModal: View {
                 }
 
                 VStack(spacing: MDSpacing.xs) {
+                    if let onSaveAndExit {
+                        MDButton(.primary, title: String(localized: "save_exit_action"), action: onSaveAndExit)
+                    }
                     MDButton(.danger, title: String(localized: "quit_confirm_action"), action: onQuit)
                     MDButton(.ghost, title: String(localized: "continue_playing_action"), action: onContinue)
                 }

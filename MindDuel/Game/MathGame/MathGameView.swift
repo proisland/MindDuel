@@ -3,7 +3,8 @@ import SwiftUI
 struct MathGameView: View {
     let username: String
     @StateObject private var engine = GameEngine()
-    @State private var problem = MathProblemGenerator.generate()
+    private static let startLevel = 1
+    @State private var problem = MathProblemGenerator.generate(level: MathGameView.startLevel)
     @State private var problemCount = 1
     @State private var elapsedSeconds: Double = 0
     @State private var totalAnswerTime: Double = 0
@@ -26,7 +27,7 @@ struct MathGameView: View {
             if engine.isRoundOver {
                 RoundEndView(correctCount: engine.correctCount, avgTimeSeconds: avgTimeSeconds) {
                     engine.restart()
-                    problem = MathProblemGenerator.generate()
+                    problem = MathProblemGenerator.generate(level: MathGameView.startLevel)
                     problemCount = 1
                     elapsedSeconds = 0
                     totalAnswerTime = 0
@@ -40,12 +41,19 @@ struct MathGameView: View {
             }
 
             if showQuitModal {
-                QuitGameModal {
-                    showQuitModal = false
-                    engine.quit()
-                } onContinue: {
-                    showQuitModal = false
-                }
+                QuitGameModal(
+                    onSaveAndExit: {
+                        showQuitModal = false
+                        dismiss()
+                    },
+                    onQuit: {
+                        showQuitModal = false
+                        engine.quit()
+                    },
+                    onContinue: {
+                        showQuitModal = false
+                    }
+                )
             }
         }
         .onReceive(timer) { _ in
@@ -88,7 +96,7 @@ struct MathGameView: View {
     private var problemCard: some View {
         MDPrimaryCard {
             VStack(spacing: MDSpacing.xs) {
-                Text(String(format: String(localized: "math_level_problem"), 1, problemCount))
+                Text(String(format: String(localized: "math_level_problem"), MathGameView.startLevel, problemCount))
                     .mdStyle(.caption)
                     .foregroundStyle(Color.mdText2)
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -189,7 +197,7 @@ struct MathGameView: View {
     }
 
     private func nextProblem() {
-        problem = MathProblemGenerator.generate()
+        problem = MathProblemGenerator.generate(level: MathGameView.startLevel)
         problemCount += 1
         elapsedSeconds = 0
     }
