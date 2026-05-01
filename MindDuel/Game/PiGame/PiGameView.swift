@@ -5,7 +5,7 @@ struct PiGameView: View {
     var resumeRoomID: String? = nil
 
     @StateObject private var engine      = GameEngine()
-    @StateObject private var progression = ProgressionStore.shared
+    @ObservedObject private var progression = ProgressionStore.shared
     @State private var currentIndex      = 0
     @State private var elapsedSeconds:   Double = 0
     @State private var totalAnswerTime:  Double = 0

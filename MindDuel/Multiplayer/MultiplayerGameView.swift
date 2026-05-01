@@ -3,9 +3,9 @@ import SwiftUI
 struct MultiplayerGameView: View {
     let ownUsername: String
 
-    @StateObject private var store     = MultiplayerStore.shared
+    @ObservedObject private var store     = MultiplayerStore.shared
     @StateObject private var engine    = GameEngine()
-    @StateObject private var progression = ProgressionStore.shared
+    @ObservedObject private var progression = ProgressionStore.shared
     @Environment(\.dismiss) private var dismiss
 
     @State private var currentDigitIndex: Int   = 0
@@ -28,7 +28,17 @@ struct MultiplayerGameView: View {
             if let room = store.currentRoom {
                 switch room.status {
                 case .finished:
-                    finishedView(room: room)
+                    MultiplayerFinishedView(
+                        room: room,
+                        onShowBreakdown: { player in
+                            breakdownPlayer = player
+                            showScoreBreakdown = true
+                        },
+                        onLeave: {
+                            store.leaveRoom()
+                            dismiss()
+                        }
+                    )
                 case .playing, .lobby:
                     gameContent(room: room)
                 }
@@ -60,7 +70,21 @@ struct MultiplayerGameView: View {
             }
 
             if showSoloQuitModal {
-                soloQuitModal
+                QuitGameModal(
+                    onQuit: {
+                        showSoloQuitModal = false
+                        store.leaveRoom()
+                        dismiss()
+                    },
+                    onContinue: {
+                        showSoloQuitModal = false
+                    },
+                    onSave: {
+                        showSoloQuitModal = false
+                        store.dismissGame()
+                        dismiss()
+                    }
+                )
             }
         }
         .onReceive(timer) { _ in handleTimerTick() }
@@ -356,88 +380,6 @@ struct MultiplayerGameView: View {
         }
     }
 
-    // MARK: – Finished screen
-
-    private func finishedView(room: MultiplayerRoom) -> some View {
-        ZStack {
-            Color.mdBg.ignoresSafeArea()
-            VStack(spacing: MDSpacing.lg) {
-                Spacer()
-
-                Image(systemName: "trophy.fill")
-                    .font(.system(size: 48))
-                    .foregroundStyle(Color.mdAmber)
-
-                VStack(spacing: MDSpacing.xs) {
-                    Text(String(localized: "round_over_title"))
-                        .mdStyle(.heading)
-                        .foregroundStyle(Color.mdText2)
-                    if let winner = room.winner {
-                        Text(winner.isYou
-                             ? String(localized: "multiplayer_you_won_label")
-                             : String(format: String(localized: "multiplayer_winner_format"),
-                                      winner.username))
-                            .mdStyle(.title)
-                            .foregroundStyle(winner.isYou ? Color.mdAccent : Color.mdText)
-                    }
-                }
-
-                resultsLeaderboard(room: room)
-                    .padding(.horizontal, MDSpacing.md)
-
-                Spacer()
-
-                VStack(spacing: MDSpacing.xs) {
-                    MDButton(.primary, title: String(localized: "back_to_home_action")) {
-                        store.leaveRoom()
-                        dismiss()
-                    }
-                }
-                .padding(.horizontal, MDSpacing.lg)
-                .padding(.bottom, MDSpacing.xl)
-            }
-        }
-    }
-
-    private func resultsLeaderboard(room: MultiplayerRoom) -> some View {
-        let sorted = room.players.sorted { $0.score > $1.score }
-        return VStack(spacing: MDSpacing.xs) {
-            ForEach(Array(sorted.enumerated()), id: \.element.id) { rank, player in
-                HStack(spacing: MDSpacing.sm) {
-                    Text("\(rank + 1)")
-                        .mdStyle(.bodyMd)
-                        .foregroundStyle(rank == 0 ? Color.mdAmber : Color.mdText3)
-                        .frame(width: 20, alignment: .center)
-                    MDAvatar(username: player.username, size: .sm)
-                    Text("@\(player.username)")
-                        .mdStyle(.caption)
-                        .foregroundStyle(Color.mdText)
-                    if player.isYou {
-                        MDPillTag(label: String(localized: "your_label"), variant: .accent)
-                    }
-                    Spacer()
-                    Text("\(player.score)p")
-                        .mdStyle(.bodyMd)
-                        .foregroundStyle(rank == 0 ? Color.mdAmber : Color.mdText2)
-                    Button {
-                        breakdownPlayer = player
-                        showScoreBreakdown = true
-                    } label: {
-                        Image(systemName: "info.circle")
-                            .font(.system(size: 14))
-                            .foregroundStyle(Color.mdText3)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, MDSpacing.md)
-                .padding(.vertical, MDSpacing.sm)
-                .background(player.isYou ? Color.mdAccentSoft : (rank == 0 ? Color.mdAmberSoft : Color.mdSurface2))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdBorder2, lineWidth: 0.5))
-            }
-        }
-    }
-
     // MARK: – Score breakdown modal
 
     private func scoreBreakdownModal(player: MultiplayerPlayer) -> some View {
@@ -484,44 +426,6 @@ struct MultiplayerGameView: View {
         .padding(MDSpacing.md)
         .background(Color.mdAmberSoft)
         .clipShape(RoundedRectangle(cornerRadius: 14))
-    }
-
-    // MARK: – Solo quit modal
-
-    private var soloQuitModal: some View {
-        ZStack {
-            Color.black.opacity(0.85).ignoresSafeArea()
-                .onTapGesture { showSoloQuitModal = false }
-            VStack(spacing: MDSpacing.md) {
-                VStack(spacing: MDSpacing.xs) {
-                    Text(String(localized: "quit_game_title"))
-                        .mdStyle(.heading)
-                        .foregroundStyle(Color.mdText)
-                    Text(String(localized: "solo_quit_message"))
-                        .mdStyle(.body)
-                        .foregroundStyle(Color.mdText2)
-                        .multilineTextAlignment(.center)
-                }
-                MDButton(.primary, title: String(localized: "solo_save_exit_action")) {
-                    showSoloQuitModal = false
-                    store.dismissGame()
-                    dismiss()
-                }
-                MDButton(.ghost, title: String(localized: "quit_confirm_action")) {
-                    showSoloQuitModal = false
-                    store.leaveRoom()
-                    dismiss()
-                }
-                MDButton(.ghost, title: String(localized: "continue_playing_action")) {
-                    showSoloQuitModal = false
-                }
-            }
-            .padding(MDSpacing.lg)
-            .background(Color.mdSurface)
-            .clipShape(RoundedRectangle(cornerRadius: 20))
-            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.mdBorder2, lineWidth: 0.5))
-            .padding(.horizontal, MDSpacing.lg)
-        }
     }
 
     // MARK: – Pi helpers

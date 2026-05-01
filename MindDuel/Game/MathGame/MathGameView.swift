@@ -5,7 +5,7 @@ struct MathGameView: View {
     let resumeRoomID: String?
 
     @StateObject private var engine      = GameEngine()
-    @StateObject private var progression = ProgressionStore.shared
+    @ObservedObject private var progression = ProgressionStore.shared
     @State private var problem:           MathProblem
     @State private var problemCount      = 1
     @State private var elapsedSeconds:   Double = 0

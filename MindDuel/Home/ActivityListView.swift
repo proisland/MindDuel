@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ActivityListView: View {
-    @StateObject private var store = MultiplayerStore.shared
+    @ObservedObject private var store = MultiplayerStore.shared
     @Environment(\.dismiss) private var dismiss
 
     // Tick every 30s so timestamps like "1m" / "2t" refresh without the user

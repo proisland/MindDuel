@@ -5,9 +5,9 @@ struct MultiplayerLobbyView: View {
     let startAsHost: Bool
     var invitedUsername: String? = nil
 
-    @StateObject private var store     = MultiplayerStore.shared
-    @StateObject private var social    = SocialStore.shared
-    @StateObject private var progression = ProgressionStore.shared
+    @ObservedObject private var store     = MultiplayerStore.shared
+    @ObservedObject private var social    = SocialStore.shared
+    @ObservedObject private var progression = ProgressionStore.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showGame        = false
     @State private var showFriendPicker = false

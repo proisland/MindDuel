@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ActiveGamesView: View {
     let ownUsername: String
-    @StateObject private var store = MultiplayerStore.shared
+    @ObservedObject private var store = MultiplayerStore.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showGame = false
     @State private var resumeSoloMode: GameMode? = nil

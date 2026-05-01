@@ -3,7 +3,7 @@ import SwiftUI
 struct OtherProfileView: View {
     let profile: UserProfile
     let ownUsername: String
-    @StateObject private var social = SocialStore.shared
+    @ObservedObject private var social = SocialStore.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showFlagExplanation = false
     @State private var showChallenge = false

@@ -3,8 +3,8 @@ import SwiftUI
 struct ProfileView: View {
     let username: String
     let onSignOut: () -> Void
-    @StateObject private var progression = ProgressionStore.shared
-    @StateObject private var social = SocialStore.shared
+    @ObservedObject private var progression = ProgressionStore.shared
+    @ObservedObject private var social = SocialStore.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showSettings = false
     @State private var selectedFriend: UserProfile? = nil
