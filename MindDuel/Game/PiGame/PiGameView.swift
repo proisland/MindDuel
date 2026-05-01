@@ -2,6 +2,8 @@ import SwiftUI
 
 struct PiGameView: View {
     let username: String
+    var resumeRoomID: String? = nil
+
     @StateObject private var engine      = GameEngine()
     @StateObject private var progression = ProgressionStore.shared
     @State private var currentIndex      = 0
@@ -11,12 +13,18 @@ struct PiGameView: View {
     @State private var feedbackIsCorrect: Bool? = nil
     @State private var showQuitModal     = false
     @State private var roundResult:      ProgressionStore.RoundResult? = nil
+    @State private var sessionStartIndex: Int = 0
 
     @Environment(\.dismiss) private var dismiss
 
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
-    private var startIndex: Int { ProgressionStore.shared.piPosition }
+    /// The first digit index of the user's current Pi level (level 1 → 0, level 2 → 50, …).
+    /// This ensures starting a Pi game at a given level always begins at that level's boundary,
+    /// matching the level shown on the home screen.
+    private var levelStartIndex: Int { max(0, (ProgressionStore.shared.piLevel - 1) * 50) }
+
+    private var startIndex: Int { sessionStartIndex }
 
     private var targetDigit: Int {
         let idx = startIndex + currentIndex
@@ -57,20 +65,60 @@ struct PiGameView: View {
             }
 
             if showQuitModal {
-                QuitGameModal {
-                    showQuitModal = false
-                    finaliseRound(won: false)
-                    engine.quit()
-                } onContinue: {
-                    showQuitModal = false
-                }
+                QuitGameModal(
+                    onQuit: {
+                        showQuitModal = false
+                        finaliseRound(won: false)
+                        engine.quit()
+                    },
+                    onContinue: {
+                        showQuitModal = false
+                    },
+                    onSave: {
+                        showQuitModal = false
+                        saveSessionAndExit()
+                    }
+                )
             }
         }
+        .onAppear { restoreOrStartFresh() }
         .onReceive(timer) { _ in handleTimerTick() }
         .animation(.easeInOut(duration: 0.2), value: showQuitModal)
         .onChange(of: engine.isRoundOver, perform: { over in
             if over && roundResult == nil { finaliseRound(won: false) }
         })
+    }
+
+    // MARK: – Session restore / save
+
+    private func restoreOrStartFresh() {
+        if let id = resumeRoomID,
+           let room = MultiplayerStore.shared.popStandaloneSolo(roomID: id),
+           let me = room.players.first(where: { $0.isYou }) {
+            // Resume saved session: start at the saved digit position, currentIndex is 0
+            sessionStartIndex = room.myPiDigitIndex
+            currentIndex = 0
+            engine.restoreState(lives: me.lives, skips: me.skips, correctCount: me.correctCount)
+            return
+        }
+        // Fresh game: start at the boundary of the user's current Pi level
+        sessionStartIndex = levelStartIndex
+    }
+
+    private func saveSessionAndExit() {
+        let absoluteDigit = sessionStartIndex + currentIndex
+        // Apply round side-effects (score / piPosition) before saving exit
+        finaliseRound(won: false)
+        _ = MultiplayerStore.shared.saveStandaloneSoloPi(
+            ownUsername: username,
+            lives: engine.lives,
+            skips: engine.skips,
+            score: roundResult?.score ?? 0,
+            correctCount: engine.correctCount,
+            currentDigit: absoluteDigit
+        )
+        engine.quit()
+        dismiss()
     }
 
     // MARK: – Layout
@@ -167,8 +215,11 @@ struct PiGameView: View {
             Text(String(localized: "quota_exhausted_message"))
                 .mdStyle(.bodyMd)
             Spacer()
-            MDButton(.ghost, title: String(localized: "back_to_home_action")) { dismiss() }
-                .frame(width: 80)
+            MDButton(.ghost, title: String(localized: "back_to_home_action")) {
+                finaliseRound(won: true)
+                dismiss()
+            }
+            .frame(width: 80)
         }
         .padding(MDSpacing.md)
         .background(Color.mdAmberSoft)
@@ -238,6 +289,7 @@ struct PiGameView: View {
 
     private func resetRound() {
         engine.restart()
+        sessionStartIndex = levelStartIndex
         currentIndex      = 0
         elapsedSeconds    = 0
         totalAnswerTime   = 0
@@ -251,7 +303,7 @@ struct PiGameView: View {
 
 enum DigitFeedbackState: Equatable { case idle, correct, wrong }
 
-private struct DigitButton: View {
+struct DigitButton: View {
     let digit: Int
     let feedbackState: DigitFeedbackState
     let action: () -> Void

@@ -1,38 +1,166 @@
 {
   "sourceLanguage" : "no",
   "strings" : {
-    "quota_exhausted_message" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Daily limit reached. Come back tomorrow!" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Daglig kvote brukt opp. Kom tilbake i morgen!" } }
-      }
-    },
-    "quota_upgrade_action" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Upgrade" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Oppgrader" } }
-      }
-    },
-    "quota_warning_subtitle" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Upgrade for unlimited questions" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Oppgrader for ubegrenset tilgang" } }
-      }
-    },
-    "quota_warning_title" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld of %lld questions used today" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "%lld av %lld oppgaver brukt i dag" } }
-      }
-    },
-    "round_personal_best" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Personal best!" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Personlig rekord!" } }
-      }
-    },
-    "MindDuel" : {
+    "@" : {
 
+    },
+    "@%@" : {
+
+    },
+    "@%@ …" : {
+
+    },
+    "%@" : {
+
+    },
+    "%@ · %@" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%@p" : {
+
+    },
+    "accept_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accept"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Godta"
+          }
+        }
+      }
+    },
+    "active_games_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ongoing games"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pågående spill"
+          }
+        }
+      }
+    },
+    "activity_lost_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You lost to @%@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du tapte mot @%@"
+          }
+        }
+      }
+    },
+    "activity_score_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Earned +%lldp"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Tjente +%lldp"
+          }
+        }
+      }
+    },
+    "activity_won_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You beat @%@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du vant mot @%@"
+          }
+        }
+      }
+    },
+    "add_friend_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+ Friend"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+ Venn"
+          }
+        }
+      }
+    },
+    "back_to_home_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back to home"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tilbake til hjem"
+          }
+        }
+      }
+    },
+    "challenge_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Challenge"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utfordre"
+          }
+        }
+      }
     },
     "choose_username" : {
       "extractionState" : "stale",
@@ -52,6 +180,7 @@
       }
     },
     "choose_your_tag" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -63,70 +192,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Velg ditt tag"
-          }
-        }
-      }
-    },
-    "tag_subtitle" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "How the arena will know you."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Slik vil arenaen kjenne deg."
-          }
-        }
-      }
-    },
-    "rule_length" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3–20 characters"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3–20 tegn"
-          }
-        }
-      }
-    },
-    "rule_chars" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Letters, numbers, underscore"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bokstaver, tall, understrek"
-          }
-        }
-      }
-    },
-    "rule_available" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tag is available"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tag er tilgjengelig"
           }
         }
       }
@@ -147,6 +212,270 @@
           }
         }
       }
+    },
+    "continue_playing_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue playing"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fortsett å spille"
+          }
+        }
+      }
+    },
+    "debug_reset_quota_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset daily quota"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nullstill daglig kvote"
+          }
+        }
+      }
+    },
+    "debug_reset_social_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset social data + re-seed"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nullstill sosiale data + reseed"
+          }
+        }
+      }
+    },
+    "debug_section_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Debug"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Debug"
+          }
+        }
+      }
+    },
+    "debug_test_notification_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send test notification (3 s)"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send testvarsling (3 sek)"
+          }
+        }
+      }
+    },
+    "decline_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decline"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avslå"
+          }
+        }
+      }
+    },
+    "flagged_explanation_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activity on this account has been flagged. Average response time under 400 ms over many rounds is suspicious."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktiviteten på denne kontoen er flagget for gjennomgang. Snittsvartid under 400 ms over mange runder er mistenkelig."
+          }
+        }
+      }
+    },
+    "flagged_explanation_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flagged for review"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flagget for gjennomgang"
+          }
+        }
+      }
+    },
+    "friend_request_sent_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request sent"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forespørsel sendt"
+          }
+        }
+      }
+    },
+    "friends_section_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FRIENDS"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "VENNER"
+          }
+        }
+      }
+    },
+    "game_event_lost_life_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "@%@ lost a life!"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "@%@ mistet et liv!"
+          }
+        }
+      }
+    },
+    "home_subtitle" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ready for a new challenge?"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klar for en ny utfordring?"
+          }
+        }
+      }
+    },
+    "last_active_now" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nå"
+          }
+        }
+      }
+    },
+    "level_of_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Level %lld of %lld"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nivå %lld av %lld"
+          }
+        }
+      }
+    },
+    "M" : {
+
+    },
+    "math_level_problem" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Level %lld · Problem %lld"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nivå %lld · Oppgave %lld"
+          }
+        }
+      }
+    },
+    "MindDuel" : {
+
+    },
+    "MindDuel M5" : {
+
     },
     "mode_math" : {
       "extractionState" : "stale",
@@ -216,7 +545,1572 @@
         }
       }
     },
+    "multiplayer_create_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opprett"
+          }
+        }
+      }
+    },
+    "multiplayer_eliminated_subtitle" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The game continues for the other players."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spillet fortsetter for de andre spillerne."
+          }
+        }
+      }
+    },
+    "multiplayer_eliminated_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're out!"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du er ute!"
+          }
+        }
+      }
+    },
+    "multiplayer_host_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Romvert"
+          }
+        }
+      }
+    },
+    "multiplayer_invite_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invite player"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inviter spiller"
+          }
+        }
+      }
+    },
+    "multiplayer_invite_share_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Join my MindDuel game! Room code: %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bli med i mitt MindDuel-spill! Spillkode: %@"
+          }
+        }
+      }
+    },
+    "multiplayer_join_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Join"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bli med"
+          }
+        }
+      }
+    },
+    "multiplayer_leave_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave game"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forlat spillet"
+          }
+        }
+      }
+    },
+    "multiplayer_live_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LIVE"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LIVE"
+          }
+        }
+      }
+    },
+    "multiplayer_lobby_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lobby"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lobby"
+          }
+        }
+      }
+    },
+    "multiplayer_mode_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MODE"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MODUS"
+          }
+        }
+      }
+    },
+    "multiplayer_players_label_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PLAYERS (%lld/%lld)"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SPILLERE (%lld/%lld)"
+          }
+        }
+      }
+    },
+    "multiplayer_ready_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I'm ready!"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeg er klar!"
+          }
+        }
+      }
+    },
+    "multiplayer_ready_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ready"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klar"
+          }
+        }
+      }
+    },
+    "multiplayer_room_code_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "#%@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "#%@"
+          }
+        }
+      }
+    },
+    "multiplayer_start_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start game"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start spill"
+          }
+        }
+      }
+    },
+    "multiplayer_start_level_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "STARTING LEVEL"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "STARTNIVÅ"
+          }
+        }
+      }
+    },
+    "multiplayer_start_level_value" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From start (#%lld)"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fra start (#%lld)"
+          }
+        }
+      }
+    },
+    "multiplayer_subtitle" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Challenge friends in real time"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utfordre venner i sanntid"
+          }
+        }
+      }
+    },
+    "multiplayer_their_turn_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PLAYING"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SPILLER"
+          }
+        }
+      }
+    },
+    "multiplayer_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Group Play"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flerspiller"
+          }
+        }
+      }
+    },
+    "multiplayer_waiting_for_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for @%@…"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Venter på @%@…"
+          }
+        }
+      }
+    },
+    "multiplayer_waiting_for_host_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for host…"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Venter på romvert…"
+          }
+        }
+      }
+    },
+    "multiplayer_waiting_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Venter"
+          }
+        }
+      }
+    },
+    "multiplayer_winner_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "@%@ won"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "@%@ vant"
+          }
+        }
+      }
+    },
+    "multiplayer_you_won_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You won! 🏆"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du vant! 🏆"
+          }
+        }
+      }
+    },
+    "multiplayer_your_turn_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YOUR TURN"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DIN TUR"
+          }
+        }
+      }
+    },
+    "no_activity_yet" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No activity yet"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen aktivitet ennå"
+          }
+        }
+      }
+    },
+    "no_friends_to_invite" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No friends to invite yet. Add friends from the scoreboard."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen venner å invitere ennå. Legg til venner fra scoreboard."
+          }
+        }
+      }
+    },
+    "no_friends_yet" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No friends yet"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen venner ennå"
+          }
+        }
+      }
+    },
+    "notification_game_waiting_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have a turn waiting in a game."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du har et trekk som venter i et spill."
+          }
+        }
+      }
+    },
+    "notification_your_turn_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It's your turn in the group game."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det er din tur i gruppespillet."
+          }
+        }
+      }
+    },
+    "notification_your_turn_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your turn!"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din tur!"
+          }
+        }
+      }
+    },
+    "other_profile_subtitle_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld years · %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld år · %@"
+          }
+        }
+      }
+    },
+    "pending_requests_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requests"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forespørsler"
+          }
+        }
+      }
+    },
+    "pi_digits_guessed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld decimals guessed"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld desimaler gjettet"
+          }
+        }
+      }
+    },
+    "play_again_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play again"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spill igjen"
+          }
+        }
+      }
+    },
+    "profile_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My Profile"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Min profil"
+          }
+        }
+      }
+    },
+    "progress_section_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PROGRESS"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FREMGANG"
+          }
+        }
+      }
+    },
+    "quit_confirm_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quit game"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forlat spillet"
+          }
+        }
+      }
+    },
+    "quit_game_message" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to quit?"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Er du sikker på at du vil forlate spillet?"
+          }
+        }
+      }
+    },
+    "quit_game_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quit game?"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forlate spillet?"
+          }
+        }
+      }
+    },
+    "quota_exhausted_message" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daily limit reached. Come back tomorrow!"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daglig kvote brukt opp. Kom tilbake i morgen!"
+          }
+        }
+      }
+    },
+    "quota_upgrade_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upgrade"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oppgrader"
+          }
+        }
+      }
+    },
+    "quota_warning_subtitle" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upgrade for unlimited questions"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oppgrader for ubegrenset tilgang"
+          }
+        }
+      }
+    },
+    "quota_warning_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld of %lld questions used today"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld av %lld oppgaver brukt i dag"
+          }
+        }
+      }
+    },
+    "recent_activity_all_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All activity"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All aktivitet"
+          }
+        }
+      }
+    },
+    "recent_activity_see_all" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See all"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se alle"
+          }
+        }
+      }
+    },
+    "recent_activity_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recent activity"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siste aktivitet"
+          }
+        }
+      }
+    },
+    "rejoin_game_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Return to ongoing game"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tilbake til pågående spill"
+          }
+        }
+      }
+    },
+    "rejoin_games_count_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld ongoing games"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld pågående spill"
+          }
+        }
+      }
+    },
+    "rejoin_your_turn_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It's your turn! Tap to play"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din tur! Trykk for å spille"
+          }
+        }
+      }
+    },
+    "remove_friend_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove friend"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fjern venn"
+          }
+        }
+      }
+    },
+    "round_avg_time" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avg time: %.1f s"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snitt tid: %.1f s"
+          }
+        }
+      }
+    },
+    "round_avg_time_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avg time"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snitt tid"
+          }
+        }
+      }
+    },
+    "round_correct_count" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Correct: %lld"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Korrekte: %lld"
+          }
+        }
+      }
+    },
+    "round_correct_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Correct"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Korrekte"
+          }
+        }
+      }
+    },
+    "round_over_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Round over"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Runde ferdig"
+          }
+        }
+      }
+    },
+    "round_personal_best" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal best!"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personlig rekord!"
+          }
+        }
+      }
+    },
+    "rule_available" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tag is available"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tag er tilgjengelig"
+          }
+        }
+      }
+    },
+    "rule_chars" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Letters, numbers, underscore"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bokstaver, tall, understrek"
+          }
+        }
+      }
+    },
+    "rule_length" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3–20 characters"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3–20 tegn"
+          }
+        }
+      }
+    },
+    "score_breakdown_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "@%@ scored %lld points. Points are earned for each correct answer — faster answers give more points."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "@%@ fikk %lld poeng. Poeng gis for hvert riktige svar — raskere svar gir flere poeng."
+          }
+        }
+      }
+    },
+    "score_breakdown_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Score breakdown"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poengforklaring"
+          }
+        }
+      }
+    },
+    "scoreboard_friends_tab" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Friends"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Venner"
+          }
+        }
+      }
+    },
+    "scoreboard_global_tab" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Global"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Globalt"
+          }
+        }
+      }
+    },
+    "scoreboard_local_tab" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lokalt"
+          }
+        }
+      }
+    },
+    "scoreboard_math_mode" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "∑ Math"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "∑ Matte"
+          }
+        }
+      }
+    },
+    "scoreboard_pi_mode" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "π Pi"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "π Pi"
+          }
+        }
+      }
+    },
+    "scoreboard_subtitle" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compare scores with others"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sammenlign poeng med andre"
+          }
+        }
+      }
+    },
+    "scoreboard_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scoreboard"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scoreboard"
+          }
+        }
+      }
+    },
+    "search_username_placeholder" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search by username"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Søk etter brukernavn"
+          }
+        }
+      }
+    },
+    "settings_account_section" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ACCOUNT"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KONTO"
+          }
+        }
+      }
+    },
+    "settings_color_scheme_dark" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dark"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mørkt"
+          }
+        }
+      }
+    },
+    "settings_color_scheme_light" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Light"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lyst"
+          }
+        }
+      }
+    },
+    "settings_color_scheme_system" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System"
+          }
+        }
+      }
+    },
+    "settings_dark_mode_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dark mode"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mørk modus"
+          }
+        }
+      }
+    },
+    "settings_dark_mode_value" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System"
+          }
+        }
+      }
+    },
+    "settings_delete_account_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete account and data"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slett konto og data"
+          }
+        }
+      }
+    },
+    "settings_free_plan_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free plan: 20 questions per day"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gratis plan: 20 oppgaver per dag"
+          }
+        }
+      }
+    },
+    "settings_language_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Language"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Språk"
+          }
+        }
+      }
+    },
+    "settings_language_picker_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Language"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Velg språk"
+          }
+        }
+      }
+    },
+    "settings_language_restart_message" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close and reopen MindDuel to apply the new language."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lukk og åpne MindDuel igjen for å bruke det nye språket."
+          }
+        }
+      }
+    },
+    "settings_language_restart_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restart App"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start appen på nytt"
+          }
+        }
+      }
+    },
+    "settings_language_system" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System"
+          }
+        }
+      }
+    },
+    "settings_language_value" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Norwegian"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Norsk"
+          }
+        }
+      }
+    },
+    "settings_notifications_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Varsler"
+          }
+        }
+      }
+    },
+    "settings_privacy_section" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PRIVACY"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PERSONVERN"
+          }
+        }
+      }
+    },
+    "settings_signout_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign out"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Logg ut"
+          }
+        }
+      }
+    },
+    "settings_subscription_section" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SUBSCRIPTION"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ABONNEMENT"
+          }
+        }
+      }
+    },
+    "settings_terms_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terms and Privacy"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vilkår og personvern"
+          }
+        }
+      }
+    },
+    "settings_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Innstillinger"
+          }
+        }
+      }
+    },
     "sign_in_placeholder" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -232,7 +2126,212 @@
         }
       }
     },
+    "sign_in_terms" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By continuing you accept our Terms of Service and Privacy Policy."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ved å fortsette godtar du våre vilkår og personvernregler."
+          }
+        }
+      }
+    },
+    "signout_message" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to sign out?"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Er du sikker på at du vil logge ut?"
+          }
+        }
+      }
+    },
+    "signout_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign out?"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Logg ut?"
+          }
+        }
+      }
+    },
+    "solo_quit_message" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save to continue later, or end the game entirely."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lagre for å fortsette senere, eller avslutt spillet helt."
+          }
+        }
+      }
+    },
+    "solo_save_exit_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save and exit"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lagre og gå ut"
+          }
+        }
+      }
+    },
+    "stats_friends_count_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Friends"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Venner"
+          }
+        }
+      }
+    },
+    "stats_last_active_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last active"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sist aktiv"
+          }
+        }
+      }
+    },
+    "stats_member_since_april" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Member since April 2025"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medlem siden april 2025"
+          }
+        }
+      }
+    },
+    "stats_member_since_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Member since"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medlem siden"
+          }
+        }
+      }
+    },
+    "stats_rounds_played_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rounds played"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Runder spilt"
+          }
+        }
+      }
+    },
+    "stats_section_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "STATISTICS"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "STATISTIKK"
+          }
+        }
+      }
+    },
+    "tag_subtitle" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How the arena will know you."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slik vil arenaen kjenne deg."
+          }
+        }
+      }
+    },
     "tagline" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -244,6 +2343,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mentale utfordringer. Sosial konkurranse."
+          }
+        }
+      }
+    },
+    "tap_to_continue_hint" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to continue"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trykk for å fortsette"
+          }
+        }
+      }
+    },
+    "test_notification_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This is a test notification from MindDuel"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dette er en testvarsling fra MindDuel"
+          }
+        }
+      }
+    },
+    "time_just_now" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "now"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nå"
+          }
+        }
+      }
+    },
+    "timer_seconds_suffix" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sec"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sek"
           }
         }
       }
@@ -266,6 +2433,7 @@
       }
     },
     "username_placeholder" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -277,294 +2445,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ditt_tag"
-          }
-        }
-      }
-    },
-    "back_to_home_action" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Back to home"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tilbake til hjem"
-          }
-        }
-      }
-    },
-    "continue_playing_action" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Continue playing"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fortsett å spille"
-          }
-        }
-      }
-    },
-    "level_of_format" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Level %lld of %lld"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nivå %lld av %lld"
-          }
-        }
-      }
-    },
-    "math_level_problem" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Level %lld · Problem %lld"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nivå %lld · Oppgave %lld"
-          }
-        }
-      }
-    },
-    "pi_digits_guessed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld decimals guessed"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld desimaler gjettet"
-          }
-        }
-      }
-    },
-    "play_again_action" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Play again"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Spill igjen"
-          }
-        }
-      }
-    },
-    "quit_confirm_action" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quit game"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Forlat spillet"
-          }
-        }
-      }
-    },
-    "quit_game_message" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Are you sure you want to quit?"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Er du sikker på at du vil forlate spillet?"
-          }
-        }
-      }
-    },
-    "quit_game_title" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quit game?"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Forlate spillet?"
-          }
-        }
-      }
-    },
-    "round_correct_count" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Correct: %lld"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Korrekte: %lld"
-          }
-        }
-      }
-    },
-    "round_over_title" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Round over"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Runde ferdig"
-          }
-        }
-      }
-    },
-    "tap_to_continue_hint" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tap to continue"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trykk for å fortsette"
-          }
-        }
-      }
-    },
-    "timer_seconds_suffix" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "sec"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "sek"
-          }
-        }
-      }
-    },
-    "home_subtitle" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ready for a new challenge?"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Klar for en ny utfordring?"
-          }
-        }
-      }
-    },
-    "round_avg_time" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avg time: %.1f s"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snitt tid: %.1f s"
-          }
-        }
-      }
-    },
-    "round_avg_time_label" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avg time"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snitt tid"
-          }
-        }
-      }
-    },
-    "round_correct_label" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Correct"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Korrekte"
-          }
-        }
-      }
-    },
-    "sign_in_terms" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "By continuing you accept our Terms of Service and Privacy Policy."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ved å fortsette godtar du våre vilkår og personvernregler."
           }
         }
       }
@@ -586,328 +2466,21 @@
         }
       }
     },
-    "profile_title" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "My Profile" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Min profil" } }
-      }
-    },
-    "progress_section_title" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "PROGRESS" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "FREMGANG" } }
-      }
-    },
-    "stats_section_title" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "STATISTICS" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "STATISTIKK" } }
-      }
-    },
-    "friends_section_title" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "FRIENDS" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "VENNER" } }
-      }
-    },
-    "stats_rounds_played_label" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Rounds played" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Runder spilt" } }
-      }
-    },
-    "stats_friends_count_label" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Friends" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Venner" } }
-      }
-    },
-    "stats_member_since_label" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Member since" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Medlem siden" } }
-      }
-    },
-    "stats_member_since_april" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Member since April 2025" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Medlem siden april 2025" } }
-      }
-    },
-    "stats_last_active_label" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Last active" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Sist aktiv" } }
-      }
-    },
-    "last_active_now" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Now" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Nå" } }
-      }
-    },
-    "search_username_placeholder" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Search by username" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Søk etter brukernavn" } }
-      }
-    },
-    "scoreboard_title" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Scoreboard" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Scoreboard" } }
-      }
-    },
-    "scoreboard_subtitle" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Compare scores with others" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Sammenlign poeng med andre" } }
-      }
-    },
-    "scoreboard_friends_tab" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Friends" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Venner" } }
-      }
-    },
-    "scoreboard_local_tab" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Local" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Lokalt" } }
-      }
-    },
-    "scoreboard_global_tab" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Global" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Globalt" } }
-      }
-    },
-    "challenge_action" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Challenge" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Utfordre" } }
-      }
-    },
-    "add_friend_action" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "+ Friend" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "+ Venn" } }
-      }
-    },
-    "friend_request_sent_label" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Request sent" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Forespørsel sendt" } }
-      }
-    },
-    "pending_requests_label" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Requests" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Forespørsler" } }
-      }
-    },
-    "accept_action" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Accept" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Godta" } }
-      }
-    },
-    "decline_action" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Decline" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Avslå" } }
-      }
-    },
-    "debug_section_title" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Debug" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Debug" } }
-      }
-    },
-    "debug_reset_quota_action" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reset daily quota" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Nullstill daglig kvote" } }
-      }
-    },
-    "debug_reset_social_action" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reset social data + re-seed" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Nullstill sosiale data + reseed" } }
-      }
-    },
-    "debug_test_notification_action" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Send test notification (3 s)" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Send testvarsling (3 sek)" } }
-      }
-    },
-    "test_notification_body" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "This is a test notification from MindDuel" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Dette er en testvarsling fra MindDuel" } }
-      }
-    },
-    "no_friends_yet" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "No friends yet" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Ingen venner ennå" } }
-      }
-    },
     "your_label" : {
+      "extractionState" : "stale",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "You" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Deg" } }
-      }
-    },
-    "settings_title" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Innstillinger" } }
-      }
-    },
-    "settings_account_section" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "ACCOUNT" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "KONTO" } }
-      }
-    },
-    "settings_notifications_label" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Notifications" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Varsler" } }
-      }
-    },
-    "settings_dark_mode_label" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Dark mode" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Mørk modus" } }
-      }
-    },
-    "settings_dark_mode_value" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "System" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "System" } }
-      }
-    },
-    "settings_color_scheme_dark" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Dark" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Mørkt" } }
-      }
-    },
-    "settings_color_scheme_light" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Light" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Lyst" } }
-      }
-    },
-    "settings_color_scheme_system" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "System" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "System" } }
-      }
-    },
-    "settings_language_label" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Language" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Språk" } }
-      }
-    },
-    "settings_language_value" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Norwegian" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Norsk" } }
-      }
-    },
-    "settings_language_picker_title" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select Language" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Velg språk" } }
-      }
-    },
-    "settings_language_system" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "System" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "System" } }
-      }
-    },
-    "settings_language_restart_title" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Restart App" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Start appen på nytt" } }
-      }
-    },
-    "settings_language_restart_message" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Close and reopen MindDuel to apply the new language." } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Lukk og åpne MindDuel igjen for å bruke det nye språket." } }
-      }
-    },
-    "settings_subscription_section" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "SUBSCRIPTION" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "ABONNEMENT" } }
-      }
-    },
-    "settings_free_plan_label" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Free plan: 10 questions per day" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Gratis plan: 10 oppgaver per dag" } }
-      }
-    },
-    "settings_privacy_section" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "PRIVACY" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "PERSONVERN" } }
-      }
-    },
-    "settings_terms_label" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Terms and Privacy" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Vilkår og personvern" } }
-      }
-    },
-    "settings_delete_account_label" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete account and data" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Slett konto og data" } }
-      }
-    },
-    "settings_signout_action" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sign out" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Logg ut" } }
-      }
-    },
-    "signout_title" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sign out?" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Logg ut?" } }
-      }
-    },
-    "signout_message" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Are you sure you want to sign out?" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Er du sikker på at du vil logge ut?" } }
-      }
-    },
-    "flagged_explanation_title" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Flagged for review" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Flagget for gjennomgang" } }
-      }
-    },
-    "flagged_explanation_body" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Activity on this account has been flagged. Average response time under 400 ms over many rounds is suspicious." } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Aktiviteten på denne kontoen er flagget for gjennomgang. Snittsvartid under 400 ms over mange runder er mistenkelig." } }
-      }
-    },
-    "other_profile_subtitle_format" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld years · %@" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "%lld år · %@" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deg"
+          }
+        }
       }
     }
   },

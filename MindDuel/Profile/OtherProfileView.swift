@@ -6,6 +6,7 @@ struct OtherProfileView: View {
     @StateObject private var social = SocialStore.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showFlagExplanation = false
+    @State private var showChallenge = false
 
     private var isFriend: Bool { social.friendUsernames.contains(profile.username) }
     private var hasSentRequest: Bool { social.sentRequestUsernames.contains(profile.username) }
@@ -58,7 +59,7 @@ struct OtherProfileView: View {
                             HStack(spacing: MDSpacing.sm) {
                                 MDModeCard(mode: .pi, score: profile.piScore, level: profile.piLevel, maxLevel: 20, compact: true) { }
                                     .disabled(true)
-                                MDModeCard(mode: .math, score: profile.mathScore, level: profile.mathLevel, maxLevel: 10, compact: true) { }
+                                MDModeCard(mode: .math, score: profile.mathScore, level: profile.mathLevel, maxLevel: 20, compact: true) { }
                                     .disabled(true)
                             }
                         }
@@ -79,11 +80,14 @@ struct OtherProfileView: View {
 
                         // Action buttons
                         HStack(spacing: MDSpacing.sm) {
-                            MDButton(.ghost, title: String(localized: "challenge_action")) { }
-                                .disabled(true)  // M5
                             if isFriend {
-                                MDButton(.ghost, title: "✓ \(String(localized: "friends_section_title"))") { }
-                                    .disabled(true)
+                                MDButton(.primary, title: String(localized: "challenge_action")) {
+                                    showChallenge = true
+                                }
+                                MDButton(.danger, title: String(localized: "remove_friend_action")) {
+                                    social.removeFriend(username: profile.username)
+                                    dismiss()
+                                }
                             } else if hasSentRequest {
                                 MDButton(.ghost, title: String(localized: "friend_request_sent_label")) { }
                                     .disabled(true)
@@ -105,6 +109,9 @@ struct OtherProfileView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: showFlagExplanation)
+        .fullScreenCover(isPresented: $showChallenge) {
+            MultiplayerLobbyView(ownUsername: ownUsername, startAsHost: true, invitedUsername: profile.username)
+        }
     }
 
     // MARK: – Helpers

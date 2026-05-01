@@ -1,0 +1,73 @@
+import SwiftUI
+
+struct ActivityListView: View {
+    @StateObject private var store = MultiplayerStore.shared
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            Color.mdBg.ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                MDTopBar(title: String(localized: "recent_activity_all_title"), leadingAction: { dismiss() }) {
+                    EmptyView()
+                }
+
+                if store.recentActivity.isEmpty {
+                    Spacer()
+                    VStack(spacing: MDSpacing.sm) {
+                        Image(systemName: "clock.badge.xmark")
+                            .font(.system(size: 36))
+                            .foregroundStyle(Color.mdText3)
+                        Text(String(localized: "no_activity_yet"))
+                            .mdStyle(.body)
+                            .foregroundStyle(Color.mdText3)
+                    }
+                    Spacer()
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: MDSpacing.xs) {
+                            ForEach(store.recentActivity) { item in
+                                activityRow(item)
+                            }
+                        }
+                        .padding(.horizontal, MDSpacing.md)
+                        .padding(.vertical, MDSpacing.md)
+                    }
+                }
+            }
+        }
+    }
+
+    private func activityRow(_ item: MultiplayerActivityItem) -> some View {
+        HStack(spacing: MDSpacing.sm) {
+            ZStack(alignment: .bottomTrailing) {
+                MDAvatar(username: item.opponentUsername, size: .sm)
+                Circle()
+                    .fill(item.didWin ? Color.mdGreen : Color.mdRed)
+                    .frame(width: 8, height: 8)
+                    .offset(x: 2, y: 2)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.didWin
+                     ? String(format: String(localized: "activity_won_format"), item.opponentUsername)
+                     : String(format: String(localized: "activity_lost_format"), item.opponentUsername))
+                    .mdStyle(.caption)
+                    .foregroundStyle(Color.mdText)
+                Text(String(format: String(localized: "activity_score_format"),
+                            item.mode == .pi ? String(localized: "mode_pi") : String(localized: "mode_math"),
+                            item.score))
+                    .mdStyle(.micro)
+                    .foregroundStyle(Color.mdText3)
+            }
+            Spacer()
+            Text(item.timeAgoString)
+                .mdStyle(.micro)
+                .foregroundStyle(Color.mdText3)
+        }
+        .padding(MDSpacing.sm)
+        .background(Color.mdSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.mdBorder2, lineWidth: 0.5))
+    }
+}

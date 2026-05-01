@@ -63,4 +63,12 @@ enum RoundEndReason {
         correctCount = 0
         phase = .playing
     }
+
+    /// Restore mid-session state when resuming a saved single-player game.
+    func restoreState(lives: Int, skips: Int, correctCount: Int) {
+        self.lives = max(0, lives)
+        self.skips = max(0, skips)
+        self.correctCount = max(0, correctCount)
+        phase = self.lives == 0 ? .roundOver(reason: .noLives) : .playing
+    }
 }

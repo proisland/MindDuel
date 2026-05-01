@@ -96,6 +96,11 @@ struct UserProfile: Identifiable {
         savePending()
     }
 
+    func removeFriend(username: String) {
+        friendUsernames.remove(username)
+        UserDefaults.standard.set(Array(friendUsernames), forKey: "friendUsernames")
+    }
+
     // MARK: – Mock seeding (called once after first round)
 
     func seedMockRequestIfNeeded() {
