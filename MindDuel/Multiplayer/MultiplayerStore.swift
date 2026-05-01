@@ -60,7 +60,8 @@ import UserNotifications
 
     func createRoom(mode: GameMode, ownUsername: String, invitedUsername: String? = nil) {
         let code = String(UUID().uuidString.prefix(4).uppercased())
-        let host = MultiplayerPlayer(id: "me", username: ownUsername, isHost: true, isReady: true, isYou: true)
+        var host = MultiplayerPlayer(id: "me", username: ownUsername, isHost: true, isReady: true, isYou: true)
+        applyOwnStats(to: &host)
         currentRoom = MultiplayerRoom(id: code, mode: mode, startLevel: 1, players: [host], status: .lobby)
         if let invited = invitedUsername {
             inviteFriend(username: invited, playerID: "u_\(invited)")
@@ -68,9 +69,12 @@ import UserNotifications
     }
 
     func joinMockRoom(ownUsername: String, mode: GameMode = .pi) {
-        let host = MultiplayerPlayer(id: "u1", username: "magnus", isHost: true,  isReady: true)
-        let you  = MultiplayerPlayer(id: "me", username: ownUsername, isHost: false, isReady: false, isYou: true)
-        let bot2 = MultiplayerPlayer(id: "u2", username: "alex",    isHost: false, isReady: false)
+        var host = MultiplayerPlayer(id: "u1", username: "magnus", isHost: true,  isReady: true)
+        host.piLevel = 7;  host.mathLevel = 5;  host.piBestScore = 1240; host.mathBestScore = 980
+        var you  = MultiplayerPlayer(id: "me", username: ownUsername, isHost: false, isReady: false, isYou: true)
+        applyOwnStats(to: &you)
+        var bot2 = MultiplayerPlayer(id: "u2", username: "alex",    isHost: false, isReady: false)
+        bot2.piLevel = 4;  bot2.mathLevel = 8;  bot2.piBestScore = 620;  bot2.mathBestScore = 1510
         currentRoom = MultiplayerRoom(id: "A3BF", mode: mode, startLevel: 1,
                                       players: [host, you, bot2], status: .lobby)
         seedBotReadyStates()
@@ -79,9 +83,26 @@ import UserNotifications
     func inviteFriend(username: String, playerID: String) {
         guard currentRoom != nil else { return }
         guard !(currentRoom?.players.contains(where: { $0.username == username }) ?? false) else { return }
-        let player = MultiplayerPlayer(id: playerID, username: username, isHost: false, isReady: false)
+        var player = MultiplayerPlayer(id: playerID, username: username, isHost: false, isReady: false)
+        // Mock invitee stats — deterministic from username so the lobby line
+        // doesn't jitter between renders. Replace with server data in M5+.
+        let seed = abs(username.hashValue)
+        player.piLevel      = 1 + seed % 12
+        player.mathLevel    = 1 + (seed / 13) % 12
+        player.piBestScore  = (seed % 1500)
+        player.mathBestScore = ((seed / 17) % 1500)
         currentRoom?.players.append(player)
         simulatePlayerReady(playerID: playerID)
+    }
+
+    /// Snapshot the local user's progression stats onto the player record
+    /// so the lobby (#21) and any peers see consistent numbers for the round.
+    private func applyOwnStats(to player: inout MultiplayerPlayer) {
+        let p = ProgressionStore.shared
+        player.piLevel       = p.piLevel
+        player.mathLevel     = p.mathLevel
+        player.piBestScore   = p.piBestScore
+        player.mathBestScore = p.mathBestScore
     }
 
     private func simulatePlayerReady(playerID: String) {

@@ -21,14 +21,6 @@ struct ActiveGamesView: View {
                     LazyVStack(spacing: MDSpacing.xs) {
                         ForEach(store.playingRooms) { room in
                             roomRow(room)
-                                .contextMenu {
-                                    Button(role: .destructive) {
-                                        store.leaveBackgroundRoom(id: room.id)
-                                    } label: {
-                                        Label(String(localized: "discard_game_action"),
-                                              systemImage: "trash")
-                                    }
-                                }
                         }
                     }
                     .padding(.horizontal, MDSpacing.md)
@@ -55,74 +47,93 @@ struct ActiveGamesView: View {
             : String(localized: "mode_math")
         let isMyTurn = room.isMyTurn
 
-        return Button {
-            if room.isStandaloneSolo {
-                resumeSoloRoomID = room.id
-                resumeSoloMode = room.mode
-            } else {
-                store.rejoin(roomID: room.id)
-                showGame = true
-            }
-        } label: {
-            HStack(spacing: MDSpacing.sm) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(room.mode == .pi ? Color.mdAccentSoft : Color.mdPinkSoft)
-                        .frame(width: 40, height: 40)
-                    Text(modeIcon)
-                        .font(.system(size: 18, weight: .heavy))
-                        .foregroundStyle(modeColor)
+        return HStack(spacing: MDSpacing.sm) {
+            // Tappable main area: rejoin / resume
+            Button {
+                if room.isStandaloneSolo {
+                    resumeSoloRoomID = room.id
+                    resumeSoloMode = room.mode
+                } else {
+                    store.rejoin(roomID: room.id)
+                    showGame = true
                 }
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: MDSpacing.xs) {
-                        Text(String(format: String(localized: "multiplayer_room_code_format"), room.id))
-                            .mdStyle(.bodyMd)
-                            .foregroundStyle(Color.mdText)
-                        Text(modeName)
-                            .mdStyle(.micro)
+            } label: {
+                HStack(spacing: MDSpacing.sm) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(room.mode == .pi ? Color.mdAccentSoft : Color.mdPinkSoft)
+                            .frame(width: 40, height: 40)
+                        Text(modeIcon)
+                            .font(.system(size: 18, weight: .heavy))
                             .foregroundStyle(modeColor)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(room.mode == .pi ? Color.mdAccentSoft : Color.mdPinkSoft)
-                            .clipShape(Capsule())
                     }
-                    if room.isStandaloneSolo {
-                        Text(String(localized: "solo_session_subtitle"))
-                            .mdStyle(.caption)
-                            .foregroundStyle(Color.mdText3)
-                    } else {
-                        let opponents = room.players.filter { !$0.isYou }.map { "@\($0.username)" }.joined(separator: ", ")
-                        Text(opponents)
-                            .mdStyle(.caption)
-                            .foregroundStyle(Color.mdText3)
-                    }
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 2) {
-                    if isMyTurn {
-                        Text(String(localized: "multiplayer_your_turn_label"))
-                            .mdStyle(.micro)
-                            .foregroundStyle(Color.mdGreen)
-                    } else {
-                        HStack(spacing: MDSpacing.xxs) {
-                            Circle().fill(Color.mdGreen).frame(width: 6, height: 6)
-                            Text(String(localized: "multiplayer_live_label"))
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: MDSpacing.xs) {
+                            Text(String(format: String(localized: "multiplayer_room_code_format"), room.id))
+                                .mdStyle(.bodyMd)
+                                .foregroundStyle(Color.mdText)
+                            Text(modeName)
                                 .mdStyle(.micro)
-                                .foregroundStyle(Color.mdGreen)
+                                .foregroundStyle(modeColor)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(room.mode == .pi ? Color.mdAccentSoft : Color.mdPinkSoft)
+                                .clipShape(Capsule())
+                        }
+                        if room.isStandaloneSolo {
+                            Text(String(localized: "solo_session_subtitle"))
+                                .mdStyle(.caption)
+                                .foregroundStyle(Color.mdText3)
+                        } else {
+                            let opponents = room.players.filter { !$0.isYou }.map { "@\($0.username)" }.joined(separator: ", ")
+                            Text(opponents)
+                                .mdStyle(.caption)
+                                .foregroundStyle(Color.mdText3)
                         }
                     }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        if isMyTurn {
+                            Text(String(localized: "multiplayer_your_turn_label"))
+                                .mdStyle(.micro)
+                                .foregroundStyle(Color.mdGreen)
+                        } else {
+                            HStack(spacing: MDSpacing.xxs) {
+                                Circle().fill(Color.mdGreen).frame(width: 6, height: 6)
+                                Text(String(localized: "multiplayer_live_label"))
+                                    .mdStyle(.micro)
+                                    .foregroundStyle(Color.mdGreen)
+                            }
+                        }
+                    }
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Color.mdText3)
                 }
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Color.mdText3)
+                .contentShape(Rectangle())
             }
-            .padding(MDSpacing.md)
-            .background(isMyTurn ? Color.mdGreen.opacity(0.06) : Color.mdSurface)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(
-                isMyTurn ? Color.mdGreen.opacity(0.5) : Color.mdBorder2,
-                lineWidth: isMyTurn ? 1 : 0.5))
+            .buttonStyle(.plain)
+
+            // Visible leave/discard affordance (issue #23) — long-press menu
+            // alone wasn't discoverable, so we expose a tappable trash icon.
+            Button {
+                store.leaveBackgroundRoom(id: room.id)
+            } label: {
+                Image(systemName: "trash")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color.mdRed)
+                    .frame(width: 36, height: 36)
+                    .background(Color.mdRedSoft)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(String(localized: "discard_game_action"))
         }
-        .buttonStyle(.plain)
+        .padding(MDSpacing.md)
+        .background(isMyTurn ? Color.mdGreen.opacity(0.06) : Color.mdSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(
+            isMyTurn ? Color.mdGreen.opacity(0.5) : Color.mdBorder2,
+            lineWidth: isMyTurn ? 1 : 0.5))
     }
 }

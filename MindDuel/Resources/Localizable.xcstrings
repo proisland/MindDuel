@@ -749,6 +749,23 @@
         }
       }
     },
+    "multiplayer_player_stats_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Level %1$d · %2$dp"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nivå %1$d · %2$dp"
+          }
+        }
+      }
+    },
     "multiplayer_players_label_format" : {
       "extractionState" : "stale",
       "localizations" : {
