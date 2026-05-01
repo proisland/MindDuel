@@ -5,6 +5,8 @@ struct ActiveGamesView: View {
     @StateObject private var store = MultiplayerStore.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showGame = false
+    @State private var resumeSoloMode: GameMode? = nil
+    @State private var resumeSoloRoomID: String? = nil
 
     var body: some View {
         ZStack {
@@ -29,6 +31,12 @@ struct ActiveGamesView: View {
         .fullScreenCover(isPresented: $showGame) {
             MultiplayerGameView(ownUsername: ownUsername)
         }
+        .fullScreenCover(item: $resumeSoloMode) { mode in
+            switch mode {
+            case .pi:   PiGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .math: MathGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            }
+        }
     }
 
     private func roomRow(_ room: MultiplayerRoom) -> some View {
@@ -40,8 +48,13 @@ struct ActiveGamesView: View {
         let isMyTurn = room.isMyTurn
 
         return Button {
-            store.rejoin(roomID: room.id)
-            showGame = true
+            if room.isStandaloneSolo {
+                resumeSoloRoomID = room.id
+                resumeSoloMode = room.mode
+            } else {
+                store.rejoin(roomID: room.id)
+                showGame = true
+            }
         } label: {
             HStack(spacing: MDSpacing.sm) {
                 ZStack {

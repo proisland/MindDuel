@@ -158,6 +158,54 @@ import UserNotifications
         backgroundRooms.removeAll { $0.id == id }
     }
 
+    // MARK: – Standalone solo (Pi/Math) sessions
+
+    /// Save a standalone solo Pi session to backgroundRooms. Returns the new room id.
+    func saveStandaloneSoloPi(ownUsername: String,
+                              lives: Int, skips: Int,
+                              score: Int, correctCount: Int,
+                              currentDigit: Int) -> String {
+        let id = "SOLO-" + String(UUID().uuidString.prefix(4).uppercased())
+        var player = MultiplayerPlayer(id: "me", username: ownUsername,
+                                       isHost: true, isReady: true, isYou: true)
+        player.lives = lives
+        player.skips = skips
+        player.score = score
+        player.correctCount = correctCount
+        var room = MultiplayerRoom(id: id, mode: .pi, startLevel: 1,
+                                   players: [player], status: .playing)
+        room.myPiDigitIndex = currentDigit
+        room.isStandaloneSolo = true
+        backgroundRooms.append(room)
+        return id
+    }
+
+    /// Save a standalone solo Math session to backgroundRooms. Returns the new room id.
+    func saveStandaloneSoloMath(ownUsername: String,
+                                lives: Int, skips: Int,
+                                score: Int, correctCount: Int,
+                                startLevel: Int) -> String {
+        let id = "SOLO-" + String(UUID().uuidString.prefix(4).uppercased())
+        var player = MultiplayerPlayer(id: "me", username: ownUsername,
+                                       isHost: true, isReady: true, isYou: true)
+        player.lives = lives
+        player.skips = skips
+        player.score = score
+        player.correctCount = correctCount
+        var room = MultiplayerRoom(id: id, mode: .math, startLevel: startLevel,
+                                   players: [player], status: .playing)
+        room.isStandaloneSolo = true
+        backgroundRooms.append(room)
+        return id
+    }
+
+    /// Remove and return a standalone solo room (used when resuming).
+    func popStandaloneSolo(roomID: String) -> MultiplayerRoom? {
+        guard let idx = backgroundRooms.firstIndex(where: { $0.id == roomID && $0.isStandaloneSolo })
+        else { return nil }
+        return backgroundRooms.remove(at: idx)
+    }
+
     // MARK: – Gameplay
 
     func submitAnswer(correct: Bool, answerTime: Double) {

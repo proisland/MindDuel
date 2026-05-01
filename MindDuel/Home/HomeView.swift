@@ -29,6 +29,7 @@ struct HomeView: View {
     @StateObject private var multiplayer = MultiplayerStore.shared
     @State private var activeMode: GameMode? = nil
     @State private var activeDestination: HomeDestination? = nil
+    @State private var resumeSoloRoomID: String? = nil
 
     private var pendingBadge: Int { social.totalPendingCount }
     private var inviteBadge: Int  { multiplayer.pendingInviteCount }
@@ -127,9 +128,14 @@ struct HomeView: View {
         .onAppear { progression.checkResetQuota() }
         .fullScreenCover(item: $activeMode) { mode in
             switch mode {
-            case .pi:   PiGameView(username: username)
-            case .math: MathGameView(username: username)
+            case .pi:   PiGameView(username: username, resumeRoomID: resumeSoloRoomID)
+            case .math: MathGameView(username: username, resumeRoomID: resumeSoloRoomID)
             }
+        }
+        .onChange(of: activeMode) { mode in
+            // Clear pending resume id once the cover is dismissed so the next
+            // fresh open from a mode card doesn't accidentally try to resume.
+            if mode == nil { resumeSoloRoomID = nil }
         }
         .fullScreenCover(item: $activeDestination) { dest in
             switch dest {
@@ -150,8 +156,14 @@ struct HomeView: View {
         let isMyTurn = multiplayer.hasMyTurnInBackground
         return Button {
             if playingRooms.count == 1 {
-                multiplayer.rejoin(roomID: playingRooms[0].id)
-                activeDestination = .multiplayerGame
+                let room = playingRooms[0]
+                if room.isStandaloneSolo {
+                    resumeSoloRoomID = room.id
+                    activeMode = room.mode
+                } else {
+                    multiplayer.rejoin(roomID: room.id)
+                    activeDestination = .multiplayerGame
+                }
             } else {
                 activeDestination = .activeGames
             }

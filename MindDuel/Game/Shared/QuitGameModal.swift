@@ -3,6 +3,7 @@ import SwiftUI
 struct QuitGameModal: View {
     let onQuit: () -> Void
     let onContinue: () -> Void
+    var onSave: (() -> Void)? = nil
 
     var body: some View {
         ZStack {
@@ -22,13 +23,16 @@ struct QuitGameModal: View {
                 VStack(spacing: MDSpacing.xs) {
                     Text(String(localized: "quit_game_title"))
                         .mdStyle(.heading)
-                    Text(String(localized: "quit_game_message"))
+                    Text(String(localized: onSave != nil ? "solo_quit_message" : "quit_game_message"))
                         .mdStyle(.caption)
                         .foregroundStyle(Color.mdText2)
                         .multilineTextAlignment(.center)
                 }
 
                 VStack(spacing: MDSpacing.xs) {
+                    if let onSave {
+                        MDButton(.primary, title: String(localized: "solo_save_exit_action"), action: onSave)
+                    }
                     MDButton(.danger, title: String(localized: "quit_confirm_action"), action: onQuit)
                     MDButton(.ghost, title: String(localized: "continue_playing_action"), action: onContinue)
                 }

@@ -48,6 +48,7 @@ struct MultiplayerRoom: Identifiable {
     var status: RoomStatus
     var currentTurnIndex: Int = 0
     var myPiDigitIndex: Int = 0  // persists pi progress across rejoin
+    var isStandaloneSolo: Bool = false  // saved Pi/Math single-player session (not multiplayer)
 
     var activePlayers: [MultiplayerPlayer] { players.filter { !$0.isEliminated } }
 
