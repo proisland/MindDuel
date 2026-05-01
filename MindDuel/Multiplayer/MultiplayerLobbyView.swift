@@ -49,9 +49,7 @@ struct MultiplayerLobbyView: View {
             if status == .playing && !showGame { showGame = true }
         }
         .onChange(of: showGame) { isShowing in
-            if !isShowing && store.currentRoom?.status != .playing {
-                dismiss()
-            }
+            if !isShowing { dismiss() }
         }
         .sheet(isPresented: $showFriendPicker) {
             friendPickerSheet

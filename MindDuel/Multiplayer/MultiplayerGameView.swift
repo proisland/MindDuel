@@ -74,9 +74,7 @@ struct MultiplayerGameView: View {
             store.cancelGameReminderNotification()
         }
         .onDisappear {
-            if store.currentRoom?.status == .playing {
-                store.dismissGame()
-            }
+            store.dismissGame()
         }
     }
 
@@ -110,6 +108,9 @@ struct MultiplayerGameView: View {
     private var liveTopBar: some View {
         HStack(spacing: 0) {
             Button {
+                if store.currentRoom?.status == .playing {
+                    store.dismissGame()
+                }
                 dismiss()
             } label: {
                 Image(systemName: "chevron.left")

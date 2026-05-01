@@ -74,6 +74,14 @@ import UserNotifications
             if let idx = currentRoom?.players.firstIndex(where: { $0.id == "u2" }) {
                 currentRoom?.players[idx].isReady = true
             }
+            // If user already pressed Ready before bots, auto-start now
+            let youReady = currentRoom?.players.first(where: { $0.isYou })?.isReady == true
+            let isHost   = currentRoom?.players.first(where: { $0.isYou })?.isHost == true
+            if allReady && youReady && !isHost {
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                guard !Task.isCancelled else { return }
+                startGame()
+            }
         }
     }
 
@@ -107,10 +115,12 @@ import UserNotifications
         guard let room = currentRoom else { return }
         botTask?.cancel()
         botTask = nil
-        if !backgroundRooms.contains(where: { $0.id == room.id }) {
-            backgroundRooms.append(room)
+        if room.status == .playing {
+            if !backgroundRooms.contains(where: { $0.id == room.id }) {
+                backgroundRooms.append(room)
+            }
+            scheduleGameReminderNotification()
         }
-        if room.status == .playing { scheduleGameReminderNotification() }
         currentRoom = nil
     }
 
