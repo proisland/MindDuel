@@ -94,7 +94,7 @@ struct SettingsView: View {
                             debugSection
                         }
 
-                        Text("MindDuel M4")
+                        Text("MindDuel M5")
                             .mdStyle(.micro)
                             .foregroundStyle(Color.mdText3.opacity(showDebugSection ? 0.6 : 0.2))
                             .frame(maxWidth: .infinity, alignment: .center)
