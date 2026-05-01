@@ -33,6 +33,7 @@ struct MultiplayerPlayer: Identifiable, Equatable {
     var lives: Int = 5
     var skips: Int = 5
     var score: Int = 0
+    var correctCount: Int = 0
     var isEliminated: Bool = false
     var isYou: Bool = false
 }

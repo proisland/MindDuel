@@ -84,8 +84,10 @@ struct OtherProfileView: View {
                                 MDButton(.primary, title: String(localized: "challenge_action")) {
                                     showChallenge = true
                                 }
-                                MDButton(.ghost, title: "✓ \(String(localized: "friends_section_title"))") { }
-                                    .disabled(true)
+                                MDButton(.danger, title: String(localized: "remove_friend_action")) {
+                                    social.removeFriend(username: profile.username)
+                                    dismiss()
+                                }
                             } else if hasSentRequest {
                                 MDButton(.ghost, title: String(localized: "friend_request_sent_label")) { }
                                     .disabled(true)

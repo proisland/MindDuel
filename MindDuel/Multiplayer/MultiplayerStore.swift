@@ -11,6 +11,7 @@ import UserNotifications
     @Published var lastGameEvent: GameEvent?
 
     private var botTask: Task<Void, Never>?
+    private var backgroundSimTask: Task<Void, Never>?
 
     private init() {}
 
@@ -119,15 +120,17 @@ import UserNotifications
             if !backgroundRooms.contains(where: { $0.id == room.id }) {
                 backgroundRooms.append(room)
             }
-            scheduleGameReminderNotification()
+            startBackgroundSimulation(roomID: room.id)
         }
         currentRoom = nil
     }
 
     func rejoin(roomID: String) {
+        backgroundSimTask?.cancel()
+        backgroundSimTask = nil
+        cancelGameReminderNotification()
         if let idx = backgroundRooms.firstIndex(where: { $0.id == roomID }) {
             currentRoom = backgroundRooms.remove(at: idx)
-            cancelGameReminderNotification()
             scheduleBotTurn()
         }
     }
@@ -135,6 +138,9 @@ import UserNotifications
     func leaveRoom() {
         botTask?.cancel()
         botTask = nil
+        backgroundSimTask?.cancel()
+        backgroundSimTask = nil
+        cancelGameReminderNotification()
         if let id = currentRoom?.id {
             backgroundRooms.removeAll { $0.id == id }
         }
@@ -244,6 +250,7 @@ import UserNotifications
         if correct {
             let pts = Int(100.0 / max(0.5, answerTime))
             room.players[playerIdx].score += pts
+            room.players[playerIdx].correctCount += 1
         } else {
             room.players[playerIdx].lives = max(0, room.players[playerIdx].lives - 1)
             if room.players[playerIdx].lives == 0 {
@@ -261,6 +268,43 @@ import UserNotifications
         room.currentTurnIndex = (room.currentTurnIndex + 1) % active.count
     }
 
+    private func startBackgroundSimulation(roomID: String) {
+        backgroundSimTask?.cancel()
+        backgroundSimTask = Task {
+            while true {
+                guard !Task.isCancelled else { return }
+                guard let idx = backgroundRooms.firstIndex(where: { $0.id == roomID }) else { return }
+                let room = backgroundRooms[idx]
+                guard room.status == .playing else { return }
+                if room.isMyTurn {
+                    sendTurnNotification()
+                    return
+                }
+                let delay = UInt64(Double.random(in: 1_200_000_000...2_500_000_000))
+                try? await Task.sleep(nanoseconds: delay)
+                guard !Task.isCancelled else { return }
+                guard let roomIdx = backgroundRooms.firstIndex(where: { $0.id == roomID }) else { return }
+                var updatedRoom = backgroundRooms[roomIdx]
+                guard updatedRoom.status == .playing,
+                      let bot = updatedRoom.currentPlayer,
+                      !bot.isYou,
+                      let botIdx = updatedRoom.players.firstIndex(where: { $0.id == bot.id }) else {
+                    if backgroundRooms[roomIdx].isMyTurn { sendTurnNotification() }
+                    return
+                }
+                let correct = Double.random(in: 0...1) > 0.28
+                let answerTime = Double.random(in: 0.8...3.5)
+                applyResult(to: &updatedRoom, playerIdx: botIdx, correct: correct, answerTime: answerTime)
+                advanceTurn(&updatedRoom)
+                backgroundRooms[roomIdx] = updatedRoom
+                if updatedRoom.status == .finished {
+                    backgroundRooms.remove(at: roomIdx)
+                    return
+                }
+            }
+        }
+    }
+
     private func recordActivity(_ room: MultiplayerRoom) {
         guard let me = room.players.first(where: { $0.isYou }) else { return }
         let opponent = room.players.first(where: { !$0.isYou })
@@ -273,7 +317,7 @@ import UserNotifications
         )
         recentActivity.insert(item, at: 0)
         if recentActivity.count > 10 { recentActivity = Array(recentActivity.prefix(10)) }
-        ProgressionStore.shared.recordMultiplayerScore(mode: room.mode, score: me.score)
+        ProgressionStore.shared.recordMultiplayerScore(mode: room.mode, score: me.score, correctCount: me.correctCount)
     }
 
     private func sendTurnNotification() {

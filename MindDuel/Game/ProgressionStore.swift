@@ -188,11 +188,13 @@ import SwiftUI
 
     // MARK: – Multiplayer integration
 
-    func recordMultiplayerScore(mode: GameMode, score: Int) {
+    func recordMultiplayerScore(mode: GameMode, score: Int, correctCount: Int = 0) {
         if mode == .pi {
             if score > piBestScore { set(piBestScore: score) }
+            if correctCount > 0 { set(piPosition: piPosition + correctCount) }
         } else {
             if score > mathBestScore { set(mathBestScore: score) }
+            for _ in 0..<correctCount { advanceMathLevel() }
         }
         incrementRounds()
     }
