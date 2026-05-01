@@ -315,6 +315,23 @@
         }
       }
     },
+    "discard_game_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discard"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forkast"
+          }
+        }
+      }
+    },
     "flagged_explanation_body" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2212,6 +2229,7 @@
       }
     },
     "solo_session_subtitle" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2223,22 +2241,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Singel-økt"
-          }
-        }
-      }
-    },
-    "discard_game_action" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Discard"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Forkast"
           }
         }
       }
