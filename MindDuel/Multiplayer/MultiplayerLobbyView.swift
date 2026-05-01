@@ -119,9 +119,16 @@ struct MultiplayerLobbyView: View {
         VStack(alignment: .leading, spacing: MDSpacing.xs) {
             sectionLabel(String(localized: "multiplayer_start_level_label"))
             HStack {
-                Text(String(format: String(localized: "multiplayer_start_level_value"), room.startLevel))
-                    .mdStyle(.caption)
-                    .foregroundStyle(Color.mdText)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(String(format: String(localized: "multiplayer_start_level_value"), room.startLevel))
+                        .mdStyle(.caption)
+                        .foregroundStyle(Color.mdText)
+                    // Curriculum label (issue #40) — same labelling as MathGameView
+                    // so the host knows what school level the start level maps to.
+                    Text(MathProblemGenerator.curriculumLabel(forLevel: room.startLevel))
+                        .mdStyle(.micro)
+                        .foregroundStyle(Color.mdText3)
+                }
                 Spacer()
                 HStack(spacing: MDSpacing.sm) {
                     Button {
