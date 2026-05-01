@@ -71,7 +71,7 @@ struct MultiplayerGameView: View {
                 elapsedSeconds = 0
                 feedbackIsCorrect = nil
                 selectedIndex = nil
-                refreshQuestion()
+                refreshMathProblem()
             }
         }
         .onChange(of: store.lastGameEvent?.id) { _ in
@@ -85,7 +85,7 @@ struct MultiplayerGameView: View {
             let saved = store.currentRoom?.myPiDigitIndex ?? 0
             piSessionStart = saved > 0 ? saved : max(0, (ProgressionStore.shared.piLevel - 1) * 50)
             currentDigitIndex = 0
-            refreshQuestion()
+            refreshMathProblem()
         }
         .onDisappear {
             store.dismissGame()
@@ -606,7 +606,7 @@ struct MultiplayerGameView: View {
         if elapsedSeconds >= 10.0 { handleSkip() }
     }
 
-    private func refreshQuestion() {
+    private func refreshMathProblem() {
         guard let room = store.currentRoom else { return }
         if room.mode == .math {
             mathProblem = MathProblemGenerator.generate(level: max(1, room.startLevel))

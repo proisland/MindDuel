@@ -67,11 +67,11 @@ import UserNotifications
         }
     }
 
-    func joinMockRoom(ownUsername: String) {
+    func joinMockRoom(ownUsername: String, mode: GameMode = .pi) {
         let host = MultiplayerPlayer(id: "u1", username: "magnus", isHost: true,  isReady: true)
         let you  = MultiplayerPlayer(id: "me", username: ownUsername, isHost: false, isReady: false, isYou: true)
         let bot2 = MultiplayerPlayer(id: "u2", username: "alex",    isHost: false, isReady: false)
-        currentRoom = MultiplayerRoom(id: "A3BF", mode: .math, startLevel: 1,
+        currentRoom = MultiplayerRoom(id: "A3BF", mode: mode, startLevel: 1,
                                       players: [host, you, bot2], status: .lobby)
         seedBotReadyStates()
     }

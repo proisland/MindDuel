@@ -2211,6 +2211,38 @@
         }
       }
     },
+    "solo_session_subtitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Single-player session"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Singel-økt"
+          }
+        }
+      }
+    },
+    "discard_game_action" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discard"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forkast"
+          }
+        }
+      }
+    },
     "stats_friends_count_label" : {
       "extractionState" : "stale",
       "localizations" : {

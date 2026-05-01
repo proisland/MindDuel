@@ -14,6 +14,9 @@ struct MathGameView: View {
     @State private var feedbackIsCorrect: Bool? = nil
     @State private var showQuitModal     = false
     @State private var roundResult:      ProgressionStore.RoundResult? = nil
+    // Snapshot of the user's mathLevel at round start. The score multiplier uses
+    // this fixed value so a player who levels up mid-round doesn't retroactively
+    // boost the score for digits they answered at lower difficulty.
     @State private var startLevel:       Int
 
     @Environment(\.dismiss) private var dismiss
