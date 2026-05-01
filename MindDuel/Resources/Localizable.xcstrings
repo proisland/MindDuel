@@ -630,38 +630,6 @@
         }
       }
     },
-    "multiplayer_player_stats_format" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Level %1$d · %2$dp"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nivå %1$d · %2$dp"
-          }
-        }
-      }
-    },
-    "multiplayer_leave_lobby_action" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Leave lobby"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Forlat lobby"
-          }
-        }
-      }
-    },
     "multiplayer_invite_label" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -777,6 +745,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "MODUS"
+          }
+        }
+      }
+    },
+    "multiplayer_player_stats_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Level %1$d · %2$dp"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nivå %1$d · %2$dp"
           }
         }
       }

@@ -25,7 +25,6 @@ struct MultiplayerLobbyView: View {
                             if isHost(room) && room.mode == .math { startLevelSection(room: room) }
                             playersSection(room: room)
                             startButton(room: room)
-                            leaveButton
                         }
                     }
                     .padding(.top, MDSpacing.lg)
@@ -245,15 +244,6 @@ struct MultiplayerLobbyView: View {
                 if !progression.isQuotaExhausted { store.toggleReady() }
             }
             .disabled(youReady || progression.isQuotaExhausted)
-        }
-    }
-
-    // MARK: – Leave lobby (issue #23)
-
-    private var leaveButton: some View {
-        MDButton(.ghost, title: String(localized: "multiplayer_leave_lobby_action")) {
-            store.leaveRoom()
-            dismiss()
         }
     }
 
