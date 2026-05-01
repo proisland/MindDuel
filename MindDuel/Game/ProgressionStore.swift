@@ -52,7 +52,13 @@ import SwiftUI
     var isQuotaExhausted: Bool  { dailyUsed >= Self.dailyQuota }
     var isNearQuota: Bool       { dailyUsed >= 16 }
 
-    var piLevel: Int { min(20, piPosition / 50 + 1) }
+    var piLevel: Int { Self.piLevel(forPosition: piPosition) }
+
+    /// Pure formula: which Pi level a given absolute digit position belongs to (1–20).
+    /// Each level covers 50 digits; capped at 20.
+    static func piLevel(forPosition position: Int) -> Int {
+        min(20, max(0, position) / 50 + 1)
+    }
 
     func checkResetQuota() {
         let lastReset = Date(timeIntervalSince1970: quotaResetEpoch)
