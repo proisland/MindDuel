@@ -22,7 +22,7 @@ struct MultiplayerLobbyView: View {
                     VStack(alignment: .leading, spacing: MDSpacing.lg) {
                         if let room = store.currentRoom {
                             modeSection(room: room, editable: isHost(room))
-                            if isHost(room) { startLevelSection(room: room) }
+                            if isHost(room) && room.mode == .math { startLevelSection(room: room) }
                             playersSection(room: room)
                             startButton(room: room)
                         }

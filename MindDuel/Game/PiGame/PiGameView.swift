@@ -168,7 +168,7 @@ struct PiGameView: View {
                 .mdStyle(.bodyMd)
             Spacer()
             MDButton(.ghost, title: String(localized: "back_to_home_action")) {
-                finaliseRound(won: false)
+                finaliseRound(won: true)
                 dismiss()
             }
             .frame(width: 80)

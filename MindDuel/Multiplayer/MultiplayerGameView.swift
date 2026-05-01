@@ -5,6 +5,7 @@ struct MultiplayerGameView: View {
 
     @StateObject private var store     = MultiplayerStore.shared
     @StateObject private var engine    = GameEngine()
+    @StateObject private var progression = ProgressionStore.shared
     @Environment(\.dismiss) private var dismiss
 
     @State private var currentDigitIndex: Int   = 0
@@ -15,6 +16,7 @@ struct MultiplayerGameView: View {
     @State private var showScoreBreakdown       = false
     @State private var breakdownPlayer: MultiplayerPlayer? = nil
     @State private var toastOpacity: Double     = 0
+    @State private var showSoloQuitModal        = false
 
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
@@ -54,6 +56,10 @@ struct MultiplayerGameView: View {
 
             if showScoreBreakdown, let player = breakdownPlayer {
                 scoreBreakdownModal(player: player)
+            }
+
+            if showSoloQuitModal {
+                soloQuitModal
             }
         }
         .onReceive(timer) { _ in handleTimerTick() }
@@ -103,6 +109,13 @@ struct MultiplayerGameView: View {
                 waitingContent(room: room)
             }
         }
+        .overlay(alignment: .top) {
+            if progression.isQuotaExhausted && room.status == .playing {
+                quotaExhaustedBanner
+                    .padding(.top, 60)
+                    .padding(.horizontal, MDSpacing.md)
+            }
+        }
     }
 
     // MARK: – Topbar with LIVE indicator
@@ -110,10 +123,13 @@ struct MultiplayerGameView: View {
     private var liveTopBar: some View {
         HStack(spacing: 0) {
             Button {
-                if store.currentRoom?.status == .playing {
-                    store.dismissGame()
+                guard let room = store.currentRoom else { dismiss(); return }
+                if room.status == .playing && room.players.count == 1 {
+                    showSoloQuitModal = true
+                } else {
+                    if room.status == .playing { store.dismissGame() }
+                    dismiss()
                 }
-                dismiss()
             } label: {
                 Image(systemName: "chevron.left")
                     .foregroundStyle(Color.mdText2)
@@ -314,7 +330,7 @@ struct MultiplayerGameView: View {
                 DigitButton(digit: digit, feedbackState: piButtonState(for: digit)) {
                     handlePiTap(digit)
                 }
-                .disabled(feedbackIsCorrect != nil)
+                .disabled(feedbackIsCorrect != nil || progression.isQuotaExhausted)
             }
         }
     }
@@ -329,7 +345,7 @@ struct MultiplayerGameView: View {
                 ) {
                     handleMathTap(i)
                 }
-                .disabled(feedbackIsCorrect != nil)
+                .disabled(feedbackIsCorrect != nil || progression.isQuotaExhausted)
             }
         }
     }
@@ -444,6 +460,64 @@ struct MultiplayerGameView: View {
         }
     }
 
+    // MARK: – Quota banner
+
+    private var quotaExhaustedBanner: some View {
+        HStack(spacing: MDSpacing.sm) {
+            Image(systemName: "lock.fill")
+                .foregroundStyle(Color.mdAmber)
+            Text(String(localized: "quota_exhausted_message"))
+                .mdStyle(.bodyMd)
+            Spacer()
+            MDButton(.ghost, title: String(localized: "back_to_home_action")) {
+                store.dismissGame()
+                dismiss()
+            }
+            .frame(width: 80)
+        }
+        .padding(MDSpacing.md)
+        .background(Color.mdAmberSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    // MARK: – Solo quit modal
+
+    private var soloQuitModal: some View {
+        ZStack {
+            Color.black.opacity(0.85).ignoresSafeArea()
+                .onTapGesture { showSoloQuitModal = false }
+            VStack(spacing: MDSpacing.md) {
+                VStack(spacing: MDSpacing.xs) {
+                    Text(String(localized: "quit_game_title"))
+                        .mdStyle(.heading)
+                        .foregroundStyle(Color.mdText)
+                    Text(String(localized: "solo_quit_message"))
+                        .mdStyle(.body)
+                        .foregroundStyle(Color.mdText2)
+                        .multilineTextAlignment(.center)
+                }
+                MDButton(.primary, title: String(localized: "solo_save_exit_action")) {
+                    showSoloQuitModal = false
+                    store.dismissGame()
+                    dismiss()
+                }
+                MDButton(.ghost, title: String(localized: "quit_confirm_action")) {
+                    showSoloQuitModal = false
+                    store.leaveRoom()
+                    dismiss()
+                }
+                MDButton(.ghost, title: String(localized: "continue_playing_action")) {
+                    showSoloQuitModal = false
+                }
+            }
+            .padding(MDSpacing.lg)
+            .background(Color.mdSurface)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.mdBorder2, lineWidth: 0.5))
+            .padding(.horizontal, MDSpacing.lg)
+        }
+    }
+
     // MARK: – Pi helpers
 
     private var piSequenceDisplay: String {
@@ -476,7 +550,8 @@ struct MultiplayerGameView: View {
     // MARK: – Input handling
 
     private func handlePiTap(_ digit: Int) {
-        guard feedbackIsCorrect == nil, let room = store.currentRoom, room.isMyTurn else { return }
+        guard feedbackIsCorrect == nil, !progression.isQuotaExhausted,
+              let room = store.currentRoom, room.isMyTurn else { return }
         let target = PiData.digits[ProgressionStore.shared.piPosition + currentDigitIndex]
         let correct = digit == target
         selectedIndex = digit
@@ -495,7 +570,8 @@ struct MultiplayerGameView: View {
     }
 
     private func handleMathTap(_ index: Int) {
-        guard feedbackIsCorrect == nil, let room = store.currentRoom, room.isMyTurn else { return }
+        guard feedbackIsCorrect == nil, !progression.isQuotaExhausted,
+              let room = store.currentRoom, room.isMyTurn else { return }
         let correct = mathProblem.options[index] == mathProblem.correctAnswer
         selectedIndex = index
         feedbackIsCorrect = correct
@@ -516,7 +592,8 @@ struct MultiplayerGameView: View {
     }
 
     private func handleTimerTick() {
-        guard let room = store.currentRoom, room.isMyTurn, feedbackIsCorrect == nil else { return }
+        guard let room = store.currentRoom, room.isMyTurn,
+              feedbackIsCorrect == nil, !progression.isQuotaExhausted else { return }
         elapsedSeconds = min(elapsedSeconds + 0.1, 10.0)
         if elapsedSeconds >= 10.0 { handleSkip() }
     }

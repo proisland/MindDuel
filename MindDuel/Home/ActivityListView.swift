@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ActivityListView: View {
-    let activity: [MultiplayerActivityItem]
+    @StateObject private var store = MultiplayerStore.shared
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -13,7 +13,7 @@ struct ActivityListView: View {
                     EmptyView()
                 }
 
-                if activity.isEmpty {
+                if store.recentActivity.isEmpty {
                     Spacer()
                     VStack(spacing: MDSpacing.sm) {
                         Image(systemName: "clock.badge.xmark")
@@ -27,7 +27,7 @@ struct ActivityListView: View {
                 } else {
                     ScrollView {
                         LazyVStack(spacing: MDSpacing.xs) {
-                            ForEach(activity) { item in
+                            ForEach(store.recentActivity) { item in
                                 activityRow(item)
                             }
                         }
@@ -54,7 +54,9 @@ struct ActivityListView: View {
                      : String(format: String(localized: "activity_lost_format"), item.opponentUsername))
                     .mdStyle(.caption)
                     .foregroundStyle(Color.mdText)
-                Text("\(item.mode == .pi ? String(localized: "mode_pi") : String(localized: "mode_math")) · +\(item.score)p")
+                Text(String(format: String(localized: "activity_score_format"),
+                            item.mode == .pi ? String(localized: "mode_pi") : String(localized: "mode_math"),
+                            item.score))
                     .mdStyle(.micro)
                     .foregroundStyle(Color.mdText3)
             }

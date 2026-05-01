@@ -105,8 +105,8 @@ import SwiftUI
                 set(piPosition: max(piFloor, piPosition - rollback))
             }
         }
-        let pb = score > 0 && score > piBestScore
-        if pb { set(piBestScore: score) }
+        let pb = score > 0
+        if pb { set(piBestScore: piBestScore + score) }
         incrementRounds()
         checkAntiCheat(avgTime: avgTime, correctCount: correctCount)
         return RoundResult(score: score, isPersonalBest: pb)
@@ -133,8 +133,8 @@ import SwiftUI
             let newProgress  = total % Self.mathLevelUpThreshold
             set(mathLevel: newLevel, mathLevelProgress: newProgress)
         }
-        let pb = score > 0 && score > mathBestScore
-        if pb { set(mathBestScore: score) }
+        let pb = score > 0
+        if pb { set(mathBestScore: mathBestScore + score) }
         incrementRounds()
         checkAntiCheat(avgTime: avgTime, correctCount: correctCount)
         return RoundResult(score: score, isPersonalBest: pb)

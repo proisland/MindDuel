@@ -137,7 +137,7 @@ struct HomeView: View {
             case .scoreboard:      ScoreboardView(ownUsername: username)
             case .multiplayerHost: MultiplayerLobbyView(ownUsername: username, startAsHost: true)
             case .multiplayerJoin: MultiplayerLobbyView(ownUsername: username, startAsHost: false)
-            case .activityList:    ActivityListView(activity: multiplayer.recentActivity)
+            case .activityList:    ActivityListView()
             case .multiplayerGame: MultiplayerGameView(ownUsername: username)
             case .activeGames:     ActiveGamesView(ownUsername: username)
             }
