@@ -2,8 +2,8 @@ import SwiftUI
 
 struct ScoreboardView: View {
     let ownUsername: String
-    @StateObject private var social = SocialStore.shared
-    @StateObject private var progression = ProgressionStore.shared
+    @ObservedObject private var social = SocialStore.shared
+    @ObservedObject private var progression = ProgressionStore.shared
     @Environment(\.dismiss) private var dismiss
     @State private var selectedTab = 2          // default: Globalt
     @State private var selectedProfile: UserProfile? = nil

@@ -24,9 +24,9 @@ private enum HomeDestination: Identifiable {
 struct HomeView: View {
     let username: String
     @EnvironmentObject private var authState: AuthState
-    @StateObject private var progression = ProgressionStore.shared
-    @StateObject private var social      = SocialStore.shared
-    @StateObject private var multiplayer = MultiplayerStore.shared
+    @ObservedObject private var progression = ProgressionStore.shared
+    @ObservedObject private var social      = SocialStore.shared
+    @ObservedObject private var multiplayer = MultiplayerStore.shared
     @State private var activeMode: GameMode? = nil
     @State private var activeDestination: HomeDestination? = nil
     @State private var resumeSoloRoomID: String? = nil
@@ -126,6 +126,16 @@ struct HomeView: View {
             }
         }
         .onAppear { progression.checkResetQuota() }
+        // Two intentional entry points to single-player play:
+        //   • Mode cards here → PiGameView / MathGameView (this branch).
+        //     Quick daily-practice flow with a polished round-end summary,
+        //     replay button, and personal-best feedback.
+        //   • Multiplayer card → MultiplayerLobbyView with one player.
+        //     Same room model used for friends; less rich UX, but the user
+        //     is in a flow where they may add opponents.
+        // Both paths persist mid-session state via the shared
+        // MultiplayerStore.backgroundRooms infra (`isStandaloneSolo` flag
+        // distinguishes which UI to resume in — see ActiveGamesView).
         .fullScreenCover(item: $activeMode) { mode in
             switch mode {
             case .pi:   PiGameView(username: username, resumeRoomID: resumeSoloRoomID)

@@ -5,15 +5,44 @@ import UserNotifications
     static let shared = MultiplayerStore()
 
     @Published var currentRoom: MultiplayerRoom?
-    @Published var backgroundRooms: [MultiplayerRoom] = []
-    @Published var pendingInviteCount: Int = 1
-    @Published var recentActivity: [MultiplayerActivityItem] = []
+    @Published var backgroundRooms: [MultiplayerRoom] = [] { didSet { persistBackgroundRooms() } }
+    @Published var pendingInviteCount: Int = 0
+    @Published var recentActivity: [MultiplayerActivityItem] = [] { didSet { persistRecentActivity() } }
     @Published var lastGameEvent: GameEvent?
 
     private var botTask: Task<Void, Never>?
     private var backgroundSimTask: Task<Void, Never>?
 
-    private init() {}
+    private static let backgroundRoomsKey = "multiplayer.backgroundRooms"
+    private static let recentActivityKey  = "multiplayer.recentActivity"
+
+    private init() {
+        loadPersistedState()
+    }
+
+    // MARK: – Persistence
+
+    private func persistBackgroundRooms() {
+        guard let data = try? JSONEncoder().encode(backgroundRooms) else { return }
+        UserDefaults.standard.set(data, forKey: Self.backgroundRoomsKey)
+    }
+
+    private func persistRecentActivity() {
+        guard let data = try? JSONEncoder().encode(recentActivity) else { return }
+        UserDefaults.standard.set(data, forKey: Self.recentActivityKey)
+    }
+
+    private func loadPersistedState() {
+        let d = UserDefaults.standard
+        if let data = d.data(forKey: Self.backgroundRoomsKey),
+           let decoded = try? JSONDecoder().decode([MultiplayerRoom].self, from: data) {
+            backgroundRooms = decoded
+        }
+        if let data = d.data(forKey: Self.recentActivityKey),
+           let decoded = try? JSONDecoder().decode([MultiplayerActivityItem].self, from: data) {
+            recentActivity = decoded
+        }
+    }
 
     // MARK: – Computed
 
@@ -38,11 +67,11 @@ import UserNotifications
         }
     }
 
-    func joinMockRoom(ownUsername: String) {
+    func joinMockRoom(ownUsername: String, mode: GameMode = .pi) {
         let host = MultiplayerPlayer(id: "u1", username: "magnus", isHost: true,  isReady: true)
         let you  = MultiplayerPlayer(id: "me", username: ownUsername, isHost: false, isReady: false, isYou: true)
         let bot2 = MultiplayerPlayer(id: "u2", username: "alex",    isHost: false, isReady: false)
-        currentRoom = MultiplayerRoom(id: "A3BF", mode: .math, startLevel: 1,
+        currentRoom = MultiplayerRoom(id: "A3BF", mode: mode, startLevel: 1,
                                       players: [host, you, bot2], status: .lobby)
         seedBotReadyStates()
     }
@@ -336,6 +365,9 @@ import UserNotifications
                 guard let idx = backgroundRooms.firstIndex(where: { $0.id == roomID }) else { return }
                 let room = backgroundRooms[idx]
                 guard room.status == .playing else { return }
+                // Solo rooms (multiplayer or standalone): nothing to simulate; the "turn"
+                // belongs to the human and we already scheduled the reminder notification.
+                guard room.players.count > 1 else { return }
                 if room.isMyTurn {
                     sendTurnNotification()
                     return

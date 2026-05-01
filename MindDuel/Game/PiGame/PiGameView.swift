@@ -5,7 +5,7 @@ struct PiGameView: View {
     var resumeRoomID: String? = nil
 
     @StateObject private var engine      = GameEngine()
-    @StateObject private var progression = ProgressionStore.shared
+    @ObservedObject private var progression = ProgressionStore.shared
     @State private var currentIndex      = 0
     @State private var elapsedSeconds:   Double = 0
     @State private var totalAnswerTime:  Double = 0
@@ -82,6 +82,7 @@ struct PiGameView: View {
             }
         }
         .onAppear { restoreOrStartFresh() }
+        .onDisappear { autoSaveIfInProgress() }
         .onReceive(timer) { _ in handleTimerTick() }
         .animation(.easeInOut(duration: 0.2), value: showQuitModal)
         .onChange(of: engine.isRoundOver, perform: { over in
@@ -90,6 +91,23 @@ struct PiGameView: View {
     }
 
     // MARK: – Session restore / save
+
+    private func autoSaveIfInProgress() {
+        // Catches iOS swipe-to-dismiss gestures that bypass the quit modal.
+        // Don't auto-save fresh / finished rounds, and don't double-save when the
+        // user just chose Save & Exit from the modal (saveSessionAndExit set roundResult).
+        guard !engine.isRoundOver, roundResult == nil,
+              engine.correctCount > 0 || engine.lives < 5 || engine.skips < 5 else { return }
+        let absoluteDigit = sessionStartIndex + currentIndex
+        _ = MultiplayerStore.shared.saveStandaloneSoloPi(
+            ownUsername: username,
+            lives: engine.lives,
+            skips: engine.skips,
+            score: 0,
+            correctCount: engine.correctCount,
+            currentDigit: absoluteDigit
+        )
+    }
 
     private func restoreOrStartFresh() {
         if let id = resumeRoomID,
@@ -106,17 +124,23 @@ struct PiGameView: View {
     }
 
     private func saveSessionAndExit() {
+        // Save mid-session state. Don't call finaliseRound here — that would apply
+        // a piPosition rollback and add the partial score to piBestScore now,
+        // and then again when the resumed round eventually ends (double-counting).
+        // The score field on the saved room is informational only; the real total
+        // is computed by finaliseRound when the resumed round actually finishes.
         let absoluteDigit = sessionStartIndex + currentIndex
-        // Apply round side-effects (score / piPosition) before saving exit
-        finaliseRound(won: false)
         _ = MultiplayerStore.shared.saveStandaloneSoloPi(
             ownUsername: username,
             lives: engine.lives,
             skips: engine.skips,
-            score: roundResult?.score ?? 0,
+            score: 0,
             correctCount: engine.correctCount,
             currentDigit: absoluteDigit
         )
+        // Mark roundResult set so onChange(isRoundOver) doesn't finalise again
+        // when we quit the engine.
+        roundResult = ProgressionStore.RoundResult(score: 0, isPersonalBest: false)
         engine.quit()
         dismiss()
     }
@@ -257,6 +281,9 @@ struct PiGameView: View {
                 engine.recordCorrect()
                 currentIndex   += 1
                 elapsedSeconds  = 0
+                // Live progression: piPosition reflects the highest digit the user has
+                // ever answered correctly. Replays of already-mastered digits don't bump it.
+                progression.advancePiPosition(toFrontier: sessionStartIndex + currentIndex)
             } else {
                 engine.recordWrong()
             }

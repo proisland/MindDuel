@@ -315,6 +315,23 @@
         }
       }
     },
+    "discard_game_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discard"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forkast"
+          }
+        }
+      }
+    },
     "flagged_explanation_body" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2207,6 +2224,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lagre og gå ut"
+          }
+        }
+      }
+    },
+    "solo_session_subtitle" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Single-player session"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Singel-økt"
           }
         }
       }

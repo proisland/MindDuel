@@ -1,8 +1,13 @@
 import SwiftUI
 
 struct ActivityListView: View {
-    @StateObject private var store = MultiplayerStore.shared
+    @ObservedObject private var store = MultiplayerStore.shared
     @Environment(\.dismiss) private var dismiss
+
+    // Tick every 30s so timestamps like "1m" / "2t" refresh without the user
+    // having to navigate away and back.
+    @State private var nowTick = Date()
+    private let tickTimer = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
 
     var body: some View {
         ZStack {
@@ -37,6 +42,7 @@ struct ActivityListView: View {
                 }
             }
         }
+        .onReceive(tickTimer) { nowTick = $0 }
     }
 
     private func activityRow(_ item: MultiplayerActivityItem) -> some View {
@@ -64,6 +70,7 @@ struct ActivityListView: View {
             Text(item.timeAgoString)
                 .mdStyle(.micro)
                 .foregroundStyle(Color.mdText3)
+                .id(nowTick)  // force re-render on tick
         }
         .padding(MDSpacing.sm)
         .background(Color.mdSurface)

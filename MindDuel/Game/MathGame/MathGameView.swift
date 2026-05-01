@@ -5,7 +5,7 @@ struct MathGameView: View {
     let resumeRoomID: String?
 
     @StateObject private var engine      = GameEngine()
-    @StateObject private var progression = ProgressionStore.shared
+    @ObservedObject private var progression = ProgressionStore.shared
     @State private var problem:           MathProblem
     @State private var problemCount      = 1
     @State private var elapsedSeconds:   Double = 0
@@ -14,6 +14,9 @@ struct MathGameView: View {
     @State private var feedbackIsCorrect: Bool? = nil
     @State private var showQuitModal     = false
     @State private var roundResult:      ProgressionStore.RoundResult? = nil
+    // Snapshot of the user's mathLevel at round start. The score multiplier uses
+    // this fixed value so a player who levels up mid-round doesn't retroactively
+    // boost the score for digits they answered at lower difficulty.
     @State private var startLevel:       Int
 
     @Environment(\.dismiss) private var dismiss
@@ -69,6 +72,7 @@ struct MathGameView: View {
             }
         }
         .onAppear { restoreSavedSessionIfNeeded() }
+        .onDisappear { autoSaveIfInProgress() }
         .onReceive(timer) { _ in handleTimerTick() }
         .animation(.easeInOut(duration: 0.2), value: showQuitModal)
         .onChange(of: engine.isRoundOver, perform: { over in
@@ -89,17 +93,31 @@ struct MathGameView: View {
     }
 
     private func saveSessionAndExit() {
-        finaliseRound(won: false)
+        // Save mid-session state without finalising — see PiGameView for why.
         _ = MultiplayerStore.shared.saveStandaloneSoloMath(
             ownUsername: username,
             lives: engine.lives,
             skips: engine.skips,
-            score: roundResult?.score ?? 0,
+            score: 0,
             correctCount: engine.correctCount,
             startLevel: startLevel
         )
+        roundResult = ProgressionStore.RoundResult(score: 0, isPersonalBest: false)
         engine.quit()
         dismiss()
+    }
+
+    private func autoSaveIfInProgress() {
+        guard !engine.isRoundOver, roundResult == nil,
+              engine.correctCount > 0 || engine.lives < 5 || engine.skips < 5 else { return }
+        _ = MultiplayerStore.shared.saveStandaloneSoloMath(
+            ownUsername: username,
+            lives: engine.lives,
+            skips: engine.skips,
+            score: 0,
+            correctCount: engine.correctCount,
+            startLevel: startLevel
+        )
     }
 
     // MARK: – Layout

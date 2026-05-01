@@ -15,7 +15,6 @@ import SwiftUI
     // MARK: – Published state (mirrors UserDefaults)
 
     @Published private(set) var piPosition: Int
-    @Published private(set) var piFloor: Int
     @Published private(set) var piBestScore: Int
 
     @Published private(set) var mathLevel: Int
@@ -34,7 +33,6 @@ import SwiftUI
     private init() {
         let d = UserDefaults.standard
         piPosition        = d.integer(forKey: "piPosition")
-        piFloor           = d.integer(forKey: "piFloor")
         piBestScore       = d.integer(forKey: "piBestScore")
         let storedLevel   = d.integer(forKey: "mathLevel")
         mathLevel         = storedLevel < 1 ? 1 : storedLevel
@@ -54,7 +52,13 @@ import SwiftUI
     var isQuotaExhausted: Bool  { dailyUsed >= Self.dailyQuota }
     var isNearQuota: Bool       { dailyUsed >= 16 }
 
-    var piLevel: Int { min(20, piPosition / 50 + 1) }
+    var piLevel: Int { Self.piLevel(forPosition: piPosition) }
+
+    /// Pure formula: which Pi level a given absolute digit position belongs to (1–20).
+    /// Each level covers 50 digits; capped at 20.
+    static func piLevel(forPosition position: Int) -> Int {
+        min(20, max(0, position) / 50 + 1)
+    }
 
     func checkResetQuota() {
         let lastReset = Date(timeIntervalSince1970: quotaResetEpoch)
@@ -78,12 +82,15 @@ import SwiftUI
     // MARK: – Score calculation
 
     func piScore(correctCount: Int, avgTime: Double) -> Int {
-        guard correctCount > 0, avgTime > 0.2 else { return 0 }
+        // Flagged accounts (suspected automation) earn no further score.
+        // Why: anti-cheat threshold tripped (>= 5 sub-0.4s rounds) and we don't want
+        //      to keep promoting the leaderboard until manual review clears the flag.
+        guard !isFlagged, correctCount > 0, avgTime > 0.2 else { return 0 }
         return max(0, Int(Double(correctCount) * (Self.K / avgTime)))
     }
 
     func mathScore(correctCount: Int, level: Int, avgTime: Double) -> Int {
-        guard correctCount > 0, avgTime > 0.2 else { return 0 }
+        guard !isFlagged, correctCount > 0, avgTime > 0.2 else { return 0 }
         let pts = Double(level * correctCount)
         return max(0, Int(pts * (Self.K / avgTime)))
     }
@@ -97,13 +104,11 @@ import SwiftUI
 
     func applyPiRound(correctCount: Int, avgTime: Double, won: Bool) -> RoundResult {
         let score = piScore(correctCount: correctCount, avgTime: avgTime)
-        if correctCount > 0 {
-            if won {
-                set(piPosition: piPosition + correctCount)
-            } else {
-                let rollback = max(0, Int(Double(correctCount) * Self.rollbackRate))
-                set(piPosition: max(piFloor, piPosition - rollback))
-            }
+        // piPosition is advanced live via advancePiPosition() during the round.
+        // On loss we still apply a small rollback as a soft "make-it-stick" penalty.
+        if !won && correctCount > 0 {
+            let rollback = max(0, Int(Double(correctCount) * Self.rollbackRate))
+            set(piPosition: max(0, piPosition - rollback))
         }
         let pb = score > 0
         if pb { set(piBestScore: piBestScore + score) }
@@ -121,6 +126,18 @@ import SwiftUI
             lvl  = min(20, lvl + 1)
         }
         set(mathLevel: lvl, mathLevelProgress: prog)
+    }
+
+    // Called after each correct Pi answer (live position progression during round).
+    // Why: previously piPosition only advanced on `applyPiRound(won: true)`, which
+    //      in solo Pi only fires on quota exhaustion. So a player could grind every
+    //      day and never level up. Now Pi mirrors Math's live-progression model.
+    // Only advances when the user is at or past the frontier — replaying digits
+    // they've already mastered (e.g. starting at the level boundary) doesn't count.
+    func advancePiPosition(toFrontier nextFrontier: Int) {
+        if nextFrontier > piPosition {
+            set(piPosition: nextFrontier)
+        }
     }
 
     func applyMathRound(correctCount: Int, level: Int, avgTime: Double, won: Bool) -> RoundResult {

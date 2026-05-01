@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ActiveGamesView: View {
     let ownUsername: String
-    @StateObject private var store = MultiplayerStore.shared
+    @ObservedObject private var store = MultiplayerStore.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showGame = false
     @State private var resumeSoloMode: GameMode? = nil
@@ -21,6 +21,14 @@ struct ActiveGamesView: View {
                     LazyVStack(spacing: MDSpacing.xs) {
                         ForEach(store.playingRooms) { room in
                             roomRow(room)
+                                .contextMenu {
+                                    Button(role: .destructive) {
+                                        store.leaveBackgroundRoom(id: room.id)
+                                    } label: {
+                                        Label(String(localized: "discard_game_action"),
+                                              systemImage: "trash")
+                                    }
+                                }
                         }
                     }
                     .padding(.horizontal, MDSpacing.md)
@@ -78,10 +86,16 @@ struct ActiveGamesView: View {
                             .background(room.mode == .pi ? Color.mdAccentSoft : Color.mdPinkSoft)
                             .clipShape(Capsule())
                     }
-                    let opponents = room.players.filter { !$0.isYou }.map { "@\($0.username)" }.joined(separator: ", ")
-                    Text(opponents)
-                        .mdStyle(.caption)
-                        .foregroundStyle(Color.mdText3)
+                    if room.isStandaloneSolo {
+                        Text(String(localized: "solo_session_subtitle"))
+                            .mdStyle(.caption)
+                            .foregroundStyle(Color.mdText3)
+                    } else {
+                        let opponents = room.players.filter { !$0.isYou }.map { "@\($0.username)" }.joined(separator: ", ")
+                        Text(opponents)
+                            .mdStyle(.caption)
+                            .foregroundStyle(Color.mdText3)
+                    }
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {

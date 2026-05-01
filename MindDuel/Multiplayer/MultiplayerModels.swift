@@ -6,8 +6,8 @@ struct GameEvent: Identifiable {
     let isPositive: Bool
 }
 
-struct MultiplayerActivityItem: Identifiable {
-    let id = UUID()
+struct MultiplayerActivityItem: Identifiable, Codable {
+    var id = UUID()
     let opponentUsername: String
     let mode: GameMode
     let didWin: Bool
@@ -25,7 +25,7 @@ struct MultiplayerActivityItem: Identifiable {
     }
 }
 
-struct MultiplayerPlayer: Identifiable, Equatable {
+struct MultiplayerPlayer: Identifiable, Equatable, Codable {
     let id: String
     let username: String
     var isHost: Bool
@@ -38,17 +38,28 @@ struct MultiplayerPlayer: Identifiable, Equatable {
     var isYou: Bool = false
 }
 
-enum RoomStatus { case lobby, playing, finished }
+enum RoomStatus: String, Codable { case lobby, playing, finished }
 
-struct MultiplayerRoom: Identifiable {
+struct MultiplayerRoom: Identifiable, Codable {
     let id: String          // room code, e.g. "4F2A"
     var mode: GameMode
-    var startLevel: Int     // 1 = from start
+    /// Math difficulty level the room started at (1 – 20).
+    /// Only meaningful for `mode == .math`; ignored for Pi (Pi uses
+    /// `myPiDigitIndex` + the user's piLevel boundary). Default 1 keeps
+    /// the on-disk format stable for existing saved rooms.
+    var startLevel: Int = 1
     var players: [MultiplayerPlayer]
     var status: RoomStatus
     var currentTurnIndex: Int = 0
-    var myPiDigitIndex: Int = 0  // persists pi progress across rejoin
-    var isStandaloneSolo: Bool = false  // saved Pi/Math single-player session (not multiplayer)
+    /// Absolute Pi digit index this room is at (only used for `mode == .pi`).
+    /// Saved on each correct answer so resume picks up at the same digit even
+    /// if the user's piPosition shifted in another session.
+    var myPiDigitIndex: Int = 0
+    /// True for single-player Pi/Math sessions saved from PiGameView /
+    /// MathGameView; false for multiplayer rooms (incl. solo-of-multiplayer).
+    /// Routing in HomeView/ActiveGamesView uses this to pick which view to
+    /// resume in.
+    var isStandaloneSolo: Bool = false
 
     var activePlayers: [MultiplayerPlayer] { players.filter { !$0.isEliminated } }
 
