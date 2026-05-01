@@ -3,7 +3,6 @@ import SwiftUI
 struct SettingsView: View {
     let onSignOut: () -> Void
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("colorSchemePreference") private var colorSchemePreference = "system"
     @AppStorage("selectedLanguageCode") private var selectedLanguageCode = "system"
     @State private var notificationsEnabled = UserDefaults.standard.bool(forKey: "notificationsEnabled")
     @State private var showSignOutModal = false
@@ -34,19 +33,6 @@ struct SettingsView: View {
                                     .onChange(of: notificationsEnabled, perform: { val in
                                         UserDefaults.standard.set(val, forKey: "notificationsEnabled")
                                     })
-                            }
-
-                            toggleRow(
-                                icon: "circle.lefthalf.filled", iconBg: .mdAccentSoft, iconColor: .mdAccent,
-                                label: String(localized: "settings_dark_mode_label")
-                            ) {
-                                Picker("", selection: $colorSchemePreference) {
-                                    Text(String(localized: "settings_color_scheme_dark")).tag("dark")
-                                    Text(String(localized: "settings_color_scheme_light")).tag("light")
-                                    Text(String(localized: "settings_color_scheme_system")).tag("system")
-                                }
-                                .pickerStyle(.menu)
-                                .tint(Color.mdAccent)
                             }
 
                             Button { showLanguagePicker = true } label: {

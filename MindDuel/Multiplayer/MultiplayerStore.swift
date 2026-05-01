@@ -23,6 +23,10 @@ import UserNotifications
         return result
     }
 
+    var hasMyTurnInBackground: Bool {
+        backgroundRooms.contains { $0.status == .playing && $0.isMyTurn }
+    }
+
     // MARK: – Lobby
 
     func createRoom(mode: GameMode, ownUsername: String, invitedUsername: String? = nil) {
@@ -155,6 +159,7 @@ import UserNotifications
 
     func submitAnswer(correct: Bool, answerTime: Double) {
         guard var room = currentRoom, room.isMyTurn else { return }
+        ProgressionStore.shared.consumeQuestion()
         applyResult(to: &room, playerID: "me", correct: correct, answerTime: answerTime)
         advanceTurn(&room)
         currentRoom = room
@@ -164,6 +169,7 @@ import UserNotifications
 
     func useSkip() {
         guard var room = currentRoom, room.isMyTurn else { return }
+        ProgressionStore.shared.consumeQuestion()
         guard let idx = room.players.firstIndex(where: { $0.isYou }) else { return }
         room.players[idx].skips = max(0, room.players[idx].skips - 1)
         if room.players[idx].skips == 0 { room.players[idx].isEliminated = true }
@@ -299,6 +305,7 @@ import UserNotifications
                 backgroundRooms[roomIdx] = updatedRoom
                 if updatedRoom.status == .finished {
                     backgroundRooms.remove(at: roomIdx)
+                    recordActivity(updatedRoom)
                     return
                 }
             }

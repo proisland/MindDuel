@@ -72,6 +72,7 @@ struct MultiplayerGameView: View {
         }
         .onAppear {
             store.cancelGameReminderNotification()
+            refreshQuestion()
         }
         .onDisappear {
             store.dismissGame()

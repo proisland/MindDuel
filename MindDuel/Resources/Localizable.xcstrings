@@ -1144,6 +1144,12 @@
         "nb" : { "stringUnit" : { "state" : "translated", "value" : "Tilbake til pågående spill" } }
       }
     },
+    "rejoin_your_turn_action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "It's your turn! Tap to play" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Din tur! Trykk for å spille" } }
+      }
+    },
     "recent_activity_all_title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "All activity" } },

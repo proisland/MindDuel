@@ -147,7 +147,8 @@ struct HomeView: View {
     // MARK: – Rejoin banner
 
     private var rejoinBanner: some View {
-        Button {
+        let isMyTurn = multiplayer.hasMyTurnInBackground
+        return Button {
             if playingRooms.count == 1 {
                 multiplayer.rejoin(roomID: playingRooms[0].id)
                 activeDestination = .multiplayerGame
@@ -158,7 +159,9 @@ struct HomeView: View {
             HStack(spacing: MDSpacing.sm) {
                 Circle().fill(Color.mdGreen).frame(width: 8, height: 8)
                 if playingRooms.count == 1 {
-                    Text(String(localized: "rejoin_game_action"))
+                    Text(isMyTurn
+                         ? String(localized: "rejoin_your_turn_action")
+                         : String(localized: "rejoin_game_action"))
                         .mdStyle(.bodyMd)
                         .foregroundStyle(Color.mdGreen)
                 } else {
@@ -172,9 +175,9 @@ struct HomeView: View {
                     .foregroundStyle(Color.mdGreen)
             }
             .padding(MDSpacing.md)
-            .background(Color.mdGreenSoft)
+            .background(isMyTurn ? Color.mdGreen.opacity(0.15) : Color.mdGreenSoft)
             .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdGreen.opacity(0.4), lineWidth: 0.5))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdGreen.opacity(isMyTurn ? 0.8 : 0.4), lineWidth: isMyTurn ? 1 : 0.5))
         }
         .buttonStyle(.plain)
     }
