@@ -277,7 +277,7 @@ import UserNotifications
             room.status = .finished
             return
         }
-        room.currentTurnIndex = room.currentTurnIndex % max(1, active.count)
+        room.currentTurnIndex = (room.currentTurnIndex + 1) % max(1, active.count)
     }
 
     private func startBackgroundSimulation(roomID: String) {
