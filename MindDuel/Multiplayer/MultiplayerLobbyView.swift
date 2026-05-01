@@ -21,7 +21,7 @@ struct MultiplayerLobbyView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: MDSpacing.lg) {
                         if let room = store.currentRoom {
-                            if isHost(room) { modeSection(room: room) }
+                            modeSection(room: room, editable: isHost(room))
                             if isHost(room) { startLevelSection(room: room) }
                             playersSection(room: room)
                             startButton(room: room)
@@ -83,21 +83,21 @@ struct MultiplayerLobbyView: View {
     // MARK: – Mode section
 
     @ViewBuilder
-    private func modeSection(room: MultiplayerRoom) -> some View {
+    private func modeSection(room: MultiplayerRoom, editable: Bool) -> some View {
         sectionLabel(String(localized: "multiplayer_mode_label"))
         HStack(spacing: MDSpacing.sm) {
-            modeButton(.pi,   room: room)
-            modeButton(.math, room: room)
+            modeButton(.pi,   room: room, editable: editable)
+            modeButton(.math, room: room, editable: editable)
         }
     }
 
-    private func modeButton(_ mode: GameMode, room: MultiplayerRoom) -> some View {
+    private func modeButton(_ mode: GameMode, room: MultiplayerRoom, editable: Bool) -> some View {
         let isActive = room.mode == mode
         let title = mode == .pi ? String(localized: "mode_pi") : String(localized: "mode_math")
         let icon: String  = mode == .pi ? "π" : "∑"
         let color: Color  = mode == .pi ? .mdAccent : .mdPink
         return Button {
-            store.currentRoom?.mode = mode
+            if editable { store.currentRoom?.mode = mode }
         } label: {
             HStack(spacing: MDSpacing.xs) {
                 Text(icon).font(.system(size: 16, weight: .heavy)).foregroundStyle(isActive ? color : Color.mdText3)
@@ -110,6 +110,7 @@ struct MultiplayerLobbyView: View {
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(isActive ? color : Color.mdBorder2, lineWidth: isActive ? 1 : 0.5))
         }
         .buttonStyle(.plain)
+        .disabled(!editable && !isActive)
     }
 
     // MARK: – Start level section
