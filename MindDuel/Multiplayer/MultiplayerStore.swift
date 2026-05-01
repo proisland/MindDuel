@@ -270,11 +270,14 @@ import UserNotifications
 
     private func advanceTurn(_ room: inout MultiplayerRoom) {
         let active = room.activePlayers
-        if active.count <= 1 || room.winner != nil {
+        let isMultiplayer = room.players.count > 1
+        // Solo game: only finish when the player is eliminated (active is empty)
+        // Multiplayer: finish when one player remains (they're the winner)
+        if active.isEmpty || (isMultiplayer && active.count == 1) {
             room.status = .finished
             return
         }
-        room.currentTurnIndex = (room.currentTurnIndex + 1) % active.count
+        room.currentTurnIndex = room.currentTurnIndex % max(1, active.count)
     }
 
     private func startBackgroundSimulation(roomID: String) {

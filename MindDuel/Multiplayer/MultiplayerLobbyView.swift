@@ -227,7 +227,7 @@ struct MultiplayerLobbyView: View {
                 store.startGame()
                 showGame = true
             }
-            .disabled(!store.allReady || progression.isQuotaExhausted || room.players.count < 2)
+            .disabled(!store.allReady || progression.isQuotaExhausted)
         } else {
             let youReady = room.players.first(where: { $0.isYou })?.isReady ?? false
             MDButton(youReady ? .ghost : .primary,

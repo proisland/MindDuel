@@ -317,7 +317,9 @@ struct HomeView: View {
                      : String(format: String(localized: "activity_lost_format"), item.opponentUsername))
                     .mdStyle(.caption)
                     .foregroundStyle(Color.mdText)
-                Text("\(item.mode == .pi ? String(localized: "mode_pi") : String(localized: "mode_math")) · +\(item.score)p")
+                Text(String(format: String(localized: "activity_score_format"),
+                            item.mode == .pi ? String(localized: "mode_pi") : String(localized: "mode_math"),
+                            item.score))
                     .mdStyle(.micro)
                     .foregroundStyle(Color.mdText3)
             }

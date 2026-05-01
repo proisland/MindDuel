@@ -60,6 +60,7 @@ struct MultiplayerRoom: Identifiable {
     var isMyTurn: Bool { currentPlayer?.isYou ?? false }
 
     var winner: MultiplayerPlayer? {
+        guard players.count > 1 else { return nil }  // solo game has no winner
         let active = activePlayers
         return active.count == 1 ? active.first : nil
     }

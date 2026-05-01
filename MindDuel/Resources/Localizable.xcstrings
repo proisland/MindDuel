@@ -1096,6 +1096,12 @@
         "nb" : { "stringUnit" : { "state" : "translated", "value" : "Du tapte mot @%@" } }
       }
     },
+    "activity_score_format" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ · Earned +%lldp" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "%@ · Tjente +%lldp" } }
+      }
+    },
     "time_just_now" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "now" } },

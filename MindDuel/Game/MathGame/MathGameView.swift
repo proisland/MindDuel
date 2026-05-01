@@ -161,8 +161,11 @@ struct MathGameView: View {
             Text(String(localized: "quota_exhausted_message"))
                 .mdStyle(.bodyMd)
             Spacer()
-            MDButton(.ghost, title: String(localized: "back_to_home_action")) { dismiss() }
-                .frame(width: 80)
+            MDButton(.ghost, title: String(localized: "back_to_home_action")) {
+                finaliseRound(won: false)
+                dismiss()
+            }
+            .frame(width: 80)
         }
         .padding(MDSpacing.md)
         .background(Color.mdAmberSoft)
