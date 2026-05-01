@@ -7,6 +7,7 @@ import UserNotifications
     @Published var currentRoom: MultiplayerRoom?
     @Published var pendingInviteCount: Int = 1
     @Published var recentActivity: [MultiplayerActivityItem] = []
+    @Published var lastGameEvent: GameEvent?
 
     private var botTask: Task<Void, Never>?
 
@@ -14,10 +15,10 @@ import UserNotifications
 
     // MARK: – Lobby
 
-    func createRoom(mode: GameMode, ownUsername: String) {
+    func createRoom(mode: GameMode, ownUsername: String, invitedUsername: String? = nil) {
         let code = String(UUID().uuidString.prefix(4).uppercased())
         let host = MultiplayerPlayer(id: "me",  username: ownUsername, isHost: true,  isReady: true,  isYou: true)
-        let bot1 = MultiplayerPlayer(id: "u1",  username: "magnus",    isHost: false, isReady: false)
+        let bot1 = MultiplayerPlayer(id: "u1",  username: invitedUsername ?? "magnus", isHost: false, isReady: false)
         let bot2 = MultiplayerPlayer(id: "u2",  username: "sara",      isHost: false, isReady: false)
         currentRoom = MultiplayerRoom(id: code, mode: mode, startLevel: 1,
                                       players: [host, bot1, bot2], status: .lobby)
@@ -36,6 +37,17 @@ import UserNotifications
     func toggleReady() {
         guard let idx = currentRoom?.players.firstIndex(where: { $0.isYou }) else { return }
         currentRoom?.players[idx].isReady.toggle()
+        let nowReady = currentRoom?.players[idx].isReady == true
+        if nowReady && allReady {
+            let isHost = currentRoom?.players[idx].isHost == true
+            if !isHost {
+                Task {
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    guard !Task.isCancelled else { return }
+                    startGame()
+                }
+            }
+        }
     }
 
     var allReady: Bool { currentRoom?.players.allSatisfy(\.isReady) ?? false }
@@ -74,6 +86,25 @@ import UserNotifications
         currentRoom = nil
     }
 
+    func scheduleGameReminderNotification() {
+        Task {
+            let center = UNUserNotificationCenter.current()
+            let granted = (try? await center.requestAuthorization(options: [.alert, .sound])) ?? false
+            guard granted else { return }
+            let content = UNMutableNotificationContent()
+            content.title = String(localized: "notification_your_turn_title")
+            content.body = String(localized: "notification_game_waiting_body")
+            content.sound = .default
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 15, repeats: false)
+            let request = UNNotificationRequest(identifier: "game-reminder", content: content, trigger: trigger)
+            try? await center.add(request)
+        }
+    }
+
+    func cancelGameReminderNotification() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["game-reminder"])
+    }
+
     // MARK: – Private
 
     private func seedBotReadyStates() {
@@ -88,6 +119,14 @@ import UserNotifications
             guard !Task.isCancelled else { return }
             if let idx = currentRoom?.players.firstIndex(where: { $0.id == "u2" }) {
                 currentRoom?.players[idx].isReady = true
+            }
+            // Auto-start if host-bot detects all ready
+            guard !Task.isCancelled else { return }
+            if allReady {
+                let isHost = currentRoom?.players.first(where: { $0.isYou })?.isHost == true
+                if isHost {
+                    // host must tap start manually; bots just wait
+                }
             }
         }
     }
@@ -116,7 +155,18 @@ import UserNotifications
 
         let correct = Double.random(in: 0...1) > 0.28
         let answerTime = Double.random(in: 0.8...3.5)
+        let prevLives = room.players[idx].lives
         applyResult(to: &room, playerIdx: idx, correct: correct, answerTime: answerTime)
+        let lostLife = !correct && room.players[idx].lives < prevLives
+
+        if lostLife {
+            let event = GameEvent(
+                message: String(format: String(localized: "game_event_lost_life_format"), bot.username),
+                isPositive: true
+            )
+            lastGameEvent = event
+        }
+
         advanceTurn(&room)
         currentRoom = room
 
@@ -166,6 +216,7 @@ import UserNotifications
         )
         recentActivity.insert(item, at: 0)
         if recentActivity.count > 10 { recentActivity = Array(recentActivity.prefix(10)) }
+        ProgressionStore.shared.recordMultiplayerScore(mode: room.mode, score: me.score)
     }
 
     private func sendTurnNotification() {

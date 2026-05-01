@@ -12,7 +12,9 @@ struct MultiplayerGameView: View {
     @State private var elapsedSeconds: Double   = 0
     @State private var feedbackIsCorrect: Bool? = nil
     @State private var selectedIndex: Int?      = nil
-    @State private var showQuitModal            = false
+    @State private var showScoreBreakdown       = false
+    @State private var breakdownPlayer: MultiplayerPlayer? = nil
+    @State private var toastOpacity: Double     = 0
 
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
@@ -31,18 +33,31 @@ struct MultiplayerGameView: View {
                 Color.mdBg.ignoresSafeArea()
             }
 
-            if showQuitModal {
-                QuitGameModal {
-                    showQuitModal = false
-                    store.leaveRoom()
-                    dismiss()
-                } onContinue: {
-                    showQuitModal = false
+            // Event toast
+            if let event = store.lastGameEvent {
+                VStack {
+                    Spacer()
+                    Text(event.message)
+                        .mdStyle(.caption)
+                        .foregroundStyle(event.isPositive ? Color.mdGreen : Color.mdRed)
+                        .padding(.horizontal, MDSpacing.md)
+                        .padding(.vertical, MDSpacing.xs)
+                        .background(event.isPositive ? Color.mdGreenSoft : Color.mdRedSoft)
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(event.isPositive ? Color.mdGreen : Color.mdRed, lineWidth: 0.5))
+                        .opacity(toastOpacity)
+                    Spacer().frame(height: MDSpacing.xl)
                 }
+                .transition(.opacity)
+                .id(event.id)
+            }
+
+            if showScoreBreakdown, let player = breakdownPlayer {
+                scoreBreakdownModal(player: player)
             }
         }
         .onReceive(timer) { _ in handleTimerTick() }
-        .animation(.easeInOut(duration: 0.2), value: showQuitModal)
+        .animation(.easeInOut(duration: 0.2), value: showScoreBreakdown)
         .animation(.easeInOut(duration: 0.3), value: store.currentRoom?.currentTurnIndex)
         .onChange(of: store.currentRoom?.isMyTurn) { isMyTurn in
             if isMyTurn == true {
@@ -51,6 +66,25 @@ struct MultiplayerGameView: View {
                 selectedIndex = nil
                 refreshQuestion()
             }
+        }
+        .onChange(of: store.lastGameEvent?.id) { _ in
+            showToast()
+        }
+        .onAppear {
+            store.cancelGameReminderNotification()
+        }
+        .onDisappear {
+            if store.currentRoom?.status == .playing {
+                store.scheduleGameReminderNotification()
+            }
+        }
+    }
+
+    private func showToast() {
+        withAnimation(.easeIn(duration: 0.2)) { toastOpacity = 1 }
+        Task {
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            withAnimation(.easeOut(duration: 0.3)) { toastOpacity = 0 }
         }
     }
 
@@ -76,13 +110,7 @@ struct MultiplayerGameView: View {
     private var liveTopBar: some View {
         HStack(spacing: 0) {
             Button {
-                let eliminated = store.currentRoom?.players.first(where: { $0.isYou })?.isEliminated == true
-                if eliminated {
-                    store.leaveRoom()
-                    dismiss()
-                } else {
-                    showQuitModal = true
-                }
+                dismiss()
             } label: {
                 Image(systemName: "chevron.left")
                     .foregroundStyle(Color.mdText2)
@@ -366,6 +394,15 @@ struct MultiplayerGameView: View {
                     Text("\(player.score)p")
                         .mdStyle(.bodyMd)
                         .foregroundStyle(rank == 0 ? Color.mdAmber : Color.mdText2)
+                    Button {
+                        breakdownPlayer = player
+                        showScoreBreakdown = true
+                    } label: {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.mdText3)
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding(.horizontal, MDSpacing.md)
                 .padding(.vertical, MDSpacing.sm)
@@ -373,6 +410,34 @@ struct MultiplayerGameView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 14))
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdBorder2, lineWidth: 0.5))
             }
+        }
+    }
+
+    // MARK: – Score breakdown modal
+
+    private func scoreBreakdownModal(player: MultiplayerPlayer) -> some View {
+        ZStack {
+            Color.black.opacity(0.85).ignoresSafeArea()
+                .onTapGesture { showScoreBreakdown = false }
+            VStack(spacing: MDSpacing.md) {
+                VStack(spacing: MDSpacing.xs) {
+                    Text(String(localized: "score_breakdown_title"))
+                        .mdStyle(.heading)
+                        .foregroundStyle(Color.mdText)
+                    Text(String(format: String(localized: "score_breakdown_body"), player.username, player.score))
+                        .mdStyle(.body)
+                        .foregroundStyle(Color.mdText2)
+                        .multilineTextAlignment(.center)
+                }
+                MDButton(.ghost, title: String(localized: "continue_playing_action")) {
+                    showScoreBreakdown = false
+                }
+            }
+            .padding(MDSpacing.lg)
+            .background(Color.mdSurface)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.mdBorder2, lineWidth: 0.5))
+            .padding(.horizontal, MDSpacing.lg)
         }
     }
 

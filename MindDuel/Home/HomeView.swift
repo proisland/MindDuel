@@ -5,12 +5,14 @@ private enum HomeDestination: Identifiable {
     case scoreboard
     case multiplayerHost
     case multiplayerJoin
+    case activityList
     var id: String {
         switch self {
-        case .profile:        return "profile"
-        case .scoreboard:     return "scoreboard"
+        case .profile:         return "profile"
+        case .scoreboard:      return "scoreboard"
         case .multiplayerHost: return "multiplayerHost"
         case .multiplayerJoin: return "multiplayerJoin"
+        case .activityList:    return "activityList"
         }
     }
 }
@@ -82,7 +84,7 @@ struct HomeView: View {
                             MDModeCard(
                                 mode: .pi,
                                 score: progression.piBestScore,
-                                level: progression.piPosition / 100 + 1,
+                                level: progression.piLevel,
                                 maxLevel: 20
                             ) { activeMode = .pi }
 
@@ -90,10 +92,16 @@ struct HomeView: View {
                                 mode: .math,
                                 score: progression.mathBestScore,
                                 level: progression.mathLevel,
-                                maxLevel: 10
+                                maxLevel: 20
                             ) { activeMode = .math }
                         }
                         .padding(.horizontal, MDSpacing.md)
+
+                        // Rejoin banner
+                        if multiplayer.currentRoom?.status == .playing {
+                            rejoinBanner
+                                .padding(.horizontal, MDSpacing.md)
+                        }
 
                         // Multiplayer card
                         multiplayerCard
@@ -126,8 +134,35 @@ struct HomeView: View {
             case .scoreboard:      ScoreboardView(ownUsername: username)
             case .multiplayerHost: MultiplayerLobbyView(ownUsername: username, startAsHost: true)
             case .multiplayerJoin: MultiplayerLobbyView(ownUsername: username, startAsHost: false)
+            case .activityList:    ActivityListView(activity: multiplayer.recentActivity)
             }
         }
+    }
+
+    // MARK: – Rejoin banner
+
+    private var rejoinBanner: some View {
+        Button {
+            activeDestination = .multiplayerHost
+        } label: {
+            HStack(spacing: MDSpacing.sm) {
+                Circle()
+                    .fill(Color.mdGreen)
+                    .frame(width: 8, height: 8)
+                Text(String(localized: "rejoin_game_action"))
+                    .mdStyle(.bodyMd)
+                    .foregroundStyle(Color.mdGreen)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color.mdGreen)
+            }
+            .padding(MDSpacing.md)
+            .background(Color.mdGreenSoft)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdGreen.opacity(0.4), lineWidth: 0.5))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: – Multiplayer card
@@ -167,9 +202,11 @@ struct HomeView: View {
                 MDButton(.primary, title: String(localized: "multiplayer_create_action")) {
                     activeDestination = .multiplayerHost
                 }
+                .disabled(progression.isQuotaExhausted)
                 MDButton(.ghost, title: String(localized: "multiplayer_join_action")) {
                     activeDestination = .multiplayerJoin
                 }
+                .disabled(progression.isQuotaExhausted)
             }
         }
         .padding(MDSpacing.md)
@@ -219,9 +256,12 @@ struct HomeView: View {
                     .mdStyle(.bodyMd)
                     .foregroundStyle(Color.mdText)
                 Spacer()
-                Text(String(localized: "recent_activity_see_all"))
-                    .mdStyle(.caption)
-                    .foregroundStyle(Color.mdAccent)
+                Button { activeDestination = .activityList } label: {
+                    Text(String(localized: "recent_activity_see_all"))
+                        .mdStyle(.caption)
+                        .foregroundStyle(Color.mdAccent)
+                }
+                .buttonStyle(.plain)
             }
 
             VStack(spacing: MDSpacing.xs) {

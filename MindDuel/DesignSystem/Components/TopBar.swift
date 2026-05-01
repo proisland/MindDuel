@@ -37,7 +37,7 @@ struct MDTopBar<Trailing: View>: View {
             Spacer()
 
             trailing
-                .frame(width: 44, height: 44)
+                .frame(height: 44)
         }
         .padding(.horizontal, MDSpacing.md)
         .frame(height: 56)

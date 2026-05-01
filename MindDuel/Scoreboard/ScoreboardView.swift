@@ -8,6 +8,7 @@ struct ScoreboardView: View {
     @State private var selectedTab = 2          // default: Globalt
     @State private var selectedProfile: UserProfile? = nil
     @State private var searchText = ""
+    @State private var scoreMode: GameMode = .pi
 
     private var ownEntry: UserProfile {
         UserProfile(
@@ -15,7 +16,7 @@ struct ScoreboardView: View {
             username: ownUsername,
             piScore: progression.piBestScore,
             mathScore: progression.mathBestScore,
-            piLevel: progression.piPosition / 100 + 1,
+            piLevel: progression.piLevel,
             mathLevel: progression.mathLevel,
             roundsPlayed: progression.totalRoundsPlayed,
             age: nil, city: nil,
@@ -39,6 +40,10 @@ struct ScoreboardView: View {
                     .padding(.horizontal, MDSpacing.md)
                     .padding(.top, MDSpacing.md)
 
+                scoreModeToggle
+                    .padding(.horizontal, MDSpacing.md)
+                    .padding(.top, MDSpacing.xs)
+
                 // Search bar (shown on Lokalt and Globalt tabs)
                 if selectedTab != 0 {
                     searchBar
@@ -52,6 +57,30 @@ struct ScoreboardView: View {
         .sheet(item: $selectedProfile) { profile in
             OtherProfileView(profile: profile, ownUsername: ownUsername)
         }
+    }
+
+    // MARK: – Score mode toggle
+
+    private var scoreModeToggle: some View {
+        HStack(spacing: 0) {
+            ForEach([GameMode.pi, GameMode.math]) { mode in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) { scoreMode = mode }
+                } label: {
+                    Text(mode == .pi ? String(localized: "scoreboard_pi_mode") : String(localized: "scoreboard_math_mode"))
+                        .mdStyle(.caption)
+                        .foregroundStyle(scoreMode == mode ? Color.mdText : Color.mdText3)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
+                        .background(scoreMode == mode ? Color.mdSurface2 : Color.clear)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(3)
+        .background(Color.mdBgDeep)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     // MARK: – Segmented control
@@ -257,7 +286,7 @@ struct ScoreboardView: View {
 
                 Spacer()
 
-                Text("\(profile.totalScore)p")
+                Text("\(scoreMode == .pi ? profile.piScore : profile.mathScore)p")
                     .mdStyle(.bodyMd)
                     .foregroundStyle(rank == 1 && !isOwn ? Color.mdAmber : Color.mdText2)
             }
@@ -291,7 +320,7 @@ struct ScoreboardView: View {
             combined.append(own)
         }
         return combined
-            .sorted { $0.totalScore > $1.totalScore }
+            .sorted { scoreMode == .pi ? $0.piScore > $1.piScore : $0.mathScore > $1.mathScore }
             .enumerated()
             .map { idx, p in RankedEntry(rank: idx + 1, profile: p, isOwn: p.username == own.username) }
     }

@@ -58,7 +58,7 @@ struct ProfileView: View {
                                 MDModeCard(
                                     mode: .pi,
                                     score: progression.piBestScore,
-                                    level: progression.piPosition / 100 + 1,
+                                    level: progression.piLevel,
                                     maxLevel: 20,
                                     compact: true
                                 ) { }
@@ -67,7 +67,7 @@ struct ProfileView: View {
                                     mode: .math,
                                     score: progression.mathBestScore,
                                     level: progression.mathLevel,
-                                    maxLevel: 10,
+                                    maxLevel: 20,
                                     compact: true
                                 ) { }
                                 .disabled(true)
@@ -164,6 +164,13 @@ struct ProfileView: View {
                                 }
                             }
                             .buttonStyle(.plain)
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    social.removeFriend(username: friend.username)
+                                } label: {
+                                    Label(String(localized: "remove_friend_action"), systemImage: "person.badge.minus")
+                                }
+                            }
                         }
                     }
                 }

@@ -7,7 +7,7 @@ import SwiftUI
 
     // MARK: – Constants
 
-    static let dailyQuota = 10
+    static let dailyQuota = 20
     private static let rollbackRate: Double = 0.15
     private static let mathLevelUpThreshold = 5
     private static let K: Double = 100.0
@@ -52,7 +52,9 @@ import SwiftUI
 
     var questionsRemaining: Int { Self.dailyQuota - dailyUsed }
     var isQuotaExhausted: Bool  { dailyUsed >= Self.dailyQuota }
-    var isNearQuota: Bool       { dailyUsed >= 8 }
+    var isNearQuota: Bool       { dailyUsed >= 16 }
+
+    var piLevel: Int { min(20, piPosition / 50 + 1) }
 
     func checkResetQuota() {
         let lastReset = Date(timeIntervalSince1970: quotaResetEpoch)
@@ -116,7 +118,7 @@ import SwiftUI
         var lvl  = mathLevel
         if prog >= Self.mathLevelUpThreshold {
             prog = 0
-            lvl  = min(10, lvl + 1)
+            lvl  = min(20, lvl + 1)
         }
         set(mathLevel: lvl, mathLevelProgress: prog)
     }
@@ -127,7 +129,7 @@ import SwiftUI
             let rollback     = max(0, Int(Double(correctCount) * Self.rollbackRate))
             var total        = (mathLevel - 1) * Self.mathLevelUpThreshold + mathLevelProgress
             total            = max(0, total - rollback)
-            let newLevel     = max(1, total / Self.mathLevelUpThreshold + 1)
+            let newLevel     = min(20, max(1, total / Self.mathLevelUpThreshold + 1))
             let newProgress  = total % Self.mathLevelUpThreshold
             set(mathLevel: newLevel, mathLevelProgress: newProgress)
         }
@@ -182,5 +184,16 @@ import SwiftUI
     private func set(dailyUsed val: Int) {
         dailyUsed = val
         UserDefaults.standard.set(val, forKey: "dailyUsed")
+    }
+
+    // MARK: – Multiplayer integration
+
+    func recordMultiplayerScore(mode: GameMode, score: Int) {
+        if mode == .pi {
+            if score > piBestScore { set(piBestScore: score) }
+        } else {
+            if score > mathBestScore { set(mathBestScore: score) }
+        }
+        incrementRounds()
     }
 }

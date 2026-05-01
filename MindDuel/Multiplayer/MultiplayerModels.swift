@@ -1,5 +1,11 @@
 import SwiftUI
 
+struct GameEvent: Identifiable {
+    let id = UUID()
+    let message: String
+    let isPositive: Bool
+}
+
 struct MultiplayerActivityItem: Identifiable {
     let id = UUID()
     let opponentUsername: String

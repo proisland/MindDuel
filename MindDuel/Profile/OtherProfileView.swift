@@ -59,7 +59,7 @@ struct OtherProfileView: View {
                             HStack(spacing: MDSpacing.sm) {
                                 MDModeCard(mode: .pi, score: profile.piScore, level: profile.piLevel, maxLevel: 20, compact: true) { }
                                     .disabled(true)
-                                MDModeCard(mode: .math, score: profile.mathScore, level: profile.mathLevel, maxLevel: 10, compact: true) { }
+                                MDModeCard(mode: .math, score: profile.mathScore, level: profile.mathLevel, maxLevel: 20, compact: true) { }
                                     .disabled(true)
                             }
                         }
@@ -80,10 +80,10 @@ struct OtherProfileView: View {
 
                         // Action buttons
                         HStack(spacing: MDSpacing.sm) {
-                            MDButton(.primary, title: String(localized: "challenge_action")) {
-                                showChallenge = true
-                            }
                             if isFriend {
+                                MDButton(.primary, title: String(localized: "challenge_action")) {
+                                    showChallenge = true
+                                }
                                 MDButton(.ghost, title: "✓ \(String(localized: "friends_section_title"))") { }
                                     .disabled(true)
                             } else if hasSentRequest {
@@ -108,7 +108,7 @@ struct OtherProfileView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: showFlagExplanation)
         .fullScreenCover(isPresented: $showChallenge) {
-            MultiplayerLobbyView(ownUsername: ownUsername, startAsHost: true)
+            MultiplayerLobbyView(ownUsername: ownUsername, startAsHost: true, invitedUsername: profile.username)
         }
     }
 

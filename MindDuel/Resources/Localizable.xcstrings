@@ -1101,6 +1101,66 @@
         "en" : { "stringUnit" : { "state" : "translated", "value" : "now" } },
         "nb" : { "stringUnit" : { "state" : "translated", "value" : "nå" } }
       }
+    },
+    "game_event_lost_life_format" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "@%@ lost a life!" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "@%@ mistet et liv!" } }
+      }
+    },
+    "notification_game_waiting_body" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You have a turn waiting in a game." } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Du har et trekk som venter i et spill." } }
+      }
+    },
+    "score_breakdown_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Score breakdown" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Poengforklaring" } }
+      }
+    },
+    "score_breakdown_body" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "@%@ scored %lld points. Points are earned for each correct answer — faster answers give more points." } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "@%@ fikk %lld poeng. Poeng gis for hvert riktige svar — raskere svar gir flere poeng." } }
+      }
+    },
+    "scoreboard_pi_mode" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "π Pi" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "π Pi" } }
+      }
+    },
+    "scoreboard_math_mode" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "∑ Math" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "∑ Matte" } }
+      }
+    },
+    "rejoin_game_action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Return to ongoing game" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Tilbake til pågående spill" } }
+      }
+    },
+    "recent_activity_all_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "All activity" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "All aktivitet" } }
+      }
+    },
+    "remove_friend_action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Remove friend" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Fjern venn" } }
+      }
+    },
+    "no_activity_yet" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No activity yet" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Ingen aktivitet ennå" } }
+      }
     }
   },
   "version" : "1.0"

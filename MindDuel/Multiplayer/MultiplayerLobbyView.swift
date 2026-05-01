@@ -3,8 +3,10 @@ import SwiftUI
 struct MultiplayerLobbyView: View {
     let ownUsername: String
     let startAsHost: Bool
+    var invitedUsername: String? = nil
 
     @StateObject private var store = MultiplayerStore.shared
+    @StateObject private var progression = ProgressionStore.shared
     @Environment(\.dismiss) private var dismiss
     @State private var selectedMode: GameMode = .pi
     @State private var showGame = false
@@ -31,15 +33,26 @@ struct MultiplayerLobbyView: View {
         }
         .onAppear {
             if startAsHost {
-                store.createRoom(mode: selectedMode, ownUsername: ownUsername)
+                store.createRoom(mode: selectedMode, ownUsername: ownUsername, invitedUsername: invitedUsername)
             } else {
                 store.joinMockRoom(ownUsername: ownUsername)
             }
         }
-        .onDisappear { store.leaveRoom() }
+        .onDisappear {
+            if store.currentRoom?.status == .lobby {
+                store.leaveRoom()
+            }
+        }
+        .onChange(of: store.currentRoom?.status) { status in
+            if status == .playing && !showGame {
+                showGame = true
+            }
+        }
         .onChange(of: showGame) { isShowing in
-            if !isShowing && store.currentRoom == nil {
-                dismiss()
+            if !isShowing {
+                if store.currentRoom?.status != .playing {
+                    dismiss()
+                }
             }
         }
         .fullScreenCover(isPresented: $showGame) {
@@ -200,16 +213,18 @@ struct MultiplayerLobbyView: View {
                 store.startGame()
                 showGame = true
             }
-            .disabled(!store.allReady)
+            .disabled(!store.allReady || progression.isQuotaExhausted)
         } else {
             let youReady = room.players.first(where: { $0.isYou })?.isReady ?? false
             MDButton(youReady ? .ghost : .primary,
                      title: youReady
                         ? String(localized: "multiplayer_waiting_for_host_label")
                         : String(localized: "multiplayer_ready_action")) {
-                store.toggleReady()
+                if !progression.isQuotaExhausted {
+                    store.toggleReady()
+                }
             }
-            .disabled(youReady)
+            .disabled(youReady || progression.isQuotaExhausted)
         }
     }
 
