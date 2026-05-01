@@ -9,6 +9,7 @@ struct MultiplayerGameView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var currentDigitIndex: Int   = 0
+    @State private var piSessionStart:    Int   = 0  // absolute Pi digit index this session begins at
     @State private var mathProblem: MathProblem = MathProblemGenerator.generate(level: 1)
     @State private var elapsedSeconds: Double   = 0
     @State private var feedbackIsCorrect: Bool? = nil
@@ -78,7 +79,12 @@ struct MultiplayerGameView: View {
         }
         .onAppear {
             store.cancelGameReminderNotification()
-            currentDigitIndex = store.currentRoom?.myPiDigitIndex ?? 0
+            // Resume: room.myPiDigitIndex stores the absolute digit position when saved.
+            // Fresh: start at the user's current Pi level boundary, matching the
+            // standalone PiGameView (#35 fix). currentDigitIndex is the in-session offset.
+            let saved = store.currentRoom?.myPiDigitIndex ?? 0
+            piSessionStart = saved > 0 ? saved : max(0, (ProgressionStore.shared.piLevel - 1) * 50)
+            currentDigitIndex = 0
             refreshQuestion()
         }
         .onDisappear {
@@ -288,7 +294,7 @@ struct MultiplayerGameView: View {
         MDPrimaryCard {
             VStack(spacing: MDSpacing.xs) {
                 if room.mode == .pi {
-                    let absIndex = ProgressionStore.shared.piPosition + currentDigitIndex
+                    let absIndex = piSessionStart + currentDigitIndex
                     Text(String(format: String(localized: "pi_digits_guessed"), absIndex))
                         .mdStyle(.caption)
                         .foregroundStyle(Color.mdText2)
@@ -521,7 +527,7 @@ struct MultiplayerGameView: View {
     // MARK: – Pi helpers
 
     private var piSequenceDisplay: String {
-        let absIndex = ProgressionStore.shared.piPosition + currentDigitIndex
+        let absIndex = piSessionStart + currentDigitIndex
         let revealed = PiData.digits.prefix(absIndex).map { String($0) }.joined()
         if absIndex <= 10 { return "3." + revealed + "…" }
         return "…" + String(revealed.suffix(8)) + "…"
@@ -552,7 +558,7 @@ struct MultiplayerGameView: View {
     private func handlePiTap(_ digit: Int) {
         guard feedbackIsCorrect == nil, !progression.isQuotaExhausted,
               let room = store.currentRoom, room.isMyTurn else { return }
-        let target = PiData.digits[ProgressionStore.shared.piPosition + currentDigitIndex]
+        let target = PiData.digits[piSessionStart + currentDigitIndex]
         let correct = digit == target
         selectedIndex = digit
         feedbackIsCorrect = correct
@@ -560,7 +566,9 @@ struct MultiplayerGameView: View {
             try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
             if correct {
                 currentDigitIndex += 1
-                store.currentRoom?.myPiDigitIndex = currentDigitIndex
+                // Save absolute digit position so resume works even if piPosition shifted.
+                store.currentRoom?.myPiDigitIndex = piSessionStart + currentDigitIndex
+                ProgressionStore.shared.advancePiPosition(toFrontier: piSessionStart + currentDigitIndex)
             }
             selectedIndex = nil
             feedbackIsCorrect = nil

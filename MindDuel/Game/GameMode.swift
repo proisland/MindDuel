@@ -1,13 +1,8 @@
 import Foundation
 
-enum GameMode: Identifiable {
+enum GameMode: String, Identifiable, Codable {
     case pi
     case math
 
-    var id: String {
-        switch self {
-        case .pi: return "pi"
-        case .math: return "math"
-        }
-    }
+    var id: String { rawValue }
 }

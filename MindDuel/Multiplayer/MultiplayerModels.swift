@@ -6,8 +6,8 @@ struct GameEvent: Identifiable {
     let isPositive: Bool
 }
 
-struct MultiplayerActivityItem: Identifiable {
-    let id = UUID()
+struct MultiplayerActivityItem: Identifiable, Codable {
+    var id = UUID()
     let opponentUsername: String
     let mode: GameMode
     let didWin: Bool
@@ -25,7 +25,7 @@ struct MultiplayerActivityItem: Identifiable {
     }
 }
 
-struct MultiplayerPlayer: Identifiable, Equatable {
+struct MultiplayerPlayer: Identifiable, Equatable, Codable {
     let id: String
     let username: String
     var isHost: Bool
@@ -38,9 +38,9 @@ struct MultiplayerPlayer: Identifiable, Equatable {
     var isYou: Bool = false
 }
 
-enum RoomStatus { case lobby, playing, finished }
+enum RoomStatus: String, Codable { case lobby, playing, finished }
 
-struct MultiplayerRoom: Identifiable {
+struct MultiplayerRoom: Identifiable, Codable {
     let id: String          // room code, e.g. "4F2A"
     var mode: GameMode
     var startLevel: Int     // 1 = from start

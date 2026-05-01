@@ -69,6 +69,7 @@ struct MathGameView: View {
             }
         }
         .onAppear { restoreSavedSessionIfNeeded() }
+        .onDisappear { autoSaveIfInProgress() }
         .onReceive(timer) { _ in handleTimerTick() }
         .animation(.easeInOut(duration: 0.2), value: showQuitModal)
         .onChange(of: engine.isRoundOver, perform: { over in
@@ -89,17 +90,31 @@ struct MathGameView: View {
     }
 
     private func saveSessionAndExit() {
-        finaliseRound(won: false)
+        // Save mid-session state without finalising — see PiGameView for why.
         _ = MultiplayerStore.shared.saveStandaloneSoloMath(
             ownUsername: username,
             lives: engine.lives,
             skips: engine.skips,
-            score: roundResult?.score ?? 0,
+            score: 0,
             correctCount: engine.correctCount,
             startLevel: startLevel
         )
+        roundResult = ProgressionStore.RoundResult(score: 0, isPersonalBest: false)
         engine.quit()
         dismiss()
+    }
+
+    private func autoSaveIfInProgress() {
+        guard !engine.isRoundOver, roundResult == nil,
+              engine.correctCount > 0 || engine.lives < 5 || engine.skips < 5 else { return }
+        _ = MultiplayerStore.shared.saveStandaloneSoloMath(
+            ownUsername: username,
+            lives: engine.lives,
+            skips: engine.skips,
+            score: 0,
+            correctCount: engine.correctCount,
+            startLevel: startLevel
+        )
     }
 
     // MARK: – Layout
