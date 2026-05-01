@@ -6,6 +6,8 @@ private enum HomeDestination: Identifiable {
     case multiplayerHost
     case multiplayerJoin
     case activityList
+    case multiplayerGame
+    case activeGames
     var id: String {
         switch self {
         case .profile:         return "profile"
@@ -13,6 +15,8 @@ private enum HomeDestination: Identifiable {
         case .multiplayerHost: return "multiplayerHost"
         case .multiplayerJoin: return "multiplayerJoin"
         case .activityList:    return "activityList"
+        case .multiplayerGame: return "multiplayerGame"
+        case .activeGames:     return "activeGames"
         }
     }
 }
@@ -28,6 +32,7 @@ struct HomeView: View {
 
     private var pendingBadge: Int { social.totalPendingCount }
     private var inviteBadge: Int  { multiplayer.pendingInviteCount }
+    private var playingRooms: [MultiplayerRoom] { multiplayer.playingRooms }
 
     var body: some View {
         ZStack {
@@ -97,8 +102,8 @@ struct HomeView: View {
                         }
                         .padding(.horizontal, MDSpacing.md)
 
-                        // Rejoin banner
-                        if multiplayer.currentRoom?.status == .playing {
+                        // Rejoin banner (one or multiple active games)
+                        if !playingRooms.isEmpty {
                             rejoinBanner
                                 .padding(.horizontal, MDSpacing.md)
                         }
@@ -111,11 +116,9 @@ struct HomeView: View {
                         scoreboardCard
                             .padding(.horizontal, MDSpacing.md)
 
-                        // Recent activity
-                        if !multiplayer.recentActivity.isEmpty {
-                            recentActivitySection
-                                .padding(.horizontal, MDSpacing.md)
-                        }
+                        // Recent activity — always visible
+                        recentActivitySection
+                            .padding(.horizontal, MDSpacing.md)
                     }
                     .padding(.bottom, MDSpacing.xl)
                 }
@@ -135,6 +138,8 @@ struct HomeView: View {
             case .multiplayerHost: MultiplayerLobbyView(ownUsername: username, startAsHost: true)
             case .multiplayerJoin: MultiplayerLobbyView(ownUsername: username, startAsHost: false)
             case .activityList:    ActivityListView(activity: multiplayer.recentActivity)
+            case .multiplayerGame: MultiplayerGameView(ownUsername: username)
+            case .activeGames:     ActiveGamesView(ownUsername: username)
             }
         }
     }
@@ -143,15 +148,24 @@ struct HomeView: View {
 
     private var rejoinBanner: some View {
         Button {
-            activeDestination = .multiplayerHost
+            if playingRooms.count == 1 {
+                multiplayer.rejoin(roomID: playingRooms[0].id)
+                activeDestination = .multiplayerGame
+            } else {
+                activeDestination = .activeGames
+            }
         } label: {
             HStack(spacing: MDSpacing.sm) {
-                Circle()
-                    .fill(Color.mdGreen)
-                    .frame(width: 8, height: 8)
-                Text(String(localized: "rejoin_game_action"))
-                    .mdStyle(.bodyMd)
-                    .foregroundStyle(Color.mdGreen)
+                Circle().fill(Color.mdGreen).frame(width: 8, height: 8)
+                if playingRooms.count == 1 {
+                    Text(String(localized: "rejoin_game_action"))
+                        .mdStyle(.bodyMd)
+                        .foregroundStyle(Color.mdGreen)
+                } else {
+                    Text(String(format: String(localized: "rejoin_games_count_format"), playingRooms.count))
+                        .mdStyle(.bodyMd)
+                        .foregroundStyle(Color.mdGreen)
+                }
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.system(size: 12, weight: .semibold))
@@ -199,12 +213,12 @@ struct HomeView: View {
             }
 
             HStack(spacing: MDSpacing.sm) {
-                MDButton(.primary, title: String(localized: "multiplayer_create_action")) {
-                    activeDestination = .multiplayerHost
-                }
-                .disabled(progression.isQuotaExhausted)
                 MDButton(.ghost, title: String(localized: "multiplayer_join_action")) {
                     activeDestination = .multiplayerJoin
+                }
+                .disabled(progression.isQuotaExhausted)
+                MDButton(.primary, title: String(localized: "multiplayer_create_action")) {
+                    activeDestination = .multiplayerHost
                 }
                 .disabled(progression.isQuotaExhausted)
             }
@@ -247,7 +261,7 @@ struct HomeView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: – Recent activity section
+    // MARK: – Recent activity section (always visible)
 
     private var recentActivitySection: some View {
         VStack(alignment: .leading, spacing: MDSpacing.sm) {
@@ -256,17 +270,30 @@ struct HomeView: View {
                     .mdStyle(.bodyMd)
                     .foregroundStyle(Color.mdText)
                 Spacer()
-                Button { activeDestination = .activityList } label: {
-                    Text(String(localized: "recent_activity_see_all"))
-                        .mdStyle(.caption)
-                        .foregroundStyle(Color.mdAccent)
+                if !multiplayer.recentActivity.isEmpty {
+                    Button { activeDestination = .activityList } label: {
+                        Text(String(localized: "recent_activity_see_all"))
+                            .mdStyle(.caption)
+                            .foregroundStyle(Color.mdAccent)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
 
-            VStack(spacing: MDSpacing.xs) {
-                ForEach(multiplayer.recentActivity.prefix(3)) { item in
-                    activityRow(item)
+            if multiplayer.recentActivity.isEmpty {
+                Text(String(localized: "no_activity_yet"))
+                    .mdStyle(.caption)
+                    .foregroundStyle(Color.mdText3)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, MDSpacing.md)
+                    .background(Color.mdSurface)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.mdBorder2, lineWidth: 0.5))
+            } else {
+                VStack(spacing: MDSpacing.xs) {
+                    ForEach(multiplayer.recentActivity.prefix(3)) { item in
+                        activityRow(item)
+                    }
                 }
             }
         }

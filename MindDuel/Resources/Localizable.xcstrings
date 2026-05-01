@@ -852,8 +852,8 @@
     },
     "settings_free_plan_label" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Free plan: 10 questions per day" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Gratis plan: 10 oppgaver per dag" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Free plan: 20 questions per day" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Gratis plan: 20 oppgaver per dag" } }
       }
     },
     "settings_privacy_section" : {
@@ -1160,6 +1160,36 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "No activity yet" } },
         "nb" : { "stringUnit" : { "state" : "translated", "value" : "Ingen aktivitet ennå" } }
+      }
+    },
+    "no_friends_to_invite" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No friends to invite yet. Add friends from the scoreboard." } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Ingen venner å invitere ennå. Legg til venner fra scoreboard." } }
+      }
+    },
+    "multiplayer_start_level_label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "STARTING LEVEL" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "STARTNIVÅ" } }
+      }
+    },
+    "multiplayer_start_level_value" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "From start (#%lld)" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Fra start (#%lld)" } }
+      }
+    },
+    "rejoin_games_count_format" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld ongoing games" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "%lld pågående spill" } }
+      }
+    },
+    "active_games_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ongoing games" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Pågående spill" } }
       }
     }
   },

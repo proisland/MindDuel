@@ -5,6 +5,7 @@ import UserNotifications
     static let shared = MultiplayerStore()
 
     @Published var currentRoom: MultiplayerRoom?
+    @Published var backgroundRooms: [MultiplayerRoom] = []
     @Published var pendingInviteCount: Int = 1
     @Published var recentActivity: [MultiplayerActivityItem] = []
     @Published var lastGameEvent: GameEvent?
@@ -13,25 +14,67 @@ import UserNotifications
 
     private init() {}
 
+    // MARK: – Computed
+
+    var playingRooms: [MultiplayerRoom] {
+        var result = backgroundRooms.filter { $0.status == .playing }
+        if let room = currentRoom, room.status == .playing { result.append(room) }
+        return result
+    }
+
     // MARK: – Lobby
 
     func createRoom(mode: GameMode, ownUsername: String, invitedUsername: String? = nil) {
         let code = String(UUID().uuidString.prefix(4).uppercased())
-        let host = MultiplayerPlayer(id: "me",  username: ownUsername, isHost: true,  isReady: true,  isYou: true)
-        let bot1 = MultiplayerPlayer(id: "u1",  username: invitedUsername ?? "magnus", isHost: false, isReady: false)
-        let bot2 = MultiplayerPlayer(id: "u2",  username: "sara",      isHost: false, isReady: false)
-        currentRoom = MultiplayerRoom(id: code, mode: mode, startLevel: 1,
-                                      players: [host, bot1, bot2], status: .lobby)
-        seedBotReadyStates()
+        let host = MultiplayerPlayer(id: "me", username: ownUsername, isHost: true, isReady: true, isYou: true)
+        currentRoom = MultiplayerRoom(id: code, mode: mode, startLevel: 1, players: [host], status: .lobby)
+        if let invited = invitedUsername {
+            inviteFriend(username: invited, playerID: "u_\(invited)")
+        }
     }
 
     func joinMockRoom(ownUsername: String) {
-        let host = MultiplayerPlayer(id: "u1",  username: "magnus",    isHost: true,  isReady: true)
-        let you  = MultiplayerPlayer(id: "me",  username: ownUsername, isHost: false, isReady: false, isYou: true)
-        let bot2 = MultiplayerPlayer(id: "u2",  username: "alex",      isHost: false, isReady: false)
+        let host = MultiplayerPlayer(id: "u1", username: "magnus", isHost: true,  isReady: true)
+        let you  = MultiplayerPlayer(id: "me", username: ownUsername, isHost: false, isReady: false, isYou: true)
+        let bot2 = MultiplayerPlayer(id: "u2", username: "alex",    isHost: false, isReady: false)
         currentRoom = MultiplayerRoom(id: "A3BF", mode: .math, startLevel: 1,
                                       players: [host, you, bot2], status: .lobby)
         seedBotReadyStates()
+    }
+
+    func inviteFriend(username: String, playerID: String) {
+        guard currentRoom != nil else { return }
+        guard !(currentRoom?.players.contains(where: { $0.username == username }) ?? false) else { return }
+        let player = MultiplayerPlayer(id: playerID, username: username, isHost: false, isReady: false)
+        currentRoom?.players.append(player)
+        simulatePlayerReady(playerID: playerID)
+    }
+
+    private func simulatePlayerReady(playerID: String) {
+        botTask?.cancel()
+        botTask = Task {
+            try? await Task.sleep(nanoseconds: 1_800_000_000)
+            guard !Task.isCancelled else { return }
+            if let idx = currentRoom?.players.firstIndex(where: { $0.id == playerID }) {
+                currentRoom?.players[idx].isReady = true
+            }
+        }
+    }
+
+    private func seedBotReadyStates() {
+        botTask?.cancel()
+        botTask = Task {
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            guard !Task.isCancelled else { return }
+            if let idx = currentRoom?.players.firstIndex(where: { $0.id == "u1" }) {
+                currentRoom?.players[idx].isReady = true
+            }
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            guard !Task.isCancelled else { return }
+            if let idx = currentRoom?.players.firstIndex(where: { $0.id == "u2" }) {
+                currentRoom?.players[idx].isReady = true
+            }
+        }
     }
 
     func toggleReady() {
@@ -58,6 +101,40 @@ import UserNotifications
         scheduleBotTurn()
     }
 
+    // MARK: – Room lifecycle
+
+    func dismissGame() {
+        guard let room = currentRoom else { return }
+        botTask?.cancel()
+        botTask = nil
+        if !backgroundRooms.contains(where: { $0.id == room.id }) {
+            backgroundRooms.append(room)
+        }
+        if room.status == .playing { scheduleGameReminderNotification() }
+        currentRoom = nil
+    }
+
+    func rejoin(roomID: String) {
+        if let idx = backgroundRooms.firstIndex(where: { $0.id == roomID }) {
+            currentRoom = backgroundRooms.remove(at: idx)
+            cancelGameReminderNotification()
+            scheduleBotTurn()
+        }
+    }
+
+    func leaveRoom() {
+        botTask?.cancel()
+        botTask = nil
+        if let id = currentRoom?.id {
+            backgroundRooms.removeAll { $0.id == id }
+        }
+        currentRoom = nil
+    }
+
+    func leaveBackgroundRoom(id: String) {
+        backgroundRooms.removeAll { $0.id == id }
+    }
+
     // MARK: – Gameplay
 
     func submitAnswer(correct: Bool, answerTime: Double) {
@@ -80,11 +157,7 @@ import UserNotifications
         else { scheduleBotTurn() }
     }
 
-    func leaveRoom() {
-        botTask?.cancel()
-        botTask = nil
-        currentRoom = nil
-    }
+    // MARK: – Notifications
 
     func scheduleGameReminderNotification() {
         Task {
@@ -105,31 +178,7 @@ import UserNotifications
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["game-reminder"])
     }
 
-    // MARK: – Private
-
-    private func seedBotReadyStates() {
-        botTask?.cancel()
-        botTask = Task {
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
-            guard !Task.isCancelled else { return }
-            if let idx = currentRoom?.players.firstIndex(where: { $0.id == "u1" }) {
-                currentRoom?.players[idx].isReady = true
-            }
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            guard !Task.isCancelled else { return }
-            if let idx = currentRoom?.players.firstIndex(where: { $0.id == "u2" }) {
-                currentRoom?.players[idx].isReady = true
-            }
-            // Auto-start if host-bot detects all ready
-            guard !Task.isCancelled else { return }
-            if allReady {
-                let isHost = currentRoom?.players.first(where: { $0.isYou })?.isHost == true
-                if isHost {
-                    // host must tap start manually; bots just wait
-                }
-            }
-        }
-    }
+    // MARK: – Private helpers
 
     private func scheduleBotTurn() {
         botTask?.cancel()
@@ -157,14 +206,12 @@ import UserNotifications
         let answerTime = Double.random(in: 0.8...3.5)
         let prevLives = room.players[idx].lives
         applyResult(to: &room, playerIdx: idx, correct: correct, answerTime: answerTime)
-        let lostLife = !correct && room.players[idx].lives < prevLives
 
-        if lostLife {
-            let event = GameEvent(
+        if !correct && room.players[idx].lives < prevLives {
+            lastGameEvent = GameEvent(
                 message: String(format: String(localized: "game_event_lost_life_format"), bot.username),
                 isPositive: true
             )
-            lastGameEvent = event
         }
 
         advanceTurn(&room)

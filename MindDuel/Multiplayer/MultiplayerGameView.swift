@@ -75,7 +75,7 @@ struct MultiplayerGameView: View {
         }
         .onDisappear {
             if store.currentRoom?.status == .playing {
-                store.scheduleGameReminderNotification()
+                store.dismissGame()
             }
         }
     }
