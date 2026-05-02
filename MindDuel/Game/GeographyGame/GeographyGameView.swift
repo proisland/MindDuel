@@ -172,11 +172,7 @@ struct GeographyGameView: View {
                     .foregroundStyle(Color.mdText3)
                     .frame(maxWidth: .infinity, alignment: .center)
                 if let flag = problem.flag {
-                    // Render via UIKit (UILabel + AppleColorEmoji) — SwiftUI
-                    // Text was dropping flag glyphs and rendering "??" even
-                    // with verbatim: + .font(.custom(...)) (#63).
-                    FlagView(emoji: flag, size: 64)
-                        .frame(height: 72)
+                    FlagView(emoji: flag, size: 72)
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
                 Text(verbatim: problem.prompt)

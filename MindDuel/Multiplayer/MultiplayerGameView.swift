@@ -394,8 +394,7 @@ struct MultiplayerGameView: View {
                         .foregroundStyle(Color.mdText3)
                         .frame(maxWidth: .infinity, alignment: .center)
                     if let flag = geoProblem.flag {
-                        FlagView(emoji: flag, size: 64)
-                            .frame(height: 72)
+                        FlagView(emoji: flag, size: 72)
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
                     Text(verbatim: geoProblem.prompt)
