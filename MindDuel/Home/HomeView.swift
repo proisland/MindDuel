@@ -91,15 +91,25 @@ struct HomeView: View {
                                 mode: .pi,
                                 score: progression.piBestScore,
                                 level: progression.piLevel,
-                                maxLevel: 20
+                                maxLevel: 20,
+                                compact: true
                             ) { activeMode = .pi }
 
                             MDModeCard(
                                 mode: .math,
                                 score: progression.mathBestScore,
                                 level: progression.mathLevel,
-                                maxLevel: 20
+                                maxLevel: 20,
+                                compact: true
                             ) { activeMode = .math }
+
+                            MDModeCard(
+                                mode: .chemistry,
+                                score: progression.chemBestScore,
+                                level: progression.chemLevel,
+                                maxLevel: 20,
+                                compact: true
+                            ) { activeMode = .chemistry }
                         }
                         .padding(.horizontal, MDSpacing.md)
 
@@ -138,8 +148,9 @@ struct HomeView: View {
         // distinguishes which UI to resume in — see ActiveGamesView).
         .fullScreenCover(item: $activeMode) { mode in
             switch mode {
-            case .pi:   PiGameView(username: username, resumeRoomID: resumeSoloRoomID)
-            case .math: MathGameView(username: username, resumeRoomID: resumeSoloRoomID)
+            case .pi:        PiGameView(username: username, resumeRoomID: resumeSoloRoomID)
+            case .math:      MathGameView(username: username, resumeRoomID: resumeSoloRoomID)
+            case .chemistry: ChemistryGameView(username: username, resumeRoomID: resumeSoloRoomID)
             }
         }
         .onChange(of: activeMode) { mode in
@@ -324,6 +335,14 @@ struct HomeView: View {
         }
     }
 
+    private func modeLabel(for mode: GameMode) -> String {
+        switch mode {
+        case .pi:        return String(localized: "mode_pi")
+        case .math:      return String(localized: "mode_math")
+        case .chemistry: return String(localized: "mode_chemistry")
+        }
+    }
+
     private func activityRow(_ item: MultiplayerActivityItem) -> some View {
         HStack(spacing: MDSpacing.sm) {
             ZStack(alignment: .bottomTrailing) {
@@ -340,7 +359,7 @@ struct HomeView: View {
                     .mdStyle(.caption)
                     .foregroundStyle(Color.mdText)
                 Text(String(format: String(localized: "activity_score_format"),
-                            item.mode == .pi ? String(localized: "mode_pi") : String(localized: "mode_math"),
+                            modeLabel(for: item.mode),
                             item.score))
                     .mdStyle(.micro)
                     .foregroundStyle(Color.mdText3)

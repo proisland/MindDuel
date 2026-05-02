@@ -162,6 +162,23 @@
         }
       }
     },
+    "chem_level_problem" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Level %lld · Question %lld"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nivå %lld · Spørsmål %lld"
+          }
+        }
+      }
+    },
     "choose_username" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -544,6 +561,23 @@
     },
     "MindDuel M5" : {
 
+    },
+    "mode_chemistry" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chemistry"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kjemi"
+          }
+        }
+      }
     },
     "mode_math" : {
       "extractionState" : "stale",

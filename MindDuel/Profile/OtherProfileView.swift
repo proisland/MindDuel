@@ -61,6 +61,8 @@ struct OtherProfileView: View {
                                     .disabled(true)
                                 MDModeCard(mode: .math, score: profile.mathScore, level: profile.mathLevel, maxLevel: 20, compact: true) { }
                                     .disabled(true)
+                                MDModeCard(mode: .chemistry, score: profile.chemScore, level: profile.chemLevel, maxLevel: 20, compact: true) { }
+                                    .disabled(true)
                             }
                         }
 

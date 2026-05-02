@@ -22,7 +22,9 @@ struct MultiplayerLobbyView: View {
                     VStack(alignment: .leading, spacing: MDSpacing.lg) {
                         if let room = store.currentRoom {
                             modeSection(room: room, editable: isHost(room))
-                            if isHost(room) && room.mode == .math { startLevelSection(room: room) }
+                            if isHost(room) && (room.mode == .math || room.mode == .chemistry) {
+                                startLevelSection(room: room)
+                            }
                             playersSection(room: room)
                             startButton(room: room)
                         }
@@ -86,16 +88,22 @@ struct MultiplayerLobbyView: View {
     private func modeSection(room: MultiplayerRoom, editable: Bool) -> some View {
         sectionLabel(String(localized: "multiplayer_mode_label"))
         HStack(spacing: MDSpacing.sm) {
-            modeButton(.pi,   room: room, editable: editable)
-            modeButton(.math, room: room, editable: editable)
+            modeButton(.pi,        room: room, editable: editable)
+            modeButton(.math,      room: room, editable: editable)
+            modeButton(.chemistry, room: room, editable: editable)
         }
     }
 
     private func modeButton(_ mode: GameMode, room: MultiplayerRoom, editable: Bool) -> some View {
         let isActive = room.mode == mode
-        let title = mode == .pi ? String(localized: "mode_pi") : String(localized: "mode_math")
-        let icon: String  = mode == .pi ? "π" : "∑"
-        let color: Color  = mode == .pi ? .mdAccent : .mdPink
+        let title: String
+        let icon: String
+        let color: Color
+        switch mode {
+        case .pi:        title = String(localized: "mode_pi");        icon = "π"; color = .mdAccent
+        case .math:      title = String(localized: "mode_math");      icon = "∑"; color = .mdPink
+        case .chemistry: title = String(localized: "mode_chemistry"); icon = "⚗︎"; color = .mdGreen
+        }
         return Button {
             if editable { store.currentRoom?.mode = mode }
         } label: {
@@ -186,8 +194,13 @@ struct MultiplayerLobbyView: View {
 
     private func playerRow(_ player: MultiplayerPlayer) -> some View {
         let mode = store.currentRoom?.mode ?? .pi
-        let level = mode == .pi ? player.piLevel : player.mathLevel
-        let score = mode == .pi ? player.piBestScore : player.mathBestScore
+        let level: Int
+        let score: Int
+        switch mode {
+        case .pi:        level = player.piLevel;   score = player.piBestScore
+        case .math:      level = player.mathLevel; score = player.mathBestScore
+        case .chemistry: level = player.chemLevel; score = player.chemBestScore
+        }
         return HStack(spacing: MDSpacing.sm) {
             MDAvatar(username: player.username, size: .sm)
             VStack(alignment: .leading, spacing: 2) {

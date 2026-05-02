@@ -5,8 +5,10 @@ struct UserProfile: Identifiable {
     let username: String
     let piScore: Int
     let mathScore: Int
+    var chemScore: Int = 0
     let piLevel: Int
     let mathLevel: Int
+    var chemLevel: Int = 1
     let roundsPlayed: Int
     let age: Int?
     let city: String?
@@ -15,7 +17,7 @@ struct UserProfile: Identifiable {
     var isFriend: Bool
     var isFlagged: Bool
 
-    var totalScore: Int { piScore + mathScore }
+    var totalScore: Int { piScore + mathScore + chemScore }
     var initials: String { String(username.prefix(2)).uppercased() }
 
     var avatarColor: Color {

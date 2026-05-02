@@ -41,8 +41,10 @@ struct MultiplayerPlayer: Identifiable, Equatable, Codable {
     /// for Math rooms. Defaults keep saved-room decoding stable.
     var piLevel: Int = 1
     var mathLevel: Int = 1
+    var chemLevel: Int = 1
     var piBestScore: Int = 0
     var mathBestScore: Int = 0
+    var chemBestScore: Int = 0
 }
 
 enum RoomStatus: String, Codable { case lobby, playing, finished }

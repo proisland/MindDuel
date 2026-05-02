@@ -101,8 +101,10 @@ import UserNotifications
         let p = ProgressionStore.shared
         player.piLevel       = p.piLevel
         player.mathLevel     = p.mathLevel
+        player.chemLevel     = p.chemLevel
         player.piBestScore   = p.piBestScore
         player.mathBestScore = p.mathBestScore
+        player.chemBestScore = p.chemBestScore
     }
 
     private func simulatePlayerReady(playerID: String) {
@@ -225,6 +227,25 @@ import UserNotifications
         var room = MultiplayerRoom(id: id, mode: .pi, startLevel: 1,
                                    players: [player], status: .playing)
         room.myPiDigitIndex = currentDigit
+        room.isStandaloneSolo = true
+        backgroundRooms.append(room)
+        return id
+    }
+
+    /// Save a standalone solo Chemistry session to backgroundRooms.
+    func saveStandaloneSoloChem(ownUsername: String,
+                                lives: Int, skips: Int,
+                                score: Int, correctCount: Int,
+                                startLevel: Int) -> String {
+        let id = "SOLO-" + String(UUID().uuidString.prefix(4).uppercased())
+        var player = MultiplayerPlayer(id: "me", username: ownUsername,
+                                       isHost: true, isReady: true, isYou: true)
+        player.lives = lives
+        player.skips = skips
+        player.score = score
+        player.correctCount = correctCount
+        var room = MultiplayerRoom(id: id, mode: .chemistry, startLevel: startLevel,
+                                   players: [player], status: .playing)
         room.isStandaloneSolo = true
         backgroundRooms.append(room)
         return id

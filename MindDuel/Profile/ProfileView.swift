@@ -71,6 +71,14 @@ struct ProfileView: View {
                                     compact: true
                                 ) { }
                                 .disabled(true)
+                                MDModeCard(
+                                    mode: .chemistry,
+                                    score: progression.chemBestScore,
+                                    level: progression.chemLevel,
+                                    maxLevel: 20,
+                                    compact: true
+                                ) { }
+                                .disabled(true)
                             }
                         }
 
