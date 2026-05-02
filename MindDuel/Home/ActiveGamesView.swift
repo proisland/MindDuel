@@ -36,6 +36,7 @@ struct ActiveGamesView: View {
             case .pi:        PiGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
             case .math:      MathGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
             case .chemistry: ChemistryGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .geography: GeographyGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
             }
         }
     }
@@ -51,6 +52,8 @@ struct ActiveGamesView: View {
             modeColor = .mdPink;   modeBgSoft = .mdPinkSoft;   modeIcon = "∑"
         case .chemistry:
             modeColor = .mdGreen;  modeBgSoft = .mdGreenSoft;  modeIcon = "⚗︎"
+        case .geography:
+            modeColor = .mdAmber;  modeBgSoft = .mdAmberSoft;  modeIcon = "🌍"
         }
         let isMyTurn = room.isMyTurn
 
@@ -148,7 +151,7 @@ struct ActiveGamesView: View {
     private func levelForRoom(_ room: MultiplayerRoom) -> Int {
         switch room.mode {
         case .pi: return ProgressionStore.piLevel(forPosition: room.myPiDigitIndex)
-        case .math, .chemistry: return max(1, room.startLevel)
+        case .math, .chemistry, .geography: return max(1, room.startLevel)
         }
     }
 

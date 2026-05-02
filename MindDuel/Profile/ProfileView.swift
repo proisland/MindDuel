@@ -57,7 +57,9 @@ struct ProfileView: View {
 
                         // FREMGANG
                         sectionContainer(String(localized: "progress_section_title")) {
-                            HStack(spacing: MDSpacing.sm) {
+                            LazyVGrid(columns: [GridItem(.flexible(), spacing: MDSpacing.sm),
+                                                GridItem(.flexible(), spacing: MDSpacing.sm)],
+                                      spacing: MDSpacing.sm) {
                                 MDModeCard(
                                     mode: .pi,
                                     score: progression.piBestScore,
@@ -78,6 +80,14 @@ struct ProfileView: View {
                                     mode: .chemistry,
                                     score: progression.chemBestScore,
                                     level: progression.chemLevel,
+                                    maxLevel: 20,
+                                    compact: true
+                                ) { }
+                                .disabled(true)
+                                MDModeCard(
+                                    mode: .geography,
+                                    score: progression.geoBestScore,
+                                    level: progression.geoLevel,
                                     maxLevel: 20,
                                     compact: true
                                 ) { }

@@ -27,6 +27,7 @@ import SwiftUI
     /// level-up so each level starts clean. In-memory — no need to persist.
     private var mathRecentWrongs: Int = 0
     private var chemRecentWrongs: Int = 0
+    private var geoRecentWrongs: Int = 0
 
     // MARK: – Published state (mirrors UserDefaults)
 
@@ -40,6 +41,10 @@ import SwiftUI
     @Published private(set) var chemLevel: Int
     @Published private(set) var chemLevelProgress: Int
     @Published private(set) var chemBestScore: Int
+
+    @Published private(set) var geoLevel: Int
+    @Published private(set) var geoLevelProgress: Int
+    @Published private(set) var geoBestScore: Int
 
     @Published private(set) var dailyUsed: Int
     @Published private(set) var totalRoundsPlayed: Int
@@ -76,6 +81,10 @@ import SwiftUI
         chemLevel         = storedChemLvl < 1 ? 1 : storedChemLvl
         chemLevelProgress = d.integer(forKey: "chemLevelProgress")
         chemBestScore     = d.integer(forKey: "chemBestScore")
+        let storedGeoLvl  = d.integer(forKey: "geoLevel")
+        geoLevel          = storedGeoLvl < 1 ? 1 : storedGeoLvl
+        geoLevelProgress  = d.integer(forKey: "geoLevelProgress")
+        geoBestScore      = d.integer(forKey: "geoBestScore")
         dailyUsed         = d.integer(forKey: "dailyUsed")
         quotaResetEpoch   = d.double(forKey: "quotaResetEpoch")
         totalRoundsPlayed = d.integer(forKey: "totalRoundsPlayed")
@@ -165,6 +174,13 @@ import SwiftUI
         return max(0, Int(pts * (Self.K / avgTime)))
     }
 
+    /// Geography uses the same level-scaled scoring formula as Math/Chem.
+    func geoScore(correctCount: Int, level: Int, avgTime: Double) -> Int {
+        guard !isFlagged, correctCount > 0, avgTime > 0.2 else { return 0 }
+        let pts = Double(level * correctCount)
+        return max(0, Int(pts * (Self.K / avgTime)))
+    }
+
     // MARK: – Round results
 
     struct RoundResult {
@@ -209,6 +225,7 @@ import SwiftUI
         switch mode {
         case .math:      mathRecentWrongs += 1
         case .chemistry: chemRecentWrongs += 1
+        case .geography: geoRecentWrongs += 1
         case .pi:        break  // Pi has its own digit-position progression
         }
     }
@@ -237,6 +254,37 @@ import SwiftUI
             chemRecentWrongs = 0
         }
         set(chemLevel: lvl, chemLevelProgress: prog)
+    }
+
+    /// Live geo-level progression — same adaptive threshold as Math/Chem.
+    func advanceGeoLevel() {
+        var prog = geoLevelProgress + 1
+        var lvl  = geoLevel
+        let threshold = Self.adaptiveThreshold(avgTime: averageAnswerTime,
+                                               recentWrongs: geoRecentWrongs)
+        if prog >= threshold {
+            prog = 0
+            lvl  = min(20, lvl + 1)
+            geoRecentWrongs = 0
+        }
+        set(geoLevel: lvl, geoLevelProgress: prog)
+    }
+
+    func applyGeoRound(correctCount: Int, level: Int, avgTime: Double, won: Bool) -> RoundResult {
+        let score = geoScore(correctCount: correctCount, level: level, avgTime: avgTime)
+        if !won && correctCount > 0 {
+            let rollback     = max(0, Int(Double(correctCount) * Self.rollbackRate))
+            var total        = (geoLevel - 1) * Self.mathLevelUpThreshold + geoLevelProgress
+            total            = max(0, total - rollback)
+            let newLevel     = min(20, max(1, total / Self.mathLevelUpThreshold + 1))
+            let newProgress  = total % Self.mathLevelUpThreshold
+            set(geoLevel: newLevel, geoLevelProgress: newProgress)
+        }
+        let pb = score > 0
+        if pb { set(geoBestScore: geoBestScore + score) }
+        incrementRounds()
+        checkAntiCheat(avgTime: avgTime, correctCount: correctCount)
+        return RoundResult(score: score, isPersonalBest: pb)
     }
 
     func applyChemRound(correctCount: Int, level: Int, avgTime: Double, won: Bool) -> RoundResult {
@@ -326,6 +374,18 @@ import SwiftUI
         UserDefaults.standard.set(val, forKey: "chemBestScore")
     }
 
+    private func set(geoLevel lvl: Int, geoLevelProgress prog: Int) {
+        geoLevel = lvl
+        geoLevelProgress = prog
+        UserDefaults.standard.set(lvl,  forKey: "geoLevel")
+        UserDefaults.standard.set(prog, forKey: "geoLevelProgress")
+    }
+
+    private func set(geoBestScore val: Int) {
+        geoBestScore = val
+        UserDefaults.standard.set(val, forKey: "geoBestScore")
+    }
+
     private func set(dailyUsed val: Int) {
         dailyUsed = val
         UserDefaults.standard.set(val, forKey: "dailyUsed")
@@ -344,6 +404,9 @@ import SwiftUI
         case .chemistry:
             if score > 0 { set(chemBestScore: chemBestScore + score) }
             for _ in 0..<correctCount { advanceChemLevel() }
+        case .geography:
+            if score > 0 { set(geoBestScore: geoBestScore + score) }
+            for _ in 0..<correctCount { advanceGeoLevel() }
         }
         incrementRounds()
     }

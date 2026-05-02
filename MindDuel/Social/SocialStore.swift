@@ -6,9 +6,11 @@ struct UserProfile: Identifiable {
     let piScore: Int
     let mathScore: Int
     var chemScore: Int = 0
+    var geoScore: Int = 0
     let piLevel: Int
     let mathLevel: Int
     var chemLevel: Int = 1
+    var geoLevel: Int = 1
     let roundsPlayed: Int
     let age: Int?
     let city: String?
@@ -20,7 +22,7 @@ struct UserProfile: Identifiable {
     /// Average answer time in seconds (#57). 0 = unknown / no data.
     var avgAnswerTime: Double = 0
 
-    var totalScore: Int { piScore + mathScore + chemScore }
+    var totalScore: Int { piScore + mathScore + chemScore + geoScore }
     var initials: String { String(username.prefix(2)).uppercased() }
 
     var avatarColor: Color {

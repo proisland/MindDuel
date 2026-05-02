@@ -13,6 +13,7 @@ struct MDModeCard: View {
         case .pi: return "π"
         case .math: return "∑"
         case .chemistry: return "⚗︎"
+        case .geography: return "🌍"
         }
     }
 
@@ -21,6 +22,7 @@ struct MDModeCard: View {
         case .pi: return .mdAccentDeep
         case .math: return .mdPinkDeep
         case .chemistry: return .mdGreen
+        case .geography: return .mdAmber
         }
     }
 
@@ -29,6 +31,7 @@ struct MDModeCard: View {
         case .pi: return .mdAccent
         case .math: return .mdPink
         case .chemistry: return .mdGreen
+        case .geography: return .mdAmber
         }
     }
 
@@ -37,6 +40,7 @@ struct MDModeCard: View {
         case .pi: return String(localized: "mode_pi")
         case .math: return String(localized: "mode_math")
         case .chemistry: return String(localized: "mode_chemistry")
+        case .geography: return String(localized: "mode_geography")
         }
     }
 

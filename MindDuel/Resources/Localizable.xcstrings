@@ -196,6 +196,40 @@
         }
       }
     },
+    "geo_level_problem" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Level %lld · Question %lld"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nivå %lld · Spørsmål %lld"
+          }
+        }
+      }
+    },
+    "mode_geography" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geography"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geografi"
+          }
+        }
+      }
+    },
     "choose_username" : {
       "extractionState" : "stale",
       "localizations" : {

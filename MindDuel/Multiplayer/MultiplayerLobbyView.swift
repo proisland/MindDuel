@@ -22,7 +22,7 @@ struct MultiplayerLobbyView: View {
                     VStack(alignment: .leading, spacing: MDSpacing.lg) {
                         if let room = store.currentRoom {
                             modeSection(room: room, editable: isHost(room))
-                            if isHost(room) && (room.mode == .math || room.mode == .chemistry) {
+                            if isHost(room) && (room.mode == .math || room.mode == .chemistry || room.mode == .geography) {
                                 startLevelSection(room: room)
                             }
                             playersSection(room: room)
@@ -92,10 +92,13 @@ struct MultiplayerLobbyView: View {
     @ViewBuilder
     private func modeSection(room: MultiplayerRoom, editable: Bool) -> some View {
         sectionLabel(String(localized: "multiplayer_mode_label"))
-        HStack(spacing: MDSpacing.sm) {
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: MDSpacing.sm),
+                            GridItem(.flexible(), spacing: MDSpacing.sm)],
+                  spacing: MDSpacing.sm) {
             modeButton(.pi,        room: room, editable: editable)
             modeButton(.math,      room: room, editable: editable)
             modeButton(.chemistry, room: room, editable: editable)
+            modeButton(.geography, room: room, editable: editable)
         }
     }
 
@@ -108,6 +111,7 @@ struct MultiplayerLobbyView: View {
         case .pi:        title = String(localized: "mode_pi");        icon = "π"; color = .mdAccent
         case .math:      title = String(localized: "mode_math");      icon = "∑"; color = .mdPink
         case .chemistry: title = String(localized: "mode_chemistry"); icon = "⚗︎"; color = .mdGreen
+        case .geography: title = String(localized: "mode_geography"); icon = "🌍"; color = .mdAmber
         }
         return Button {
             if editable { store.currentRoom?.mode = mode }
@@ -205,6 +209,7 @@ struct MultiplayerLobbyView: View {
         case .pi:        level = player.piLevel;   score = player.piBestScore
         case .math:      level = player.mathLevel; score = player.mathBestScore
         case .chemistry: level = player.chemLevel; score = player.chemBestScore
+        case .geography: level = player.geoLevel;  score = player.geoBestScore
         }
         return HStack(spacing: MDSpacing.sm) {
             MDAvatar(username: player.username, size: .sm)

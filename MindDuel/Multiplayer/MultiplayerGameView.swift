@@ -12,6 +12,7 @@ struct MultiplayerGameView: View {
     @State private var piSessionStart:    Int   = 0  // absolute Pi digit index this session begins at
     @State private var mathProblem: MathProblem = MathProblemGenerator.generate(level: 1)
     @State private var chemProblem: ChemistryProblem = ChemistryProblemGenerator.generate(level: 1)
+    @State private var geoProblem: GeographyProblem = GeographyProblemGenerator.generate(level: 1)
     @State private var elapsedSeconds: Double   = 0
     @State private var feedbackIsCorrect: Bool? = nil
     @State private var selectedIndex: Int?      = nil
@@ -378,6 +379,21 @@ struct MultiplayerGameView: View {
                         .foregroundStyle(Color.mdText)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity, alignment: .center)
+                case .geography:
+                    Text(String(format: String(localized: "geo_level_problem"),
+                                room.startLevel, 1))
+                        .mdStyle(.caption)
+                        .foregroundStyle(Color.mdText2)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    Text(GeographyProblemGenerator.curriculumLabel(forLevel: room.startLevel))
+                        .mdStyle(.micro)
+                        .foregroundStyle(Color.mdText3)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    Text(geoProblem.prompt)
+                        .font(.system(size: 18, weight: .heavy))
+                        .foregroundStyle(Color.mdText)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
             .padding(.vertical, MDSpacing.sm)
@@ -390,6 +406,38 @@ struct MultiplayerGameView: View {
         case .pi:        piDigitGrid
         case .math:      mathAnswerGrid
         case .chemistry: chemAnswerGrid
+        case .geography: geoAnswerGrid
+        }
+    }
+
+    private var geoAnswerGrid: some View {
+        let columns = Array(repeating: GridItem(.flexible(), spacing: MDSpacing.sm), count: 2)
+        return LazyVGrid(columns: columns, spacing: MDSpacing.sm) {
+            ForEach(geoProblem.options.indices, id: \.self) { i in
+                AnswerButton(
+                    label: geoProblem.options[i],
+                    feedbackState: mathButtonState(for: i)
+                ) {
+                    handleGeoTap(i)
+                }
+                .disabled(feedbackIsCorrect != nil || progression.isQuotaExhausted)
+            }
+        }
+    }
+
+    private func handleGeoTap(_ index: Int) {
+        guard feedbackIsCorrect == nil, !progression.isQuotaExhausted,
+              let room = store.currentRoom, room.isMyTurn else { return }
+        let correct = geoProblem.options[index] == geoProblem.correctAnswer
+        selectedIndex = index
+        feedbackIsCorrect = correct
+        let time = elapsedSeconds
+        Task {
+            try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
+            selectedIndex = nil
+            feedbackIsCorrect = nil
+            elapsedSeconds = 0
+            store.submitAnswer(correct: correct, answerTime: time)
         }
     }
 
@@ -589,6 +637,8 @@ struct MultiplayerGameView: View {
             mathProblem = MathProblemGenerator.generate(level: max(1, room.startLevel))
         case .chemistry:
             chemProblem = ChemistryProblemGenerator.generate(level: max(1, room.startLevel))
+        case .geography:
+            geoProblem = GeographyProblemGenerator.generate(level: max(1, room.startLevel))
         case .pi:
             break
         }

@@ -52,9 +52,11 @@ struct MultiplayerPlayer: Identifiable, Equatable, Codable {
     var piLevel: Int = 1
     var mathLevel: Int = 1
     var chemLevel: Int = 1
+    var geoLevel: Int = 1
     var piBestScore: Int = 0
     var mathBestScore: Int = 0
     var chemBestScore: Int = 0
+    var geoBestScore: Int = 0
 }
 
 enum RoomStatus: String, Codable { case lobby, playing, finished }

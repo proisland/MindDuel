@@ -59,12 +59,16 @@ struct OtherProfileView: View {
 
                         // Mode cards
                         sectionContainer(String(localized: "progress_section_title")) {
-                            HStack(spacing: MDSpacing.sm) {
+                            LazyVGrid(columns: [GridItem(.flexible(), spacing: MDSpacing.sm),
+                                                GridItem(.flexible(), spacing: MDSpacing.sm)],
+                                      spacing: MDSpacing.sm) {
                                 MDModeCard(mode: .pi, score: profile.piScore, level: profile.piLevel, maxLevel: 20, compact: true) { }
                                     .disabled(true)
                                 MDModeCard(mode: .math, score: profile.mathScore, level: profile.mathLevel, maxLevel: 20, compact: true) { }
                                     .disabled(true)
                                 MDModeCard(mode: .chemistry, score: profile.chemScore, level: profile.chemLevel, maxLevel: 20, compact: true) { }
+                                    .disabled(true)
+                                MDModeCard(mode: .geography, score: profile.geoScore, level: profile.geoLevel, maxLevel: 20, compact: true) { }
                                     .disabled(true)
                             }
                         }

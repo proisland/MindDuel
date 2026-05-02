@@ -17,9 +17,11 @@ struct ScoreboardView: View {
             piScore: progression.piBestScore,
             mathScore: progression.mathBestScore,
             chemScore: progression.chemBestScore,
+            geoScore: progression.geoBestScore,
             piLevel: progression.piLevel,
             mathLevel: progression.mathLevel,
             chemLevel: progression.chemLevel,
+            geoLevel: progression.geoLevel,
             roundsPlayed: progression.totalRoundsPlayed,
             age: nil, city: nil,
             memberSince: "april 2025",
@@ -65,7 +67,7 @@ struct ScoreboardView: View {
 
     private var scoreModeToggle: some View {
         HStack(spacing: 0) {
-            ForEach([GameMode.pi, GameMode.math, GameMode.chemistry]) { mode in
+            ForEach([GameMode.pi, GameMode.math, GameMode.chemistry, GameMode.geography]) { mode in
                 Button {
                     withAnimation(.easeInOut(duration: 0.15)) { scoreMode = mode }
                 } label: {
@@ -90,6 +92,7 @@ struct ScoreboardView: View {
         case .pi:        return String(localized: "scoreboard_pi_mode")
         case .math:      return String(localized: "scoreboard_math_mode")
         case .chemistry: return String(localized: "mode_chemistry")
+        case .geography: return String(localized: "mode_geography")
         }
     }
 
@@ -98,6 +101,7 @@ struct ScoreboardView: View {
         case .pi:        return profile.piScore
         case .math:      return profile.mathScore
         case .chemistry: return profile.chemScore
+        case .geography: return profile.geoScore
         }
     }
 

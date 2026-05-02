@@ -83,6 +83,7 @@ struct ActivityListView: View {
         case .pi:        return String(localized: "mode_pi")
         case .math:      return String(localized: "mode_math")
         case .chemistry: return String(localized: "mode_chemistry")
+        case .geography: return String(localized: "mode_geography")
         }
     }
 }

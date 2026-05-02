@@ -87,8 +87,10 @@ struct HomeView: View {
                             .padding(.horizontal, MDSpacing.md)
                         }
 
-                        // Mode cards
-                        HStack(spacing: MDSpacing.sm) {
+                        // Mode cards (2x2 grid — geography brings the count to four).
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: MDSpacing.sm),
+                                            GridItem(.flexible(), spacing: MDSpacing.sm)],
+                                  spacing: MDSpacing.sm) {
                             MDModeCard(
                                 mode: .pi,
                                 score: progression.piBestScore,
@@ -112,6 +114,14 @@ struct HomeView: View {
                                 maxLevel: 20,
                                 compact: true
                             ) { startOrResume(.chemistry) }
+
+                            MDModeCard(
+                                mode: .geography,
+                                score: progression.geoBestScore,
+                                level: progression.geoLevel,
+                                maxLevel: 20,
+                                compact: true
+                            ) { startOrResume(.geography) }
                         }
                         .padding(.horizontal, MDSpacing.md)
 
@@ -153,6 +163,7 @@ struct HomeView: View {
             case .pi:        PiGameView(username: username, resumeRoomID: resumeSoloRoomID)
             case .math:      MathGameView(username: username, resumeRoomID: resumeSoloRoomID)
             case .chemistry: ChemistryGameView(username: username, resumeRoomID: resumeSoloRoomID)
+            case .geography: GeographyGameView(username: username, resumeRoomID: resumeSoloRoomID)
             }
         }
         .onChange(of: activeMode) { mode in
@@ -361,6 +372,7 @@ struct HomeView: View {
         case .pi:        return String(localized: "mode_pi")
         case .math:      return String(localized: "mode_math")
         case .chemistry: return String(localized: "mode_chemistry")
+        case .geography: return String(localized: "mode_geography")
         }
     }
 

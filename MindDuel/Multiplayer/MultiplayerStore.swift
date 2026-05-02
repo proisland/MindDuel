@@ -131,9 +131,11 @@ import UserNotifications
         player.piLevel       = p.piLevel
         player.mathLevel     = p.mathLevel
         player.chemLevel     = p.chemLevel
+        player.geoLevel      = p.geoLevel
         player.piBestScore   = p.piBestScore
         player.mathBestScore = p.mathBestScore
         player.chemBestScore = p.chemBestScore
+        player.geoBestScore  = p.geoBestScore
     }
 
     private func simulatePlayerReady(playerID: String) {
@@ -256,6 +258,26 @@ import UserNotifications
         var room = MultiplayerRoom(id: id, mode: .pi, startLevel: 1,
                                    players: [player], status: .playing)
         room.myPiDigitIndex = currentDigit
+        room.isStandaloneSolo = true
+        room.lastActivityAt = Date()
+        backgroundRooms.append(room)
+        return id
+    }
+
+    /// Save a standalone solo Geography session to backgroundRooms.
+    func saveStandaloneSoloGeo(ownUsername: String,
+                               lives: Int, skips: Int,
+                               score: Int, correctCount: Int,
+                               startLevel: Int) -> String {
+        let id = "SOLO-" + String(UUID().uuidString.prefix(4).uppercased())
+        var player = MultiplayerPlayer(id: "me", username: ownUsername,
+                                       isHost: true, isReady: true, isYou: true)
+        player.lives = lives
+        player.skips = skips
+        player.score = score
+        player.correctCount = correctCount
+        var room = MultiplayerRoom(id: id, mode: .geography, startLevel: startLevel,
+                                   players: [player], status: .playing)
         room.isStandaloneSolo = true
         room.lastActivityAt = Date()
         backgroundRooms.append(room)
