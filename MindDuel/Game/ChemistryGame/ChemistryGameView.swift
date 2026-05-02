@@ -29,6 +29,7 @@ struct ChemistryGameView: View {
         self.resumeRoomID = resumeRoomID
         let lvl = ProgressionStore.shared.chemLevel
         _startLevel = State(initialValue: lvl)
+        ChemistryProblemGenerator.resetRoundHistory()
         _problem    = State(initialValue: ChemistryProblemGenerator.generate(level: lvl))
     }
 
@@ -314,6 +315,7 @@ struct ChemistryGameView: View {
     private func resetRound() {
         let lvl    = progression.chemLevel
         startLevel = lvl
+        ChemistryProblemGenerator.resetRoundHistory()
         problem    = ChemistryProblemGenerator.generate(level: lvl)
         problemCount      = 1
         elapsedSeconds    = 0

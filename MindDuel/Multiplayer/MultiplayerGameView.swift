@@ -112,6 +112,7 @@ struct MultiplayerGameView: View {
             piSessionStart = saved > 0 ? saved : max(0, (ProgressionStore.shared.piLevel - 1) * 50)
             currentDigitIndex = 0
             GeographyProblemGenerator.resetRoundHistory()
+            ChemistryProblemGenerator.resetRoundHistory()
             refreshMathProblem()
         }
         .onDisappear {
