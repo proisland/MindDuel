@@ -44,17 +44,13 @@ struct ActiveGamesView: View {
         let modeColor: Color
         let modeBgSoft: Color
         let modeIcon: String
-        let modeName: String
         switch room.mode {
         case .pi:
-            modeColor = .mdAccent; modeBgSoft = .mdAccentSoft
-            modeIcon = "π";        modeName = String(localized: "mode_pi")
+            modeColor = .mdAccent; modeBgSoft = .mdAccentSoft; modeIcon = "π"
         case .math:
-            modeColor = .mdPink;   modeBgSoft = .mdPinkSoft
-            modeIcon = "∑";        modeName = String(localized: "mode_math")
+            modeColor = .mdPink;   modeBgSoft = .mdPinkSoft;   modeIcon = "∑"
         case .chemistry:
-            modeColor = .mdGreen;  modeBgSoft = .mdGreenSoft
-            modeIcon = "⚗︎";        modeName = String(localized: "mode_chemistry")
+            modeColor = .mdGreen;  modeBgSoft = .mdGreenSoft;  modeIcon = "⚗︎"
         }
         let isMyTurn = room.isMyTurn
 
@@ -79,18 +75,9 @@ struct ActiveGamesView: View {
                             .foregroundStyle(modeColor)
                     }
                     VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: MDSpacing.xs) {
-                            Text(String(format: String(localized: "multiplayer_room_code_format"), room.id))
-                                .mdStyle(.bodyMd)
-                                .foregroundStyle(Color.mdText)
-                            Text(modeName)
-                                .mdStyle(.micro)
-                                .foregroundStyle(modeColor)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(modeBgSoft)
-                                .clipShape(Capsule())
-                        }
+                        Text(String(format: String(localized: "multiplayer_room_code_format"), room.id))
+                            .mdStyle(.bodyMd)
+                            .foregroundStyle(Color.mdText)
                         if room.isStandaloneSolo {
                             Text(String(localized: "solo_session_subtitle"))
                                 .mdStyle(.caption)

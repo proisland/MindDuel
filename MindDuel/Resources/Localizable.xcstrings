@@ -1,16 +1,16 @@
 {
   "sourceLanguage" : "no",
   "strings" : {
+    "·" : {
+
+    },
     "@" : {
 
     },
-    "@%@" : {
-
-    },
-    "@%@ …" : {
-
-    },
     "%@" : {
+
+    },
+    "%@ …" : {
 
     },
     "%@ · %@" : {
@@ -44,6 +44,7 @@
       }
     },
     "active_games_level_format" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -601,13 +602,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Math Mode"
+            "value" : "Math"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Matte-modus"
+            "value" : "Matte"
           }
         }
       }
@@ -635,13 +636,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pi Mode"
+            "value" : "Pi"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pi-modus"
+            "value" : "Pi"
           }
         }
       }
@@ -731,6 +732,23 @@
         }
       }
     },
+    "multiplayer_invite_from_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invite from %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invitasjon fra %@"
+          }
+        }
+      }
+    },
     "multiplayer_invite_label" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -761,6 +779,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bli med i mitt MindDuel-spill! Spillkode: %@"
+          }
+        }
+      }
+    },
+    "multiplayer_invites_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invites"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invitasjoner"
           }
         }
       }
@@ -846,6 +881,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "MODUS"
+          }
+        }
+      }
+    },
+    "multiplayer_no_invites" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pending invites"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen ventende invitasjoner"
           }
         }
       }
@@ -1305,6 +1357,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Spill igjen"
+          }
+        }
+      }
+    },
+    "premium_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium"
           }
         }
       }
@@ -2363,24 +2432,8 @@
         }
       }
     },
-    "stats_friends_count_label" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Friends"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Venner"
-          }
-        }
-      }
-    },
     "stats_avg_answer_time_label" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2396,66 +2449,19 @@
         }
       }
     },
-    "multiplayer_invites_title" : {
+    "stats_friends_count_label" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invites"
+            "value" : "Friends"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invitasjoner"
-          }
-        }
-      }
-    },
-    "multiplayer_no_invites" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No pending invites"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ingen ventende invitasjoner"
-          }
-        }
-      }
-    },
-    "multiplayer_invite_from_format" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invite from %@"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invitasjon fra %@"
-          }
-        }
-      }
-    },
-    "premium_label" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Premium"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Premium"
+            "value" : "Venner"
           }
         }
       }
