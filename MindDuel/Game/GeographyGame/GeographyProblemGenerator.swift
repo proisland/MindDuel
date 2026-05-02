@@ -53,7 +53,7 @@ enum GeographyProblemGenerator {
     }
 
     /// Compose the level pool from programmatic country questions +
-    /// handcrafted specials (landmarks, rivers, etc.).
+    /// handcrafted specials + cross-cutting question types.
     private static func pool(forLevel level: Int) -> [Raw] {
         let countries = CountryData.countries(forLevel: level)
         var pool: [Raw] = []
@@ -61,24 +61,64 @@ enum GeographyProblemGenerator {
             pool.append(contentsOf: questions(for: country, allInLevel: countries))
         }
         pool.append(contentsOf: specials(forLevel: level))
+        pool.append(contentsOf: oddOneOut(forLevel: level))
+        pool.append(contentsOf: timeDifference())
         return pool
     }
 
-    /// Four programmatic question types per country: capital lookup,
-    /// reverse capital lookup, continent, and flag. With 12+ countries
-    /// per level this alone yields 48+ questions.
+    /// "Hvilken er odd one out?" — three countries from one continent and
+    /// one from another. The "different" continent's country is the answer.
+    private static func oddOneOut(forLevel level: Int) -> [Raw] {
+        let countries = CountryData.countries(forLevel: level)
+        let byContinent = Dictionary(grouping: countries, by: \.continent)
+        guard byContinent.count >= 2 else { return [] }
+        var out: [Raw] = []
+        for (continent, group) in byContinent where group.count >= 3 {
+            let outsiders = countries.filter { $0.continent != continent }
+            guard let odd = outsiders.randomElement() else { continue }
+            let three = Array(group.shuffled().prefix(3))
+            let options = (three.map(\.name) + [odd.name]).shuffled()
+            out.append(Raw(
+                prompt: "Hvilket av disse er odd one out (annerledes kontinent)?",
+                correct: odd.name,
+                distractors: options.filter { $0 != odd.name }
+            ))
+        }
+        return out
+    }
+
+    /// Time-zone difference questions for major capitals. Independent of
+    /// level so they appear in the pool from level 1 onwards as a fun
+    /// twist on standard geography.
+    private static func timeDifference() -> [Raw] {
+        let pairs: [(from: String, to: String, diff: String)] = [
+            ("Oslo", "Tokyo", "+8 timer"),
+            ("Oslo", "New York", "−6 timer"),
+            ("Oslo", "Sydney", "+9 timer"),
+            ("Oslo", "Los Angeles", "−9 timer"),
+            ("London", "New Delhi", "+5.5 timer"),
+            ("Paris", "Beijing", "+7 timer")
+        ]
+        return pairs.map { p in
+            Raw(prompt: "Hva er tidsforskjellen fra \(p.from) til \(p.to)?",
+                correct: p.diff,
+                distractors: ["+1 time", "+3 timer", "−2 timer", "+12 timer", "+5 timer"]
+                    .filter { $0 != p.diff }.shuffled().prefix(3).map { $0 })
+        }
+    }
+
+    /// Programmatic question types per country. The four core types fire
+    /// for every country; the remaining types fire only when matching
+    /// extras data exists (currency, language, neighbors, etc.). With
+    /// 12+ countries per level this expands to 60–150+ prompts.
     private static func questions(for c: Country, allInLevel: [Country]) -> [Raw] {
-        let regionalPool = (allInLevel + CountryData.allCountries)
-        let otherCapitals = regionalPool
-            .filter { $0.capital != c.capital }
-            .map(\.capital)
-        let otherCountries = regionalPool
-            .filter { $0.name != c.name }
-            .map(\.name)
+        let regionalPool = allInLevel + CountryData.allCountries
+        let otherCapitals = regionalPool.filter { $0.capital != c.capital }.map(\.capital)
+        let otherCountries = regionalPool.filter { $0.name != c.name }.map(\.name)
         let continents = ["Europa", "Asia", "Afrika", "Nord-Amerika", "Sør-Amerika", "Oseania"]
             .filter { $0 != c.continent }
 
-        return [
+        var qs: [Raw] = [
             Raw(prompt: "Hovedstaden i \(c.name)?",
                 correct: c.capital,
                 distractors: pickDistractors(from: otherCapitals, count: 3)),
@@ -93,6 +133,122 @@ enum GeographyProblemGenerator {
                 correct: c.name,
                 distractors: pickDistractors(from: otherCountries, count: 3))
         ]
+
+        guard let x = CountryExtras.lookup(iso: c.iso) else { return qs }
+        let allExtras = CountryExtras.byISO.values
+
+        if let cur = x.currency {
+            let others = allExtras.compactMap(\.currency).filter { $0 != cur }
+            qs.append(Raw(prompt: "Hvilken valuta brukes i \(c.name)?",
+                          correct: cur, distractors: pickDistractors(from: others, count: 3)))
+        }
+        if let lang = x.language {
+            let others = allExtras.compactMap(\.language).filter { $0 != lang }
+            qs.append(Raw(prompt: "Hvilket språk snakkes i \(c.name)?",
+                          correct: lang, distractors: pickDistractors(from: others, count: 3)))
+        }
+        if let big = x.biggestCity, big != c.capital {
+            qs.append(Raw(prompt: "Hva er den største byen i \(c.name)?",
+                          correct: big, distractors: pickDistractors(from: otherCapitals, count: 3)))
+        }
+        if let phone = x.phoneCode {
+            let others = allExtras.compactMap(\.phoneCode).filter { $0 != phone }
+            qs.append(Raw(prompt: "Hvilken telefon-landkode har \(c.name)?",
+                          correct: phone, distractors: pickDistractors(from: others, count: 3)))
+        }
+        if let iso3 = x.iso3 {
+            let others = allExtras.compactMap(\.iso3).filter { $0 != iso3 }
+            qs.append(Raw(prompt: "Hva er ISO-landkoden (3 bokstaver) for \(c.name)?",
+                          correct: iso3, distractors: pickDistractors(from: others, count: 3)))
+        }
+        if let driving = x.drivingSide {
+            qs.append(Raw(prompt: "Hvilken side kjører de på i \(c.name)?",
+                          correct: driving, distractors: ["Høyre", "Venstre"].filter { $0 != driving }))
+        }
+        if let gov = x.government {
+            let others = ["Republikk", "Konstitusjonelt monarki", "Absolutt monarki", "Forbundsrepublikk", "Ettpartistat", "Føderalt monarki", "Islamsk republikk"]
+                .filter { $0 != gov }
+            qs.append(Raw(prompt: "Hvilken styreform har \(c.name)?",
+                          correct: gov, distractors: pickDistractors(from: others, count: 3)))
+        }
+        if let religion = x.religion {
+            let others = ["Kristendom", "Islam", "Buddhisme", "Hinduisme", "Jødedom", "Shinto/Buddhisme"].filter { $0 != religion }
+            qs.append(Raw(prompt: "Hvilken religion er størst i \(c.name)?",
+                          correct: religion, distractors: pickDistractors(from: others, count: 3)))
+        }
+        if let landlocked = x.landlocked {
+            qs.append(Raw(prompt: "Er \(c.name) en innlandsstat?",
+                          correct: landlocked ? "Ja" : "Nei",
+                          distractors: [landlocked ? "Nei" : "Ja"]))
+        }
+        if let trans = x.transcontinental, trans {
+            qs.append(Raw(prompt: "\(c.name) er et transkontinentalt land. Sant eller usant?",
+                          correct: "Sant", distractors: ["Usant"]))
+        }
+        if let eq = x.equatorCrosses, eq {
+            qs.append(Raw(prompt: "Krysser ekvator gjennom \(c.name)?",
+                          correct: "Ja", distractors: ["Nei"]))
+        }
+        if let hemi = x.hemisphereNS {
+            let others = ["Nord", "Sør", "Begge"].filter { $0 != hemi }
+            qs.append(Raw(prompt: "Hvilken halvkule ligger \(c.name) i?",
+                          correct: hemi, distractors: others))
+        }
+        if let utc = x.utcOffset {
+            let others = allExtras.compactMap(\.utcOffset).filter { $0 != utc }
+            qs.append(Raw(prompt: "Hvilken tidssone (UTC) bruker \(c.name)?",
+                          correct: utc, distractors: pickDistractors(from: others, count: 3)))
+        }
+        if let endo = x.endonym {
+            qs.append(Raw(prompt: "Hva kaller innbyggerne i \(c.name) selv landet?",
+                          correct: endo,
+                          distractors: pickDistractors(from: allExtras.compactMap(\.endonym).filter { $0 != endo }, count: 3)))
+            qs.append(Raw(prompt: "Hvilket land kalles '\(endo)' på sitt eget språk?",
+                          correct: c.name, distractors: pickDistractors(from: otherCountries, count: 3)))
+        }
+        if let neighbors = x.neighbors, !neighbors.isEmpty {
+            // Pick a random neighbor as the correct answer
+            if let n = neighbors.randomElement() {
+                let nonNeighbors = otherCountries.filter { !neighbors.contains($0) && $0 != c.name }
+                qs.append(Raw(prompt: "Hvilket land grenser til \(c.name)?",
+                              correct: n, distractors: pickDistractors(from: nonNeighbors, count: 3)))
+            }
+            qs.append(Raw(prompt: "Hvor mange naboland har \(c.name)?",
+                          correct: String(neighbors.count),
+                          distractors: pickDistractors(from: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "12", "14"]
+                            .filter { $0 != String(neighbors.count) }, count: 3)))
+        }
+        if let dish = x.nationalDish {
+            let others = allExtras.compactMap(\.nationalDish).filter { $0 != dish }
+            qs.append(Raw(prompt: "Hvilken nasjonalrett er kjent fra \(c.name)?",
+                          correct: dish, distractors: pickDistractors(from: others, count: 3)))
+        }
+        if let sport = x.nationalSport {
+            let others = ["Fotball", "Cricket", "Rugby", "Ishockey", "Sumo", "Hockey", "Amerikansk fotball", "Langrenn", "Håndball"].filter { $0 != sport }
+            qs.append(Raw(prompt: "Hvilken sport regnes som nasjonalsport i \(c.name)?",
+                          correct: sport, distractors: pickDistractors(from: others, count: 3)))
+        }
+        if let animal = x.nationalAnimal {
+            let others = ["Elg", "Bever", "Kenguru", "Kiwi", "Løve", "Bjørn", "Ørn", "Ulv"].filter { $0 != animal }
+            qs.append(Raw(prompt: "Hvilket dyr er et nasjonalsymbol for \(c.name)?",
+                          correct: animal, distractors: pickDistractors(from: others, count: 3)))
+        }
+        if let high = x.highestPoint {
+            qs.append(Raw(prompt: "Hva er det høyeste punktet i \(c.name)?",
+                          correct: high,
+                          distractors: pickDistractors(from: ["Mount Everest", "K2", "Kilimanjaro", "Mont Blanc", "Galdhøpiggen", "Kebnekaise", "Aconcagua", "Denali"].filter { $0 != high }, count: 3)))
+        }
+        if let river = x.longestRiver {
+            qs.append(Raw(prompt: "Hva er den lengste elva i \(c.name)?",
+                          correct: river,
+                          distractors: pickDistractors(from: ["Glomma", "Donau", "Nilen", "Amazonas", "Themsen", "Seinen", "Volga", "Mississippi"].filter { $0 != river }, count: 3)))
+        }
+        if let year = x.independenceYear {
+            qs.append(Raw(prompt: "Når ble \(c.name) selvstendig?",
+                          correct: String(year),
+                          distractors: pickDistractors(from: ["1776", "1814", "1905", "1917", "1922", "1947", "1960", "1991", "2011"].filter { $0 != String(year) }, count: 3)))
+        }
+        return qs
     }
 
     /// Random unique distractors from the candidate pool. If the pool is
