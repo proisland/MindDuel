@@ -157,6 +157,9 @@ struct PiGameView: View {
                 .padding(.horizontal, MDSpacing.md)
                 .padding(.top, MDSpacing.md)
 
+            CountdownTimer(elapsedSeconds: elapsedSeconds)
+                .padding(.top, MDSpacing.sm)
+
             questionCard
                 .padding(.horizontal, MDSpacing.md)
                 .padding(.top, MDSpacing.lg)
@@ -339,13 +342,16 @@ struct DigitButton: View {
     var body: some View {
         Button(action: action) {
             Text("\(digit)")
-                .font(.system(size: 14, weight: .bold))
+                .font(.system(size: 15, weight: .bold))
                 .foregroundStyle(labelColor)
                 .frame(maxWidth: .infinity)
-                .aspectRatio(1, contentMode: .fit)
+                .frame(height: 56)
                 .background(bgColor)
-                .clipShape(Circle())
-                .overlay(Circle().stroke(borderColor, lineWidth: feedbackState == .idle ? 0 : 1.5))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(borderColor, lineWidth: feedbackState == .idle ? 0 : 1.5)
+                )
         }
         .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.15), value: feedbackState)

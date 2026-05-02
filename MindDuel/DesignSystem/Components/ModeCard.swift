@@ -8,15 +8,6 @@ struct MDModeCard: View {
     var compact: Bool = false
     let action: () -> Void
 
-    private var iconSymbol: String {
-        switch mode {
-        case .pi: return "π"
-        case .math: return "∑"
-        case .chemistry: return "⚗︎"
-        case .geography: return "🌍"
-        }
-    }
-
     private var iconBg: Color {
         switch mode {
         case .pi: return .mdAccentDeep
@@ -58,9 +49,7 @@ struct MDModeCard: View {
                     Circle()
                         .fill(iconBg)
                         .frame(width: iconSize, height: iconSize)
-                    Text(iconSymbol)
-                        .font(.system(size: iconFont, weight: .heavy))
-                        .foregroundStyle(Color.mdText)
+                    ModeGlyph(mode: mode, size: iconFont, color: Color.mdText)
                 }
 
                 Text(verbatim: localizedTitle)

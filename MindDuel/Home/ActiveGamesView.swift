@@ -44,16 +44,11 @@ struct ActiveGamesView: View {
     private func roomRow(_ room: MultiplayerRoom) -> some View {
         let modeColor: Color
         let modeBgSoft: Color
-        let modeIcon: String
         switch room.mode {
-        case .pi:
-            modeColor = .mdAccent; modeBgSoft = .mdAccentSoft; modeIcon = "π"
-        case .math:
-            modeColor = .mdPink;   modeBgSoft = .mdPinkSoft;   modeIcon = "∑"
-        case .chemistry:
-            modeColor = .mdGreen;  modeBgSoft = .mdGreenSoft;  modeIcon = "⚗︎"
-        case .geography:
-            modeColor = .mdAmber;  modeBgSoft = .mdAmberSoft;  modeIcon = "🌍"
+        case .pi:        modeColor = .mdAccent; modeBgSoft = .mdAccentSoft
+        case .math:      modeColor = .mdPink;   modeBgSoft = .mdPinkSoft
+        case .chemistry: modeColor = .mdGreen;  modeBgSoft = .mdGreenSoft
+        case .geography: modeColor = .mdAmber;  modeBgSoft = .mdAmberSoft
         }
         let isMyTurn = room.isMyTurn
 
@@ -73,9 +68,7 @@ struct ActiveGamesView: View {
                         RoundedRectangle(cornerRadius: 10)
                             .fill(modeBgSoft)
                             .frame(width: 40, height: 40)
-                        Text(modeIcon)
-                            .font(.system(size: 18, weight: .heavy))
-                            .foregroundStyle(modeColor)
+                        ModeGlyph(mode: room.mode, size: 18, color: modeColor)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text(String(format: String(localized: "multiplayer_room_code_format"), room.id))

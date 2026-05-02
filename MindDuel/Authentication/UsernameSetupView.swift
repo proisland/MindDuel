@@ -54,13 +54,8 @@ struct UsernameSetupView: View {
                 avatarPlaceholder
                     .padding(.top, MDSpacing.lg)
 
-                VStack(spacing: MDSpacing.xs) {
-                    Text(String(localized: "choose_your_tag"))
-                        .mdStyle(.display)
-                    Text(String(localized: "tag_subtitle"))
-                        .mdStyle(.body)
-                        .foregroundStyle(Color.mdText2)
-                }
+                Text(String(localized: "choose_your_tag"))
+                    .mdStyle(.display)
 
                 MDPrimaryCard {
                     VStack(spacing: MDSpacing.md) {

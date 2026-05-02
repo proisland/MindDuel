@@ -7,12 +7,24 @@ import Foundation
 /// obscure trivia at the top.
 enum GeographyProblemGenerator {
 
+    /// Last prompt returned, kept so we can avoid handing the same question
+    /// back two calls in a row (#64) — the pool at low levels is small, so
+    /// without this the same question often surfaces back-to-back.
+    private static var lastPrompt: String?
+
     static func generate(level: Int = 1) -> GeographyProblem {
         let clamped = max(1, min(20, level))
         let pool = pool(forLevel: clamped)
-        let raw = pool.randomElement() ?? pool[0]
+        var candidates = pool
+        if pool.count > 1, let last = lastPrompt {
+            candidates = pool.filter { $0.prompt != last }
+            if candidates.isEmpty { candidates = pool }
+        }
+        let raw = candidates.randomElement() ?? pool[0]
+        lastPrompt = raw.prompt
         return GeographyProblem(
             prompt: raw.prompt,
+            flag: raw.flag,
             correctAnswer: raw.correct,
             options: ([raw.correct] + raw.distractors).shuffled()
         )
@@ -31,9 +43,12 @@ enum GeographyProblemGenerator {
 
     private struct Raw {
         let prompt: String
+        var flag: String? = nil
         let correct: String
         let distractors: [String]
     }
+
+    private static let flagPrompt = "Hvilket land har dette flagget?"
 
     // swiftlint:disable function_body_length
     private static func pool(forLevel level: Int) -> [Raw] {
@@ -51,7 +66,7 @@ enum GeographyProblemGenerator {
                     distractors: ["Aarhus", "Odense", "Aalborg"]),
                 Raw(prompt: "Hovedstaden i Finland?", correct: "Helsinki",
                     distractors: ["Turku", "Tampere", "Espoo"]),
-                Raw(prompt: "Hvilket land har 🇳🇴 som flagg?", correct: "Norge",
+                Raw(prompt: flagPrompt, flag: "🇳🇴", correct: "Norge",
                     distractors: ["Sverige", "Island", "Danmark"]),
                 Raw(prompt: "Hvilken kontinent ligger Norge i?", correct: "Europa",
                     distractors: ["Asia", "Afrika", "Nord-Amerika"])
@@ -61,11 +76,11 @@ enum GeographyProblemGenerator {
             return [
                 Raw(prompt: "Hovedstaden i Island?", correct: "Reykjavík",
                     distractors: ["Akureyri", "Tórshavn", "Nuuk"]),
-                Raw(prompt: "Hvilket land har 🇸🇪 som flagg?", correct: "Sverige",
+                Raw(prompt: flagPrompt, flag: "🇸🇪", correct: "Sverige",
                     distractors: ["Finland", "Norge", "Danmark"]),
-                Raw(prompt: "Hvilket land har 🇩🇰 som flagg?", correct: "Danmark",
+                Raw(prompt: flagPrompt, flag: "🇩🇰", correct: "Danmark",
                     distractors: ["Norge", "Island", "Sveits"]),
-                Raw(prompt: "Hvilket land har 🇫🇮 som flagg?", correct: "Finland",
+                Raw(prompt: flagPrompt, flag: "🇫🇮", correct: "Finland",
                     distractors: ["Sverige", "Estland", "Hellas"]),
                 Raw(prompt: "I hvilket land ligger Stockholm?", correct: "Sverige",
                     distractors: ["Norge", "Finland", "Danmark"]),
@@ -85,7 +100,7 @@ enum GeographyProblemGenerator {
                     distractors: ["Barcelona", "Sevilla", "Valencia"]),
                 Raw(prompt: "Hovedstaden i Italia?", correct: "Roma",
                     distractors: ["Milano", "Napoli", "Venezia"]),
-                Raw(prompt: "Hvilket land har 🇩🇪 som flagg?", correct: "Tyskland",
+                Raw(prompt: flagPrompt, flag: "🇩🇪", correct: "Tyskland",
                     distractors: ["Belgia", "Østerrike", "Nederland"])
             ]
 
@@ -229,13 +244,13 @@ enum GeographyProblemGenerator {
                     distractors: ["Spania", "Italia", "Belgia"]),
                 Raw(prompt: "Hvilket land grenser til både Russland og Kina?", correct: "Mongolia",
                     distractors: ["Kasakhstan", "Nord-Korea", "Vietnam"]),
-                Raw(prompt: "Hvilket land har 🇨🇭 som flagg?", correct: "Sveits",
+                Raw(prompt: flagPrompt, flag: "🇨🇭", correct: "Sveits",
                     distractors: ["Østerrike", "Liechtenstein", "Polen"]),
-                Raw(prompt: "Hvilket land har 🇧🇷 som flagg?", correct: "Brasil",
+                Raw(prompt: flagPrompt, flag: "🇧🇷", correct: "Brasil",
                     distractors: ["Argentina", "Colombia", "Mexico"]),
-                Raw(prompt: "Hvilket land har 🇿🇦 som flagg?", correct: "Sør-Afrika",
+                Raw(prompt: flagPrompt, flag: "🇿🇦", correct: "Sør-Afrika",
                     distractors: ["Kenya", "Etiopia", "Nigeria"]),
-                Raw(prompt: "Hvilket land har 🇰🇷 som flagg?", correct: "Sør-Korea",
+                Raw(prompt: flagPrompt, flag: "🇰🇷", correct: "Sør-Korea",
                     distractors: ["Japan", "Nord-Korea", "Kina"])
             ]
 
@@ -369,9 +384,9 @@ enum GeographyProblemGenerator {
 
         default:
             return [
-                Raw(prompt: "Hvilket land har 🇧🇹 som flagg?", correct: "Bhutan",
+                Raw(prompt: flagPrompt, flag: "🇧🇹", correct: "Bhutan",
                     distractors: ["Nepal", "Mongolia", "Tibet"]),
-                Raw(prompt: "Hvilket land har 🇰🇿 som flagg?", correct: "Kasakhstan",
+                Raw(prompt: flagPrompt, flag: "🇰🇿", correct: "Kasakhstan",
                     distractors: ["Usbekistan", "Aserbajdsjan", "Kirgisistan"]),
                 Raw(prompt: "Hvor ligger Socotra-øya?", correct: "Jemen",
                     distractors: ["Oman", "Somalia", "Eritrea"]),

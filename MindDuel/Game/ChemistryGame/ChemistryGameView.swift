@@ -132,6 +132,9 @@ struct ChemistryGameView: View {
                 .padding(.horizontal, MDSpacing.md)
                 .padding(.top, MDSpacing.md)
 
+            CountdownTimer(elapsedSeconds: elapsedSeconds)
+                .padding(.top, MDSpacing.sm)
+
             problemCard
                 .padding(.horizontal, MDSpacing.md)
                 .padding(.top, MDSpacing.lg)

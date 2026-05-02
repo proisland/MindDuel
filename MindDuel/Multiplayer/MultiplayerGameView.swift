@@ -270,6 +270,9 @@ struct MultiplayerGameView: View {
             .padding(.horizontal, MDSpacing.md)
             .padding(.top, MDSpacing.md)
 
+            CountdownTimer(elapsedSeconds: elapsedSeconds)
+                .padding(.top, MDSpacing.sm)
+
             questionCard(room: room)
                 .padding(.horizontal, MDSpacing.md)
                 .padding(.top, MDSpacing.lg)
@@ -389,6 +392,11 @@ struct MultiplayerGameView: View {
                         .mdStyle(.micro)
                         .foregroundStyle(Color.mdText3)
                         .frame(maxWidth: .infinity, alignment: .center)
+                    if let flag = geoProblem.flag {
+                        Text(flag)
+                            .font(.system(size: 56))
+                            .frame(maxWidth: .infinity, alignment: .center)
+                    }
                     Text(geoProblem.prompt)
                         .font(.system(size: 18, weight: .heavy))
                         .foregroundStyle(Color.mdText)

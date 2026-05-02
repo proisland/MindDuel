@@ -253,13 +253,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose your tag"
+            "value" : "Choose your username"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Velg ditt tag"
+            "value" : "Velg ditt brukernavn"
           }
         }
       }

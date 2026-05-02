@@ -127,6 +127,9 @@ struct GeographyGameView: View {
                 .padding(.horizontal, MDSpacing.md)
                 .padding(.top, MDSpacing.md)
 
+            CountdownTimer(elapsedSeconds: elapsedSeconds)
+                .padding(.top, MDSpacing.sm)
+
             problemCard
                 .padding(.horizontal, MDSpacing.md)
                 .padding(.top, MDSpacing.lg)
@@ -165,6 +168,11 @@ struct GeographyGameView: View {
                     .mdStyle(.micro)
                     .foregroundStyle(Color.mdText3)
                     .frame(maxWidth: .infinity, alignment: .center)
+                if let flag = problem.flag {
+                    Text(flag)
+                        .font(.system(size: 56))
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
                 Text(problem.prompt)
                     .font(.system(size: 18, weight: .heavy))
                     .foregroundStyle(Color.mdText)

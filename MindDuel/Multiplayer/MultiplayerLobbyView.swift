@@ -105,19 +105,18 @@ struct MultiplayerLobbyView: View {
     private func modeButton(_ mode: GameMode, room: MultiplayerRoom, editable: Bool) -> some View {
         let isActive = room.mode == mode
         let title: String
-        let icon: String
         let color: Color
         switch mode {
-        case .pi:        title = String(localized: "mode_pi");        icon = "π"; color = .mdAccent
-        case .math:      title = String(localized: "mode_math");      icon = "∑"; color = .mdPink
-        case .chemistry: title = String(localized: "mode_chemistry"); icon = "⚗︎"; color = .mdGreen
-        case .geography: title = String(localized: "mode_geography"); icon = "🌍"; color = .mdAmber
+        case .pi:        title = String(localized: "mode_pi");        color = .mdAccent
+        case .math:      title = String(localized: "mode_math");      color = .mdPink
+        case .chemistry: title = String(localized: "mode_chemistry"); color = .mdGreen
+        case .geography: title = String(localized: "mode_geography"); color = .mdAmber
         }
         return Button {
             if editable { store.currentRoom?.mode = mode }
         } label: {
             HStack(spacing: MDSpacing.xs) {
-                Text(icon).font(.system(size: 16, weight: .heavy)).foregroundStyle(isActive ? color : Color.mdText3)
+                ModeGlyph(mode: mode, size: 16, color: isActive ? color : Color.mdText3)
                 Text(title).mdStyle(.bodyMd).foregroundStyle(isActive ? Color.mdText : Color.mdText3)
             }
             .frame(maxWidth: .infinity)

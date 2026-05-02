@@ -48,20 +48,17 @@ struct MultiplayerInvitesView: View {
 
     private func inviteRow(_ invite: MultiplayerInvite) -> some View {
         let modeColor: Color
-        let modeIcon: String
         let modeName: String
         switch invite.mode {
-        case .pi:        modeColor = .mdAccent; modeIcon = "π";  modeName = String(localized: "mode_pi")
-        case .math:      modeColor = .mdPink;   modeIcon = "∑";  modeName = String(localized: "mode_math")
-        case .chemistry: modeColor = .mdGreen;  modeIcon = "⚗︎"; modeName = String(localized: "mode_chemistry")
-        case .geography: modeColor = .mdAmber;  modeIcon = "🌍"; modeName = String(localized: "mode_geography")
+        case .pi:        modeColor = .mdAccent; modeName = String(localized: "mode_pi")
+        case .math:      modeColor = .mdPink;   modeName = String(localized: "mode_math")
+        case .chemistry: modeColor = .mdGreen;  modeName = String(localized: "mode_chemistry")
+        case .geography: modeColor = .mdAmber;  modeName = String(localized: "mode_geography")
         }
         return HStack(spacing: MDSpacing.sm) {
             ZStack {
                 Circle().fill(modeColor.opacity(0.2)).frame(width: 36, height: 36)
-                Text(modeIcon)
-                    .font(.system(size: 16, weight: .heavy))
-                    .foregroundStyle(modeColor)
+                ModeGlyph(mode: invite.mode, size: 16, color: modeColor)
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(String(format: String(localized: "multiplayer_invite_from_format"),
