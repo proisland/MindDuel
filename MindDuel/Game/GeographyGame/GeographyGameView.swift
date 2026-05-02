@@ -28,6 +28,9 @@ struct GeographyGameView: View {
         self.resumeRoomID = resumeRoomID
         let lvl = ProgressionStore.shared.geoLevel
         _startLevel = State(initialValue: lvl)
+        // Fresh round → clear any leftover seen-set so dedup tracks only
+        // questions answered inside *this* round (#64).
+        GeographyProblemGenerator.resetRoundHistory()
         _problem    = State(initialValue: GeographyProblemGenerator.generate(level: lvl))
     }
 
@@ -169,12 +172,11 @@ struct GeographyGameView: View {
                     .foregroundStyle(Color.mdText3)
                     .frame(maxWidth: .infinity, alignment: .center)
                 if let flag = problem.flag {
-                    // Force AppleColorEmoji explicitly. SwiftUI's default font
-                    // resolution sometimes drops emoji glyphs in the simulator
-                    // and renders flags as "??" (#63) — pinning the emoji font
-                    // bypasses the system-font fallback path entirely.
-                    Text(verbatim: flag)
-                        .font(.custom("AppleColorEmoji", size: 64))
+                    // Render via UIKit (UILabel + AppleColorEmoji) — SwiftUI
+                    // Text was dropping flag glyphs and rendering "??" even
+                    // with verbatim: + .font(.custom(...)) (#63).
+                    FlagView(emoji: flag, size: 64)
+                        .frame(height: 72)
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
                 Text(verbatim: problem.prompt)
@@ -314,6 +316,7 @@ struct GeographyGameView: View {
     private func resetRound() {
         let lvl    = progression.geoLevel
         startLevel = lvl
+        GeographyProblemGenerator.resetRoundHistory()
         problem    = GeographyProblemGenerator.generate(level: lvl)
         problemCount      = 1
         elapsedSeconds    = 0

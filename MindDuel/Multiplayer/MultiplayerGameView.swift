@@ -111,6 +111,7 @@ struct MultiplayerGameView: View {
             let saved = store.currentRoom?.myPiDigitIndex ?? 0
             piSessionStart = saved > 0 ? saved : max(0, (ProgressionStore.shared.piLevel - 1) * 50)
             currentDigitIndex = 0
+            GeographyProblemGenerator.resetRoundHistory()
             refreshMathProblem()
         }
         .onDisappear {
@@ -393,8 +394,8 @@ struct MultiplayerGameView: View {
                         .foregroundStyle(Color.mdText3)
                         .frame(maxWidth: .infinity, alignment: .center)
                     if let flag = geoProblem.flag {
-                        Text(verbatim: flag)
-                            .font(.custom("AppleColorEmoji", size: 64))
+                        FlagView(emoji: flag, size: 64)
+                            .frame(height: 72)
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
                     Text(verbatim: geoProblem.prompt)

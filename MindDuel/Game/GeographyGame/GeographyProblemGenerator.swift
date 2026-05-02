@@ -7,23 +7,26 @@ import Foundation
 /// obscure trivia at the top.
 enum GeographyProblemGenerator {
 
-    /// Per-level set of `correct` answers we've already shown. A question
-    /// the player has seen on the current level isn't shown again until
-    /// every other question on that level has been served (#64). The level
-    /// is tracked alongside the seen-set so leveling up auto-resets it.
-    private static var seenLevel: Int = 0
+    /// Set of `correct` answers already served in the current round, across
+    /// every level the player passes through. A question never repeats while
+    /// the round lasts (#64) — only when the entire pool of all 20 levels is
+    /// exhausted does the set reset. The view calls `resetRoundHistory()`
+    /// when starting / restarting a round to clear this.
     private static var seenCorrects: Set<String> = []
+
+    static func resetRoundHistory() {
+        seenCorrects.removeAll()
+    }
 
     static func generate(level: Int = 1) -> GeographyProblem {
         let clamped = max(1, min(20, level))
-        if seenLevel != clamped {
-            seenLevel = clamped
-            seenCorrects.removeAll()
-        }
         let pool = pool(forLevel: clamped)
         var candidates = pool.filter { !seenCorrects.contains($0.correct) }
         if candidates.isEmpty {
-            seenCorrects.removeAll()
+            // Whole level is already seen this round — clear so the player
+            // can keep playing rather than getting stuck. Other levels in
+            // the round retain their seen-state via the same set.
+            seenCorrects.subtract(pool.map(\.correct))
             candidates = pool
         }
         let raw = candidates.randomElement() ?? pool[0]
