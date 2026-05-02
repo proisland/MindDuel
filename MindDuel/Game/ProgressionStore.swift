@@ -9,7 +9,7 @@ import SwiftUI
 
     static let dailyQuota = 20
     private static let rollbackRate: Double = 0.15
-    private static let mathLevelUpThreshold = 5
+    private static let mathLevelUpThreshold = 12
     private static let K: Double = 100.0
 
     /// Adaptive level-up threshold (#43). Uses the player's pace within the
@@ -19,12 +19,12 @@ import SwiftUI
     /// slip-ups buy more practice before progression. Bounded [3, 10].
     private static func adaptiveThreshold(avgTime: Double, recentWrongs: Int) -> Int {
         var t = mathLevelUpThreshold
-        if avgTime > 0 && avgTime < 1.2 { t -= 2 }       // very fast → -2
-        else if avgTime > 0 && avgTime < 2.0 { t -= 1 }  // fast → -1
-        if avgTime > 4.0                { t += 2 }       // slow → +2
-        else if avgTime > 3.0           { t += 1 }       // somewhat slow → +1
-        t += min(5, max(0, recentWrongs))                // each wrong adds one extra Q
-        return max(3, min(10, t))
+        if avgTime > 0 && avgTime < 1.2 { t -= 4 }       // very fast → -4
+        else if avgTime > 0 && avgTime < 2.0 { t -= 2 }  // fast → -2
+        if avgTime > 4.0                { t += 4 }       // slow → +4
+        else if avgTime > 3.0           { t += 2 }       // somewhat slow → +2
+        t += min(8, max(0, recentWrongs))                // each wrong adds one extra Q
+        return max(8, min(25, t))
     }
 
     /// Per-mode running stats inside the current level. Both reset on
