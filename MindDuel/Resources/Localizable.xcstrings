@@ -26,6 +26,12 @@
     "%@p" : {
 
     },
+    "∑" : {
+
+    },
+    "⚗︎" : {
+
+    },
     "accept_action" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -192,40 +198,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nivå %lld · Spørsmål %lld"
-          }
-        }
-      }
-    },
-    "geo_level_problem" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Level %lld · Question %lld"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nivå %lld · Spørsmål %lld"
-          }
-        }
-      }
-    },
-    "mode_geography" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Geography"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Geografi"
           }
         }
       }
@@ -536,6 +508,23 @@
         }
       }
     },
+    "geo_level_problem" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Level %lld · Question %lld"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nivå %lld · Spørsmål %lld"
+          }
+        }
+      }
+    },
     "home_subtitle" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -626,6 +615,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Kjemi"
+          }
+        }
+      }
+    },
+    "mode_geography" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geography"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geografi"
           }
         }
       }
@@ -2710,13 +2716,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "your_tag"
+            "value" : "Type your username"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ditt_tag"
+            "value" : "Skriv ditt brukernavn"
           }
         }
       }
@@ -2754,6 +2760,9 @@
           }
         }
       }
+    },
+    "π" : {
+
     }
   },
   "version" : "1.0"

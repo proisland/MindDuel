@@ -7,21 +7,24 @@ import Foundation
 /// obscure trivia at the top.
 enum GeographyProblemGenerator {
 
-    /// Last prompt returned, kept so we can avoid handing the same question
-    /// back two calls in a row (#64) — the pool at low levels is small, so
-    /// without this the same question often surfaces back-to-back.
-    private static var lastPrompt: String?
+    /// Recent question identities (correct answers), kept so we don't repeat
+    /// the same question within a short window (#64). Identifying by `correct`
+    /// — not `prompt` — distinguishes flag questions which all share one prompt
+    /// text but differ by country. Keeps the last 3 to avoid both back-to-back
+    /// duplicates and ABAB cycling at small pool sizes.
+    private static var recentCorrects: [String] = []
+    private static let recentWindow = 3
 
     static func generate(level: Int = 1) -> GeographyProblem {
         let clamped = max(1, min(20, level))
         let pool = pool(forLevel: clamped)
-        var candidates = pool
-        if pool.count > 1, let last = lastPrompt {
-            candidates = pool.filter { $0.prompt != last }
-            if candidates.isEmpty { candidates = pool }
-        }
+        var candidates = pool.filter { !recentCorrects.contains($0.correct) }
+        if candidates.isEmpty { candidates = pool }
         let raw = candidates.randomElement() ?? pool[0]
-        lastPrompt = raw.prompt
+        recentCorrects.append(raw.correct)
+        if recentCorrects.count > recentWindow {
+            recentCorrects.removeFirst(recentCorrects.count - recentWindow)
+        }
         return GeographyProblem(
             prompt: raw.prompt,
             flag: raw.flag,

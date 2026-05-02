@@ -12,22 +12,40 @@ import SwiftUI
     private static let mathLevelUpThreshold = 5
     private static let K: Double = 100.0
 
-    /// Adaptive level-up threshold (#43). Faster avg answer time and a clean
-    /// streak shrink the number of correct answers required for the next
-    /// level; slow play or recent mistakes grow it. Bounded [3, 10].
+    /// Adaptive level-up threshold (#43). Uses the player's pace within the
+    /// CURRENT level — not lifetime — so a long-tenured player who has slowed
+    /// down still gets extra questions, and a player on a hot streak ramps up
+    /// quickly. Recent wrongs in the current level grow the threshold so
+    /// slip-ups buy more practice before progression. Bounded [3, 10].
     private static func adaptiveThreshold(avgTime: Double, recentWrongs: Int) -> Int {
         var t = mathLevelUpThreshold
-        if avgTime > 0 && avgTime < 1.5 { t -= 1 }      // fast → -1
+        if avgTime > 0 && avgTime < 1.2 { t -= 2 }       // very fast → -2
+        else if avgTime > 0 && avgTime < 2.0 { t -= 1 }  // fast → -1
         if avgTime > 4.0                { t += 2 }       // slow → +2
+        else if avgTime > 3.0           { t += 1 }       // somewhat slow → +1
         t += min(5, max(0, recentWrongs))                // each wrong adds one extra Q
         return max(3, min(10, t))
     }
 
-    /// Number of wrong answers since the last math/chem level-up. Resets on
+    /// Per-mode running stats inside the current level. Both reset on
     /// level-up so each level starts clean. In-memory — no need to persist.
     private var mathRecentWrongs: Int = 0
     private var chemRecentWrongs: Int = 0
     private var geoRecentWrongs: Int = 0
+
+    private var mathLevelTimeSum: Double = 0; private var mathLevelAnswerCount: Int = 0
+    private var chemLevelTimeSum: Double = 0; private var chemLevelAnswerCount: Int = 0
+    private var geoLevelTimeSum:  Double = 0; private var geoLevelAnswerCount:  Int = 0
+
+    private var mathLevelAvgTime: Double {
+        mathLevelAnswerCount > 0 ? mathLevelTimeSum / Double(mathLevelAnswerCount) : averageAnswerTime
+    }
+    private var chemLevelAvgTime: Double {
+        chemLevelAnswerCount > 0 ? chemLevelTimeSum / Double(chemLevelAnswerCount) : averageAnswerTime
+    }
+    private var geoLevelAvgTime: Double {
+        geoLevelAnswerCount > 0 ? geoLevelTimeSum / Double(geoLevelAnswerCount) : averageAnswerTime
+    }
 
     // MARK: – Published state (mirrors UserDefaults)
 
@@ -105,11 +123,17 @@ import SwiftUI
     /// Record a correct answer's time so the running average can be shown
     /// on the profile (#57). Wrong answers are excluded — they're typically
     /// resolved by the engine penalty and don't reflect the user's pace.
-    func recordCorrectAnswerTime(_ seconds: Double) {
+    func recordCorrectAnswerTime(_ seconds: Double, mode: GameMode = .pi) {
         totalCorrectAnswerTime += seconds
         totalCorrectAnswers += 1
         UserDefaults.standard.set(totalCorrectAnswerTime, forKey: "totalCorrectAnswerTime")
         UserDefaults.standard.set(totalCorrectAnswers,    forKey: "totalCorrectAnswers")
+        switch mode {
+        case .math:      mathLevelTimeSum += seconds; mathLevelAnswerCount += 1
+        case .chemistry: chemLevelTimeSum += seconds; chemLevelAnswerCount += 1
+        case .geography: geoLevelTimeSum  += seconds; geoLevelAnswerCount  += 1
+        case .pi:        break
+        }
     }
 
     private func bumpLastActive() {
@@ -208,12 +232,14 @@ import SwiftUI
     func advanceMathLevel() {
         var prog = mathLevelProgress + 1
         var lvl  = mathLevel
-        let threshold = Self.adaptiveThreshold(avgTime: averageAnswerTime,
+        let threshold = Self.adaptiveThreshold(avgTime: mathLevelAvgTime,
                                                recentWrongs: mathRecentWrongs)
         if prog >= threshold {
             prog = 0
             lvl  = min(20, lvl + 1)
             mathRecentWrongs = 0
+            mathLevelTimeSum = 0
+            mathLevelAnswerCount = 0
         }
         set(mathLevel: lvl, mathLevelProgress: prog)
     }
@@ -246,12 +272,14 @@ import SwiftUI
     func advanceChemLevel() {
         var prog = chemLevelProgress + 1
         var lvl  = chemLevel
-        let threshold = Self.adaptiveThreshold(avgTime: averageAnswerTime,
+        let threshold = Self.adaptiveThreshold(avgTime: chemLevelAvgTime,
                                                recentWrongs: chemRecentWrongs)
         if prog >= threshold {
             prog = 0
             lvl  = min(20, lvl + 1)
             chemRecentWrongs = 0
+            chemLevelTimeSum = 0
+            chemLevelAnswerCount = 0
         }
         set(chemLevel: lvl, chemLevelProgress: prog)
     }
@@ -260,12 +288,14 @@ import SwiftUI
     func advanceGeoLevel() {
         var prog = geoLevelProgress + 1
         var lvl  = geoLevel
-        let threshold = Self.adaptiveThreshold(avgTime: averageAnswerTime,
+        let threshold = Self.adaptiveThreshold(avgTime: geoLevelAvgTime,
                                                recentWrongs: geoRecentWrongs)
         if prog >= threshold {
             prog = 0
             lvl  = min(20, lvl + 1)
             geoRecentWrongs = 0
+            geoLevelTimeSum = 0
+            geoLevelAnswerCount = 0
         }
         set(geoLevel: lvl, geoLevelProgress: prog)
     }

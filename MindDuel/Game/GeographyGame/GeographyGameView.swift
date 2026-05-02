@@ -260,7 +260,7 @@ struct GeographyGameView: View {
             try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
             if correct {
                 totalAnswerTime += elapsedSeconds
-                progression.recordCorrectAnswerTime(elapsedSeconds)
+                progression.recordCorrectAnswerTime(elapsedSeconds, mode: .geography)
                 engine.recordCorrect()
                 progression.advanceGeoLevel()
             } else {

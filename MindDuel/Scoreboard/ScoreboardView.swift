@@ -71,13 +71,17 @@ struct ScoreboardView: View {
                 Button {
                     withAnimation(.easeInOut(duration: 0.15)) { scoreMode = mode }
                 } label: {
-                    Text(scoreboardLabel(for: mode))
-                        .mdStyle(.caption)
-                        .foregroundStyle(scoreMode == mode ? Color.mdText : Color.mdText3)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 6)
-                        .background(scoreMode == mode ? Color.mdSurface2 : Color.clear)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    HStack(spacing: 4) {
+                        ModeGlyph(mode: mode, size: 13, weight: .bold,
+                                  color: scoreMode == mode ? Color.mdText : Color.mdText3)
+                        Text(scoreboardLabel(for: mode))
+                            .mdStyle(.caption)
+                            .foregroundStyle(scoreMode == mode ? Color.mdText : Color.mdText3)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
+                    .background(scoreMode == mode ? Color.mdSurface2 : Color.clear)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
                 .buttonStyle(.plain)
             }
@@ -89,8 +93,8 @@ struct ScoreboardView: View {
 
     private func scoreboardLabel(for mode: GameMode) -> String {
         switch mode {
-        case .pi:        return String(localized: "scoreboard_pi_mode")
-        case .math:      return String(localized: "scoreboard_math_mode")
+        case .pi:        return String(localized: "mode_pi")
+        case .math:      return String(localized: "mode_math")
         case .chemistry: return String(localized: "mode_chemistry")
         case .geography: return String(localized: "mode_geography")
         }
