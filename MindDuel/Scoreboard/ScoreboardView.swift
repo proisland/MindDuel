@@ -233,7 +233,7 @@ struct ScoreboardView: View {
     @ViewBuilder
     private func globalSection(entries: [UserProfile]) -> some View {
         if entries.isEmpty {
-            Text("@\(searchText) …")
+            Text("\(searchText) …")
                 .mdStyle(.body)
                 .foregroundStyle(Color.mdText3)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -283,7 +283,7 @@ struct ScoreboardView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: MDSpacing.xxs) {
-                        Text("@\(profile.username)")
+                        Text("\(profile.username)")
                             .mdStyle(.caption)
                             .foregroundStyle(Color.mdText)
                         if isOwn {
@@ -354,7 +354,7 @@ private struct FriendRequestRow: View {
     var body: some View {
         HStack(spacing: MDSpacing.sm) {
             MDAvatar(username: profile.username, size: .sm)
-            Text("@\(profile.username)")
+            Text("\(profile.username)")
                 .mdStyle(.caption)
                 .foregroundStyle(Color.mdText)
             Spacer()

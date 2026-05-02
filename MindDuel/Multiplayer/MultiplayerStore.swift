@@ -6,7 +6,36 @@ import UserNotifications
 
     @Published var currentRoom: MultiplayerRoom?
     @Published var backgroundRooms: [MultiplayerRoom] = [] { didSet { persistBackgroundRooms() } }
-    @Published var pendingInviteCount: Int = 0
+    /// Pending multiplayer invites (#56). The home-screen badge counts these
+    /// and the "Bli med" entry surfaces them as a list. Seeded with mock
+    /// data on first launch so the feature is testable.
+    @Published var pendingInvites: [MultiplayerInvite] = MultiplayerStore.mockInvites()
+    var pendingInviteCount: Int { pendingInvites.count }
+
+    private static func mockInvites() -> [MultiplayerInvite] {
+        [
+            MultiplayerInvite(roomCode: "9F2A", mode: .math,
+                              hostUsername: "magnus",
+                              invitedAt: Date().addingTimeInterval(-180)),
+            MultiplayerInvite(roomCode: "B3C1", mode: .pi,
+                              hostUsername: "sara",
+                              invitedAt: Date().addingTimeInterval(-1200)),
+            MultiplayerInvite(roomCode: "K7D9", mode: .chemistry,
+                              hostUsername: "alex",
+                              invitedAt: Date().addingTimeInterval(-3600))
+        ]
+    }
+
+    /// Accept a pending invite and drop the user into the corresponding lobby.
+    /// Mock implementation just calls joinMockRoom with the invite's mode.
+    func acceptInvite(_ invite: MultiplayerInvite, ownUsername: String) {
+        pendingInvites.removeAll { $0.id == invite.id }
+        joinMockRoom(ownUsername: ownUsername, mode: invite.mode)
+    }
+
+    func declineInvite(_ invite: MultiplayerInvite) {
+        pendingInvites.removeAll { $0.id == invite.id }
+    }
     @Published var recentActivity: [MultiplayerActivityItem] = [] { didSet { persistRecentActivity() } }
     @Published var lastGameEvent: GameEvent?
 
@@ -228,6 +257,7 @@ import UserNotifications
                                    players: [player], status: .playing)
         room.myPiDigitIndex = currentDigit
         room.isStandaloneSolo = true
+        room.lastActivityAt = Date()
         backgroundRooms.append(room)
         return id
     }
@@ -247,6 +277,7 @@ import UserNotifications
         var room = MultiplayerRoom(id: id, mode: .chemistry, startLevel: startLevel,
                                    players: [player], status: .playing)
         room.isStandaloneSolo = true
+        room.lastActivityAt = Date()
         backgroundRooms.append(room)
         return id
     }
@@ -266,6 +297,7 @@ import UserNotifications
         var room = MultiplayerRoom(id: id, mode: .math, startLevel: startLevel,
                                    players: [player], status: .playing)
         room.isStandaloneSolo = true
+        room.lastActivityAt = Date()
         backgroundRooms.append(room)
         return id
     }
@@ -385,6 +417,7 @@ import UserNotifications
                 room.players[playerIdx].isEliminated = true
             }
         }
+        room.lastActivityAt = Date()
     }
 
     private func advanceTurn(_ room: inout MultiplayerRoom) {

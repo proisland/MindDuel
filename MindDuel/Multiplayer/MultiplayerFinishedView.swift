@@ -60,7 +60,7 @@ struct MultiplayerFinishedView: View {
                 .foregroundStyle(rank == 0 ? Color.mdAmber : Color.mdText3)
                 .frame(width: 20, alignment: .center)
             MDAvatar(username: player.username, size: .sm)
-            Text("@\(player.username)")
+            Text("\(player.username)")
                 .mdStyle(.caption)
                 .foregroundStyle(Color.mdText)
             if player.isYou {

@@ -96,11 +96,21 @@ struct ActiveGamesView: View {
                                 .mdStyle(.caption)
                                 .foregroundStyle(Color.mdText3)
                         } else {
-                            let opponents = room.players.filter { !$0.isYou }.map { "@\($0.username)" }.joined(separator: ", ")
+                            let opponents = room.players.filter { !$0.isYou }.map { "\($0.username)" }.joined(separator: ", ")
                             Text(opponents)
                                 .mdStyle(.caption)
                                 .foregroundStyle(Color.mdText3)
                         }
+                        // #48 + #49: level + last-activity timestamp so players
+                        // can decide whether to discard a stale session.
+                        HStack(spacing: MDSpacing.xs) {
+                            Text(String(format: String(localized: "active_games_level_format"),
+                                        levelForRoom(room)))
+                            Text("·")
+                            Text(timeAgo(from: room.lastActivityAt))
+                        }
+                        .mdStyle(.micro)
+                        .foregroundStyle(Color.mdText3)
                     }
                     Spacer()
                     VStack(alignment: .trailing, spacing: 2) {
@@ -146,5 +156,22 @@ struct ActiveGamesView: View {
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(
             isMyTurn ? Color.mdGreen.opacity(0.5) : Color.mdBorder2,
             lineWidth: isMyTurn ? 1 : 0.5))
+    }
+
+    private func levelForRoom(_ room: MultiplayerRoom) -> Int {
+        switch room.mode {
+        case .pi: return ProgressionStore.piLevel(forPosition: room.myPiDigitIndex)
+        case .math, .chemistry: return max(1, room.startLevel)
+        }
+    }
+
+    private func timeAgo(from date: Date) -> String {
+        let seconds = Int(-date.timeIntervalSinceNow)
+        if seconds < 60 { return String(localized: "time_just_now") }
+        let minutes = seconds / 60
+        if minutes < 60 { return "\(minutes)m" }
+        let hours = minutes / 60
+        if hours < 24 { return "\(hours)t" }
+        return "\(hours / 24)d"
     }
 }

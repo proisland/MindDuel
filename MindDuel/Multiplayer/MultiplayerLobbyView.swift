@@ -36,9 +36,14 @@ struct MultiplayerLobbyView: View {
             }
         }
         .onAppear {
+            // For the invite-accept flow (#56) MultiplayerStore.acceptInvite
+            // already seeded the room. Only fall back to seeding here if we
+            // still have nothing — covers fresh "Create" and legacy "Join".
             if startAsHost {
-                store.createRoom(mode: .pi, ownUsername: ownUsername, invitedUsername: invitedUsername)
-            } else {
+                if store.currentRoom == nil {
+                    store.createRoom(mode: .pi, ownUsername: ownUsername, invitedUsername: invitedUsername)
+                }
+            } else if store.currentRoom == nil {
                 store.joinMockRoom(ownUsername: ownUsername)
             }
         }
@@ -205,7 +210,7 @@ struct MultiplayerLobbyView: View {
             MDAvatar(username: player.username, size: .sm)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: MDSpacing.xxs) {
-                    Text("@\(player.username)").mdStyle(.caption).foregroundStyle(Color.mdText)
+                    Text("\(player.username)").mdStyle(.caption).foregroundStyle(Color.mdText)
                     if player.isHost { MDPillTag(label: String(localized: "multiplayer_host_label"), variant: .accent) }
                     if player.isYou  { MDPillTag(label: String(localized: "your_label"), variant: .neutral) }
                 }
@@ -294,7 +299,7 @@ struct MultiplayerLobbyView: View {
                             } label: {
                                 HStack(spacing: MDSpacing.sm) {
                                     MDAvatar(username: friend.username, size: .sm)
-                                    Text("@\(friend.username)")
+                                    Text("\(friend.username)")
                                         .mdStyle(.caption)
                                         .foregroundStyle(Color.mdText)
                                     Spacer()

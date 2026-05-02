@@ -43,6 +43,22 @@
         }
       }
     },
+    "active_games_level_format" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lv %d"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nivå %d"
+          }
+        }
+      }
+    },
     "active_games_title" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -591,7 +607,7 @@
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Regning-modus"
+            "value" : "Matte-modus"
           }
         }
       }
@@ -2360,6 +2376,86 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Venner"
+          }
+        }
+      }
+    },
+    "stats_avg_answer_time_label" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Average answer time"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snittsvartid"
+          }
+        }
+      }
+    },
+    "multiplayer_invites_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invites"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invitasjoner"
+          }
+        }
+      }
+    },
+    "multiplayer_no_invites" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pending invites"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen ventende invitasjoner"
+          }
+        }
+      }
+    },
+    "multiplayer_invite_from_format" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invite from %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invitasjon fra %@"
+          }
+        }
+      }
+    },
+    "premium_label" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium"
           }
         }
       }
