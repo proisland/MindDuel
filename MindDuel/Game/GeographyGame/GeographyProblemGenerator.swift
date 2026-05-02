@@ -7,24 +7,27 @@ import Foundation
 /// obscure trivia at the top.
 enum GeographyProblemGenerator {
 
-    /// Recent question identities (correct answers), kept so we don't repeat
-    /// the same question within a short window (#64). Identifying by `correct`
-    /// — not `prompt` — distinguishes flag questions which all share one prompt
-    /// text but differ by country. Keeps the last 3 to avoid both back-to-back
-    /// duplicates and ABAB cycling at small pool sizes.
-    private static var recentCorrects: [String] = []
-    private static let recentWindow = 7
+    /// Per-level set of `correct` answers we've already shown. A question
+    /// the player has seen on the current level isn't shown again until
+    /// every other question on that level has been served (#64). The level
+    /// is tracked alongside the seen-set so leveling up auto-resets it.
+    private static var seenLevel: Int = 0
+    private static var seenCorrects: Set<String> = []
 
     static func generate(level: Int = 1) -> GeographyProblem {
         let clamped = max(1, min(20, level))
-        let pool = pool(forLevel: clamped)
-        var candidates = pool.filter { !recentCorrects.contains($0.correct) }
-        if candidates.isEmpty { candidates = pool }
-        let raw = candidates.randomElement() ?? pool[0]
-        recentCorrects.append(raw.correct)
-        if recentCorrects.count > recentWindow {
-            recentCorrects.removeFirst(recentCorrects.count - recentWindow)
+        if seenLevel != clamped {
+            seenLevel = clamped
+            seenCorrects.removeAll()
         }
+        let pool = pool(forLevel: clamped)
+        var candidates = pool.filter { !seenCorrects.contains($0.correct) }
+        if candidates.isEmpty {
+            seenCorrects.removeAll()
+            candidates = pool
+        }
+        let raw = candidates.randomElement() ?? pool[0]
+        seenCorrects.insert(raw.correct)
         return GeographyProblem(
             prompt: raw.prompt,
             flag: raw.flag,

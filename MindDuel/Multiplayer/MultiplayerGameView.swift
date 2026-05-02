@@ -394,7 +394,7 @@ struct MultiplayerGameView: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                     if let flag = geoProblem.flag {
                         Text(verbatim: flag)
-                            .font(.system(size: 64))
+                            .font(.custom("AppleColorEmoji", size: 64))
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
                     Text(verbatim: geoProblem.prompt)

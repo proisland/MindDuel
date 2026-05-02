@@ -169,10 +169,12 @@ struct GeographyGameView: View {
                     .foregroundStyle(Color.mdText3)
                     .frame(maxWidth: .infinity, alignment: .center)
                 if let flag = problem.flag {
-                    // verbatim avoids LocalizedStringKey lookup (#63 — without
-                    // it SwiftUI tried to localize the emoji and rendered "??")
+                    // Force AppleColorEmoji explicitly. SwiftUI's default font
+                    // resolution sometimes drops emoji glyphs in the simulator
+                    // and renders flags as "??" (#63) — pinning the emoji font
+                    // bypasses the system-font fallback path entirely.
                     Text(verbatim: flag)
-                        .font(.system(size: 64))
+                        .font(.custom("AppleColorEmoji", size: 64))
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
                 Text(verbatim: problem.prompt)
