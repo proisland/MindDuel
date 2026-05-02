@@ -4,19 +4,21 @@ private enum HomeDestination: Identifiable {
     case profile
     case scoreboard
     case multiplayerHost
-    case multiplayerJoin
+    case multiplayerInvites
+    case multiplayerLobbyJoined
     case activityList
     case multiplayerGame
     case activeGames
     var id: String {
         switch self {
-        case .profile:         return "profile"
-        case .scoreboard:      return "scoreboard"
-        case .multiplayerHost: return "multiplayerHost"
-        case .multiplayerJoin: return "multiplayerJoin"
-        case .activityList:    return "activityList"
-        case .multiplayerGame: return "multiplayerGame"
-        case .activeGames:     return "activeGames"
+        case .profile:                return "profile"
+        case .scoreboard:             return "scoreboard"
+        case .multiplayerHost:        return "multiplayerHost"
+        case .multiplayerInvites:     return "multiplayerInvites"
+        case .multiplayerLobbyJoined: return "multiplayerLobbyJoined"
+        case .activityList:           return "activityList"
+        case .multiplayerGame:        return "multiplayerGame"
+        case .activeGames:            return "activeGames"
         }
     }
 }
@@ -66,7 +68,7 @@ struct HomeView: View {
                             HStack(spacing: MDSpacing.xxs) {
                                 Text(String(localized: "welcome_greeting"))
                                     .mdStyle(.title)
-                                Text("@\(username)")
+                                Text("\(username)")
                                     .mdStyle(.title)
                             }
                             Text(String(localized: "home_subtitle"))
@@ -74,7 +76,7 @@ struct HomeView: View {
                                 .foregroundStyle(Color.mdText2)
                         }
                         .padding(.horizontal, MDSpacing.md)
-                        .padding(.top, MDSpacing.xl)
+                        .padding(.top, MDSpacing.sm)
 
                         // Quota warning banner
                         if progression.isNearQuota {
@@ -93,7 +95,7 @@ struct HomeView: View {
                                 level: progression.piLevel,
                                 maxLevel: 20,
                                 compact: true
-                            ) { activeMode = .pi }
+                            ) { startOrResume(.pi) }
 
                             MDModeCard(
                                 mode: .math,
@@ -101,7 +103,7 @@ struct HomeView: View {
                                 level: progression.mathLevel,
                                 maxLevel: 20,
                                 compact: true
-                            ) { activeMode = .math }
+                            ) { startOrResume(.math) }
 
                             MDModeCard(
                                 mode: .chemistry,
@@ -109,7 +111,7 @@ struct HomeView: View {
                                 level: progression.chemLevel,
                                 maxLevel: 20,
                                 compact: true
-                            ) { activeMode = .chemistry }
+                            ) { startOrResume(.chemistry) }
                         }
                         .padding(.horizontal, MDSpacing.md)
 
@@ -163,7 +165,12 @@ struct HomeView: View {
             case .profile:         ProfileView(username: username, onSignOut: { authState.signOut() })
             case .scoreboard:      ScoreboardView(ownUsername: username)
             case .multiplayerHost: MultiplayerLobbyView(ownUsername: username, startAsHost: true)
-            case .multiplayerJoin: MultiplayerLobbyView(ownUsername: username, startAsHost: false)
+            case .multiplayerInvites:
+                MultiplayerInvitesView(ownUsername: username) {
+                    activeDestination = .multiplayerLobbyJoined
+                }
+            case .multiplayerLobbyJoined:
+                MultiplayerLobbyView(ownUsername: username, startAsHost: false)
             case .activityList:    ActivityListView()
             case .multiplayerGame: MultiplayerGameView(ownUsername: username)
             case .activeGames:     ActiveGamesView(ownUsername: username)
@@ -250,7 +257,7 @@ struct HomeView: View {
 
             HStack(spacing: MDSpacing.sm) {
                 MDButton(.ghost, title: String(localized: "multiplayer_join_action")) {
-                    activeDestination = .multiplayerJoin
+                    activeDestination = .multiplayerInvites
                 }
                 .disabled(progression.isQuotaExhausted)
                 MDButton(.primary, title: String(localized: "multiplayer_create_action")) {
@@ -333,6 +340,20 @@ struct HomeView: View {
                 }
             }
         }
+    }
+
+    /// #50: tapping a mode card while an unfinished standalone-solo session
+    /// of that mode exists in backgroundRooms resumes it instead of starting
+    /// a fresh round (which would shadow the saved progress).
+    private func startOrResume(_ mode: GameMode) {
+        if let existing = multiplayer.backgroundRooms.first(where: {
+            $0.isStandaloneSolo && $0.mode == mode && $0.status == .playing
+        }) {
+            resumeSoloRoomID = existing.id
+        } else {
+            resumeSoloRoomID = nil
+        }
+        activeMode = mode
     }
 
     private func modeLabel(for mode: GameMode) -> String {

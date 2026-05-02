@@ -261,9 +261,11 @@ struct ChemistryGameView: View {
             try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
             if correct {
                 totalAnswerTime += elapsedSeconds
+                progression.recordCorrectAnswerTime(elapsedSeconds)
                 engine.recordCorrect()
                 progression.advanceChemLevel()
             } else {
+                progression.recordWrongAnswer(mode: .chemistry)
                 engine.recordWrong()
             }
             guard !engine.isRoundOver else {

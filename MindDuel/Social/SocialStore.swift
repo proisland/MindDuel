@@ -16,6 +16,9 @@ struct UserProfile: Identifiable {
     let lastActive: String
     var isFriend: Bool
     var isFlagged: Bool
+    var isPremium: Bool = false
+    /// Average answer time in seconds (#57). 0 = unknown / no data.
+    var avgAnswerTime: Double = 0
 
     var totalScore: Int { piScore + mathScore + chemScore }
     var initials: String { String(username.prefix(2)).uppercased() }

@@ -34,7 +34,7 @@ struct ProfileView: View {
                         VStack(spacing: MDSpacing.xs) {
                             MDAvatar(username: username, size: .lg)
                             HStack(spacing: MDSpacing.xxs) {
-                                Text("@\(username)")
+                                Text("\(username)")
                                     .mdStyle(.title2)
                                     .foregroundStyle(Color.mdText)
                                 if progression.isFlagged {
@@ -44,6 +44,9 @@ struct ProfileView: View {
                                             .foregroundStyle(Color.mdRed)
                                     }
                                     .buttonStyle(.plain)
+                                }
+                                if progression.isPremium {
+                                    MDPillTag(label: String(localized: "premium_label"), variant: .amber)
                                 }
                             }
                             Text(String(localized: "stats_member_since_april"))
@@ -91,6 +94,14 @@ struct ProfileView: View {
                                 statRow(label: String(localized: "stats_friends_count_label"),
                                         value: "\(social.friends.count)")
                                 Divider().background(Color.mdBorder2)
+                                statRow(label: String(localized: "stats_avg_answer_time_label"),
+                                        value: progression.totalCorrectAnswers > 0
+                                            ? String(format: "%.1f s", progression.averageAnswerTime)
+                                            : "–")
+                                Divider().background(Color.mdBorder2)
+                                statRow(label: String(localized: "stats_last_active_label"),
+                                        value: timeAgoString(from: progression.lastActiveAt))
+                                Divider().background(Color.mdBorder2)
                                 statRow(label: String(localized: "stats_member_since_label"),
                                         value: "april 2025")
                             }
@@ -130,7 +141,7 @@ struct ProfileView: View {
             ForEach(social.pendingRequests) { req in
                 HStack(spacing: MDSpacing.sm) {
                     MDAvatar(username: req.username, size: .sm)
-                    Text("@\(req.username)")
+                    Text("\(req.username)")
                         .mdStyle(.caption)
                         .foregroundStyle(Color.mdText)
                     Spacer()
@@ -165,7 +176,7 @@ struct ProfileView: View {
                             Button { selectedFriend = friend } label: {
                                 VStack(spacing: MDSpacing.xxs) {
                                     MDAvatar(username: friend.username, size: .sm)
-                                    Text("@\(friend.username)")
+                                    Text("\(friend.username)")
                                         .mdStyle(.micro)
                                         .foregroundStyle(Color.mdText3)
                                         .lineLimit(1)
@@ -209,6 +220,16 @@ struct ProfileView: View {
         }
         .padding(.horizontal, MDSpacing.md)
         .padding(.vertical, MDSpacing.sm)
+    }
+
+    private func timeAgoString(from date: Date) -> String {
+        let seconds = Int(-date.timeIntervalSinceNow)
+        if seconds < 60 { return String(localized: "time_just_now") }
+        let minutes = seconds / 60
+        if minutes < 60 { return "\(minutes)m" }
+        let hours = minutes / 60
+        if hours < 24 { return "\(hours)t" }
+        return "\(hours / 24)d"
     }
 
     // MARK: – Flag modal

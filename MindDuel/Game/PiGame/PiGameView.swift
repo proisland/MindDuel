@@ -278,6 +278,7 @@ struct PiGameView: View {
             try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
             if correct {
                 totalAnswerTime += elapsedSeconds
+                progression.recordCorrectAnswerTime(elapsedSeconds)
                 engine.recordCorrect()
                 currentIndex   += 1
                 elapsedSeconds  = 0

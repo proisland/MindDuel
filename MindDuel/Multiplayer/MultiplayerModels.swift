@@ -6,6 +6,16 @@ struct GameEvent: Identifiable {
     let isPositive: Bool
 }
 
+/// A pending invite to a multiplayer room (#56). The "Bli med" entry point
+/// on the home screen now lists these so the user can pick which one to join.
+struct MultiplayerInvite: Identifiable, Codable {
+    var id = UUID()
+    let roomCode: String
+    let mode: GameMode
+    let hostUsername: String
+    let invitedAt: Date
+}
+
 struct MultiplayerActivityItem: Identifiable, Codable {
     var id = UUID()
     let opponentUsername: String
@@ -69,6 +79,10 @@ struct MultiplayerRoom: Identifiable, Codable {
     /// Routing in HomeView/ActiveGamesView uses this to pick which view to
     /// resume in.
     var isStandaloneSolo: Bool = false
+    /// When the room last saw activity (turn submitted, skip, save, …).
+    /// Surfaced on ActiveGamesView rows (#49) so players can decide whether
+    /// to discard a stale game. Defaults to creation time.
+    var lastActivityAt: Date = Date()
 
     var activePlayers: [MultiplayerPlayer] { players.filter { !$0.isEliminated } }
 

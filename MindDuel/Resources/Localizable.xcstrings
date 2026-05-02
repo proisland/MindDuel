@@ -1,16 +1,16 @@
 {
   "sourceLanguage" : "no",
   "strings" : {
+    "·" : {
+
+    },
     "@" : {
 
     },
-    "@%@" : {
-
-    },
-    "@%@ …" : {
-
-    },
     "%@" : {
+
+    },
+    "%@ …" : {
 
     },
     "%@ · %@" : {
@@ -39,6 +39,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Godta"
+          }
+        }
+      }
+    },
+    "active_games_level_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lv %d"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nivå %d"
           }
         }
       }
@@ -585,13 +602,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Math Mode"
+            "value" : "Math"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Regning-modus"
+            "value" : "Matte"
           }
         }
       }
@@ -619,13 +636,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pi Mode"
+            "value" : "Pi"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pi-modus"
+            "value" : "Pi"
           }
         }
       }
@@ -715,6 +732,23 @@
         }
       }
     },
+    "multiplayer_invite_from_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invite from %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invitasjon fra %@"
+          }
+        }
+      }
+    },
     "multiplayer_invite_label" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -745,6 +779,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bli med i mitt MindDuel-spill! Spillkode: %@"
+          }
+        }
+      }
+    },
+    "multiplayer_invites_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invites"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invitasjoner"
           }
         }
       }
@@ -830,6 +881,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "MODUS"
+          }
+        }
+      }
+    },
+    "multiplayer_no_invites" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pending invites"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen ventende invitasjoner"
           }
         }
       }
@@ -1289,6 +1357,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Spill igjen"
+          }
+        }
+      }
+    },
+    "premium_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium"
           }
         }
       }
@@ -2343,6 +2428,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Singel-økt"
+          }
+        }
+      }
+    },
+    "stats_avg_answer_time_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Average answer time"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snittsvartid"
           }
         }
       }

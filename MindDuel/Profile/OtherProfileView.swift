@@ -16,7 +16,7 @@ struct OtherProfileView: View {
             Color.mdBg.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                MDTopBar(title: "@\(profile.username)", leadingAction: { dismiss() }) {
+                MDTopBar(title: "\(profile.username)", leadingAction: { dismiss() }) {
                     EmptyView()
                 }
 
@@ -26,7 +26,7 @@ struct OtherProfileView: View {
                         VStack(spacing: MDSpacing.xs) {
                             MDAvatar(username: profile.username, size: .lg)
                             HStack(spacing: MDSpacing.xxs) {
-                                Text("@\(profile.username)")
+                                Text("\(profile.username)")
                                     .mdStyle(.title2)
                                     .foregroundStyle(Color.mdText)
                                 if profile.isFlagged {
@@ -36,6 +36,9 @@ struct OtherProfileView: View {
                                             .foregroundStyle(Color.mdRed)
                                     }
                                     .buttonStyle(.plain)
+                                }
+                                if profile.isPremium {
+                                    MDPillTag(label: String(localized: "premium_label"), variant: .amber)
                                 }
                             }
                             if let age = profile.age, let city = profile.city {
@@ -71,6 +74,11 @@ struct OtherProfileView: View {
                             VStack(spacing: 0) {
                                 statRow(label: String(localized: "stats_rounds_played_label"),
                                         value: "\(profile.roundsPlayed)")
+                                Divider().background(Color.mdBorder2)
+                                statRow(label: String(localized: "stats_avg_answer_time_label"),
+                                        value: profile.avgAnswerTime > 0
+                                            ? String(format: "%.1f s", profile.avgAnswerTime)
+                                            : "–")
                                 Divider().background(Color.mdBorder2)
                                 statRow(label: String(localized: "stats_member_since_label"),
                                         value: profile.memberSince)

@@ -12,6 +12,22 @@ import SwiftUI
     private static let mathLevelUpThreshold = 5
     private static let K: Double = 100.0
 
+    /// Adaptive level-up threshold (#43). Faster avg answer time and a clean
+    /// streak shrink the number of correct answers required for the next
+    /// level; slow play or recent mistakes grow it. Bounded [3, 10].
+    private static func adaptiveThreshold(avgTime: Double, recentWrongs: Int) -> Int {
+        var t = mathLevelUpThreshold
+        if avgTime > 0 && avgTime < 1.5 { t -= 1 }      // fast → -1
+        if avgTime > 4.0                { t += 2 }       // slow → +2
+        t += min(5, max(0, recentWrongs))                // each wrong adds one extra Q
+        return max(3, min(10, t))
+    }
+
+    /// Number of wrong answers since the last math/chem level-up. Resets on
+    /// level-up so each level starts clean. In-memory — no need to persist.
+    private var mathRecentWrongs: Int = 0
+    private var chemRecentWrongs: Int = 0
+
     // MARK: – Published state (mirrors UserDefaults)
 
     @Published private(set) var piPosition: Int
@@ -28,6 +44,20 @@ import SwiftUI
     @Published private(set) var dailyUsed: Int
     @Published private(set) var totalRoundsPlayed: Int
     @Published private(set) var isFlagged: Bool
+
+    /// Lifetime sum of correct-answer times (seconds) and total correct
+    /// answers — used to compute avg answer time on the profile (#57).
+    @Published private(set) var totalCorrectAnswerTime: Double
+    @Published private(set) var totalCorrectAnswers: Int
+
+    /// Last time the user submitted any answer. Surfaced on the profile (#54).
+    @Published private(set) var lastActiveAt: Date
+
+    /// Whether the user has a premium subscription. Local mock until M6;
+    /// surfaced on profiles (#58) so opponents know who can be quota-blocked.
+    @Published var isPremium: Bool {
+        didSet { UserDefaults.standard.set(isPremium, forKey: "isPremium") }
+    }
 
     private var quotaResetEpoch: Double
     private var fastRoundCount: Int
@@ -51,7 +81,31 @@ import SwiftUI
         totalRoundsPlayed = d.integer(forKey: "totalRoundsPlayed")
         isFlagged         = d.bool(forKey: "isFlagged")
         fastRoundCount    = d.integer(forKey: "fastRoundCount")
+        totalCorrectAnswerTime = d.double(forKey: "totalCorrectAnswerTime")
+        totalCorrectAnswers    = d.integer(forKey: "totalCorrectAnswers")
+        let storedActive       = d.double(forKey: "lastActiveAt")
+        lastActiveAt           = storedActive > 0 ? Date(timeIntervalSince1970: storedActive) : Date()
+        isPremium              = d.bool(forKey: "isPremium")
         checkResetQuota()
+    }
+
+    var averageAnswerTime: Double {
+        totalCorrectAnswers > 0 ? totalCorrectAnswerTime / Double(totalCorrectAnswers) : 0
+    }
+
+    /// Record a correct answer's time so the running average can be shown
+    /// on the profile (#57). Wrong answers are excluded — they're typically
+    /// resolved by the engine penalty and don't reflect the user's pace.
+    func recordCorrectAnswerTime(_ seconds: Double) {
+        totalCorrectAnswerTime += seconds
+        totalCorrectAnswers += 1
+        UserDefaults.standard.set(totalCorrectAnswerTime, forKey: "totalCorrectAnswerTime")
+        UserDefaults.standard.set(totalCorrectAnswers,    forKey: "totalCorrectAnswers")
+    }
+
+    private func bumpLastActive() {
+        lastActiveAt = Date()
+        UserDefaults.standard.set(lastActiveAt.timeIntervalSince1970, forKey: "lastActiveAt")
     }
 
     // MARK: – Quota
@@ -79,6 +133,7 @@ import SwiftUI
     func consumeQuestion() {
         checkResetQuota()
         set(dailyUsed: min(Self.dailyQuota, dailyUsed + 1))
+        bumpLastActive()
     }
 
     func resetDailyQuota() {
@@ -132,15 +187,30 @@ import SwiftUI
         return RoundResult(score: score, isPersonalBest: pb)
     }
 
-    // Called after each correct Math answer (live level progression during round)
+    // Called after each correct Math answer (live level progression during round).
+    // Threshold adapts to avg answer time and recent mistakes (#43).
     func advanceMathLevel() {
         var prog = mathLevelProgress + 1
         var lvl  = mathLevel
-        if prog >= Self.mathLevelUpThreshold {
+        let threshold = Self.adaptiveThreshold(avgTime: averageAnswerTime,
+                                               recentWrongs: mathRecentWrongs)
+        if prog >= threshold {
             prog = 0
             lvl  = min(20, lvl + 1)
+            mathRecentWrongs = 0
         }
         set(mathLevel: lvl, mathLevelProgress: prog)
+    }
+
+    /// Hook for math/chem game views to report wrong answers — feeds the
+    /// adaptive threshold so the player sees more questions before levelling
+    /// up after slip-ups.
+    func recordWrongAnswer(mode: GameMode) {
+        switch mode {
+        case .math:      mathRecentWrongs += 1
+        case .chemistry: chemRecentWrongs += 1
+        case .pi:        break  // Pi has its own digit-position progression
+        }
     }
 
     // Called after each correct Pi answer (live position progression during round).
@@ -155,13 +225,16 @@ import SwiftUI
         }
     }
 
-    /// Live chem-level progression — same threshold model as Math.
+    /// Live chem-level progression — same adaptive threshold as Math (#43).
     func advanceChemLevel() {
         var prog = chemLevelProgress + 1
         var lvl  = chemLevel
-        if prog >= Self.mathLevelUpThreshold {
+        let threshold = Self.adaptiveThreshold(avgTime: averageAnswerTime,
+                                               recentWrongs: chemRecentWrongs)
+        if prog >= threshold {
             prog = 0
             lvl  = min(20, lvl + 1)
+            chemRecentWrongs = 0
         }
         set(chemLevel: lvl, chemLevelProgress: prog)
     }
