@@ -393,11 +393,11 @@ struct MultiplayerGameView: View {
                         .foregroundStyle(Color.mdText3)
                         .frame(maxWidth: .infinity, alignment: .center)
                     if let flag = geoProblem.flag {
-                        Text(flag)
-                            .font(.system(size: 56))
+                        Text(verbatim: flag)
+                            .font(.system(size: 64))
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
-                    Text(geoProblem.prompt)
+                    Text(verbatim: geoProblem.prompt)
                         .font(.system(size: 18, weight: .heavy))
                         .foregroundStyle(Color.mdText)
                         .multilineTextAlignment(.center)

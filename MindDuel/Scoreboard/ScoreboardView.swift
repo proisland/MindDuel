@@ -66,27 +66,30 @@ struct ScoreboardView: View {
     // MARK: – Score mode toggle
 
     private var scoreModeToggle: some View {
-        HStack(spacing: 0) {
-            ForEach([GameMode.pi, GameMode.math, GameMode.chemistry, GameMode.geography]) { mode in
-                Button {
-                    withAnimation(.easeInOut(duration: 0.15)) { scoreMode = mode }
-                } label: {
-                    HStack(spacing: 4) {
-                        ModeGlyph(mode: mode, size: 13, weight: .bold,
-                                  color: scoreMode == mode ? Color.mdText : Color.mdText3)
-                        Text(scoreboardLabel(for: mode))
-                            .mdStyle(.caption)
-                            .foregroundStyle(scoreMode == mode ? Color.mdText : Color.mdText3)
+        // Horizontal scroll so additional modes don't crowd the row (#52).
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 4) {
+                ForEach(GameMode.allCases) { mode in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.15)) { scoreMode = mode }
+                    } label: {
+                        HStack(spacing: 4) {
+                            ModeGlyph(mode: mode, size: 13, weight: .bold,
+                                      color: scoreMode == mode ? Color.mdText : Color.mdText3)
+                            Text(scoreboardLabel(for: mode))
+                                .mdStyle(.caption)
+                                .foregroundStyle(scoreMode == mode ? Color.mdText : Color.mdText3)
+                        }
+                        .padding(.horizontal, MDSpacing.sm)
+                        .padding(.vertical, 6)
+                        .background(scoreMode == mode ? Color.mdSurface2 : Color.clear)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 6)
-                    .background(scoreMode == mode ? Color.mdSurface2 : Color.clear)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
+            .padding(3)
         }
-        .padding(3)
         .background(Color.mdBgDeep)
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }

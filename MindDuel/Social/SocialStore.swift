@@ -25,6 +25,24 @@ struct UserProfile: Identifiable {
     var totalScore: Int { piScore + mathScore + chemScore + geoScore }
     var initials: String { String(username.prefix(2)).uppercased() }
 
+    func score(for mode: GameMode) -> Int {
+        switch mode {
+        case .pi:        return piScore
+        case .math:      return mathScore
+        case .chemistry: return chemScore
+        case .geography: return geoScore
+        }
+    }
+
+    func level(for mode: GameMode) -> Int {
+        switch mode {
+        case .pi:        return piLevel
+        case .math:      return mathLevel
+        case .chemistry: return chemLevel
+        case .geography: return geoLevel
+        }
+    }
+
     var avatarColor: Color {
         let colors: [Color] = [.mdAccentDeep, .mdPinkDeep, .mdGreen, .mdAmber]
         return colors[abs(username.hashValue) % colors.count]

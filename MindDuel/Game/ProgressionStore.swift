@@ -169,6 +169,26 @@ import SwiftUI
         bumpLastActive()
     }
 
+    /// Per-mode best-score / level lookup so views can iterate
+    /// `GameMode.allCases` without a per-mode switch (#52).
+    func bestScore(for mode: GameMode) -> Int {
+        switch mode {
+        case .pi:        return piBestScore
+        case .math:      return mathBestScore
+        case .chemistry: return chemBestScore
+        case .geography: return geoBestScore
+        }
+    }
+
+    func level(for mode: GameMode) -> Int {
+        switch mode {
+        case .pi:        return piLevel
+        case .math:      return mathLevel
+        case .chemistry: return chemLevel
+        case .geography: return geoLevel
+        }
+    }
+
     func resetDailyQuota() {
         set(dailyUsed: 0)
         quotaResetEpoch = Date().timeIntervalSince1970

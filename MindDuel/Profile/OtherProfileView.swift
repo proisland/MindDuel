@@ -62,14 +62,13 @@ struct OtherProfileView: View {
                             LazyVGrid(columns: [GridItem(.flexible(), spacing: MDSpacing.sm),
                                                 GridItem(.flexible(), spacing: MDSpacing.sm)],
                                       spacing: MDSpacing.sm) {
-                                MDModeCard(mode: .pi, score: profile.piScore, level: profile.piLevel, maxLevel: 20, compact: true) { }
-                                    .disabled(true)
-                                MDModeCard(mode: .math, score: profile.mathScore, level: profile.mathLevel, maxLevel: 20, compact: true) { }
-                                    .disabled(true)
-                                MDModeCard(mode: .chemistry, score: profile.chemScore, level: profile.chemLevel, maxLevel: 20, compact: true) { }
-                                    .disabled(true)
-                                MDModeCard(mode: .geography, score: profile.geoScore, level: profile.geoLevel, maxLevel: 20, compact: true) { }
-                                    .disabled(true)
+                                ForEach(GameMode.allCases) { mode in
+                                    MDModeCard(mode: mode,
+                                               score: profile.score(for: mode),
+                                               level: profile.level(for: mode),
+                                               maxLevel: 20, compact: true) { }
+                                        .disabled(true)
+                                }
                             }
                         }
 

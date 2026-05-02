@@ -13,7 +13,7 @@ enum GeographyProblemGenerator {
     /// text but differ by country. Keeps the last 3 to avoid both back-to-back
     /// duplicates and ABAB cycling at small pool sizes.
     private static var recentCorrects: [String] = []
-    private static let recentWindow = 3
+    private static let recentWindow = 7
 
     static func generate(level: Int = 1) -> GeographyProblem {
         let clamped = max(1, min(20, level))

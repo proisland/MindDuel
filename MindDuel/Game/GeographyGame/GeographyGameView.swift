@@ -169,11 +169,13 @@ struct GeographyGameView: View {
                     .foregroundStyle(Color.mdText3)
                     .frame(maxWidth: .infinity, alignment: .center)
                 if let flag = problem.flag {
-                    Text(flag)
-                        .font(.system(size: 56))
+                    // verbatim avoids LocalizedStringKey lookup (#63 — without
+                    // it SwiftUI tried to localize the emoji and rendered "??")
+                    Text(verbatim: flag)
+                        .font(.system(size: 64))
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
-                Text(problem.prompt)
+                Text(verbatim: problem.prompt)
                     .font(.system(size: 18, weight: .heavy))
                     .foregroundStyle(Color.mdText)
                     .multilineTextAlignment(.center)

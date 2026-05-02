@@ -95,22 +95,21 @@ struct MultiplayerLobbyView: View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: MDSpacing.sm),
                             GridItem(.flexible(), spacing: MDSpacing.sm)],
                   spacing: MDSpacing.sm) {
-            modeButton(.pi,        room: room, editable: editable)
-            modeButton(.math,      room: room, editable: editable)
-            modeButton(.chemistry, room: room, editable: editable)
-            modeButton(.geography, room: room, editable: editable)
+            ForEach(GameMode.allCases) { mode in
+                modeButton(mode, room: room, editable: editable)
+            }
         }
     }
 
     private func modeButton(_ mode: GameMode, room: MultiplayerRoom, editable: Bool) -> some View {
         let isActive = room.mode == mode
-        let title: String
+        let title = String(localized: String.LocalizationValue(mode.titleKey))
         let color: Color
         switch mode {
-        case .pi:        title = String(localized: "mode_pi");        color = .mdAccent
-        case .math:      title = String(localized: "mode_math");      color = .mdPink
-        case .chemistry: title = String(localized: "mode_chemistry"); color = .mdGreen
-        case .geography: title = String(localized: "mode_geography"); color = .mdAmber
+        case .pi:        color = .mdAccent
+        case .math:      color = .mdPink
+        case .chemistry: color = .mdGreen
+        case .geography: color = .mdAmber
         }
         return Button {
             if editable { store.currentRoom?.mode = mode }

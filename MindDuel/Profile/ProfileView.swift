@@ -60,38 +60,16 @@ struct ProfileView: View {
                             LazyVGrid(columns: [GridItem(.flexible(), spacing: MDSpacing.sm),
                                                 GridItem(.flexible(), spacing: MDSpacing.sm)],
                                       spacing: MDSpacing.sm) {
-                                MDModeCard(
-                                    mode: .pi,
-                                    score: progression.piBestScore,
-                                    level: progression.piLevel,
-                                    maxLevel: 20,
-                                    compact: true
-                                ) { }
-                                .disabled(true)
-                                MDModeCard(
-                                    mode: .math,
-                                    score: progression.mathBestScore,
-                                    level: progression.mathLevel,
-                                    maxLevel: 20,
-                                    compact: true
-                                ) { }
-                                .disabled(true)
-                                MDModeCard(
-                                    mode: .chemistry,
-                                    score: progression.chemBestScore,
-                                    level: progression.chemLevel,
-                                    maxLevel: 20,
-                                    compact: true
-                                ) { }
-                                .disabled(true)
-                                MDModeCard(
-                                    mode: .geography,
-                                    score: progression.geoBestScore,
-                                    level: progression.geoLevel,
-                                    maxLevel: 20,
-                                    compact: true
-                                ) { }
-                                .disabled(true)
+                                ForEach(GameMode.allCases) { mode in
+                                    MDModeCard(
+                                        mode: mode,
+                                        score: progression.bestScore(for: mode),
+                                        level: progression.level(for: mode),
+                                        maxLevel: 20,
+                                        compact: true
+                                    ) { }
+                                    .disabled(true)
+                                }
                             }
                         }
 

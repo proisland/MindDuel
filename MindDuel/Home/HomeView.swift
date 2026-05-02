@@ -87,41 +87,21 @@ struct HomeView: View {
                             .padding(.horizontal, MDSpacing.md)
                         }
 
-                        // Mode cards (2x2 grid — geography brings the count to four).
+                        // Mode cards — auto-wrapping 2-column grid driven by
+                        // GameMode.allCases so adding a new mode propagates
+                        // here without code changes (#52).
                         LazyVGrid(columns: [GridItem(.flexible(), spacing: MDSpacing.sm),
                                             GridItem(.flexible(), spacing: MDSpacing.sm)],
                                   spacing: MDSpacing.sm) {
-                            MDModeCard(
-                                mode: .pi,
-                                score: progression.piBestScore,
-                                level: progression.piLevel,
-                                maxLevel: 20,
-                                compact: true
-                            ) { startOrResume(.pi) }
-
-                            MDModeCard(
-                                mode: .math,
-                                score: progression.mathBestScore,
-                                level: progression.mathLevel,
-                                maxLevel: 20,
-                                compact: true
-                            ) { startOrResume(.math) }
-
-                            MDModeCard(
-                                mode: .chemistry,
-                                score: progression.chemBestScore,
-                                level: progression.chemLevel,
-                                maxLevel: 20,
-                                compact: true
-                            ) { startOrResume(.chemistry) }
-
-                            MDModeCard(
-                                mode: .geography,
-                                score: progression.geoBestScore,
-                                level: progression.geoLevel,
-                                maxLevel: 20,
-                                compact: true
-                            ) { startOrResume(.geography) }
+                            ForEach(GameMode.allCases) { mode in
+                                MDModeCard(
+                                    mode: mode,
+                                    score: progression.bestScore(for: mode),
+                                    level: progression.level(for: mode),
+                                    maxLevel: 20,
+                                    compact: true
+                                ) { startOrResume(mode) }
+                            }
                         }
                         .padding(.horizontal, MDSpacing.md)
 
