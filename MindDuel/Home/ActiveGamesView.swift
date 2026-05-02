@@ -33,18 +33,29 @@ struct ActiveGamesView: View {
         }
         .fullScreenCover(item: $resumeSoloMode) { mode in
             switch mode {
-            case .pi:   PiGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
-            case .math: MathGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .pi:        PiGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .math:      MathGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .chemistry: ChemistryGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
             }
         }
     }
 
     private func roomRow(_ room: MultiplayerRoom) -> some View {
-        let modeColor: Color = room.mode == .pi ? .mdAccent : .mdPink
-        let modeIcon = room.mode == .pi ? "π" : "∑"
-        let modeName = room.mode == .pi
-            ? String(localized: "mode_pi")
-            : String(localized: "mode_math")
+        let modeColor: Color
+        let modeBgSoft: Color
+        let modeIcon: String
+        let modeName: String
+        switch room.mode {
+        case .pi:
+            modeColor = .mdAccent; modeBgSoft = .mdAccentSoft
+            modeIcon = "π";        modeName = String(localized: "mode_pi")
+        case .math:
+            modeColor = .mdPink;   modeBgSoft = .mdPinkSoft
+            modeIcon = "∑";        modeName = String(localized: "mode_math")
+        case .chemistry:
+            modeColor = .mdGreen;  modeBgSoft = .mdGreenSoft
+            modeIcon = "⚗︎";        modeName = String(localized: "mode_chemistry")
+        }
         let isMyTurn = room.isMyTurn
 
         return HStack(spacing: MDSpacing.sm) {
@@ -61,7 +72,7 @@ struct ActiveGamesView: View {
                 HStack(spacing: MDSpacing.sm) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 10)
-                            .fill(room.mode == .pi ? Color.mdAccentSoft : Color.mdPinkSoft)
+                            .fill(modeBgSoft)
                             .frame(width: 40, height: 40)
                         Text(modeIcon)
                             .font(.system(size: 18, weight: .heavy))
@@ -77,7 +88,7 @@ struct ActiveGamesView: View {
                                 .foregroundStyle(modeColor)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(room.mode == .pi ? Color.mdAccentSoft : Color.mdPinkSoft)
+                                .background(modeBgSoft)
                                 .clipShape(Capsule())
                         }
                         if room.isStandaloneSolo {

@@ -16,8 +16,10 @@ struct ScoreboardView: View {
             username: ownUsername,
             piScore: progression.piBestScore,
             mathScore: progression.mathBestScore,
+            chemScore: progression.chemBestScore,
             piLevel: progression.piLevel,
             mathLevel: progression.mathLevel,
+            chemLevel: progression.chemLevel,
             roundsPlayed: progression.totalRoundsPlayed,
             age: nil, city: nil,
             memberSince: "april 2025",
@@ -63,11 +65,11 @@ struct ScoreboardView: View {
 
     private var scoreModeToggle: some View {
         HStack(spacing: 0) {
-            ForEach([GameMode.pi, GameMode.math]) { mode in
+            ForEach([GameMode.pi, GameMode.math, GameMode.chemistry]) { mode in
                 Button {
                     withAnimation(.easeInOut(duration: 0.15)) { scoreMode = mode }
                 } label: {
-                    Text(mode == .pi ? String(localized: "scoreboard_pi_mode") : String(localized: "scoreboard_math_mode"))
+                    Text(scoreboardLabel(for: mode))
                         .mdStyle(.caption)
                         .foregroundStyle(scoreMode == mode ? Color.mdText : Color.mdText3)
                         .frame(maxWidth: .infinity)
@@ -81,6 +83,22 @@ struct ScoreboardView: View {
         .padding(3)
         .background(Color.mdBgDeep)
         .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func scoreboardLabel(for mode: GameMode) -> String {
+        switch mode {
+        case .pi:        return String(localized: "scoreboard_pi_mode")
+        case .math:      return String(localized: "scoreboard_math_mode")
+        case .chemistry: return String(localized: "mode_chemistry")
+        }
+    }
+
+    private func score(for profile: UserProfile, mode: GameMode) -> Int {
+        switch mode {
+        case .pi:        return profile.piScore
+        case .math:      return profile.mathScore
+        case .chemistry: return profile.chemScore
+        }
     }
 
     // MARK: – Segmented control
@@ -286,7 +304,7 @@ struct ScoreboardView: View {
 
                 Spacer()
 
-                Text("\(scoreMode == .pi ? profile.piScore : profile.mathScore)p")
+                Text("\(score(for: profile, mode: scoreMode))p")
                     .mdStyle(.bodyMd)
                     .foregroundStyle(rank == 1 && !isOwn ? Color.mdAmber : Color.mdText2)
             }
@@ -320,7 +338,7 @@ struct ScoreboardView: View {
             combined.append(own)
         }
         return combined
-            .sorted { scoreMode == .pi ? $0.piScore > $1.piScore : $0.mathScore > $1.mathScore }
+            .sorted { score(for: $0, mode: scoreMode) > score(for: $1, mode: scoreMode) }
             .enumerated()
             .map { idx, p in RankedEntry(rank: idx + 1, profile: p, isOwn: p.username == own.username) }
     }

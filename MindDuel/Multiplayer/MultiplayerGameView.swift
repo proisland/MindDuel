@@ -11,6 +11,7 @@ struct MultiplayerGameView: View {
     @State private var currentDigitIndex: Int   = 0
     @State private var piSessionStart:    Int   = 0  // absolute Pi digit index this session begins at
     @State private var mathProblem: MathProblem = MathProblemGenerator.generate(level: 1)
+    @State private var chemProblem: ChemistryProblem = ChemistryProblemGenerator.generate(level: 1)
     @State private var elapsedSeconds: Double   = 0
     @State private var feedbackIsCorrect: Bool? = nil
     @State private var selectedIndex: Int?      = nil
@@ -337,7 +338,8 @@ struct MultiplayerGameView: View {
     private func questionCard(room: MultiplayerRoom) -> some View {
         MDPrimaryCard {
             VStack(spacing: MDSpacing.xs) {
-                if room.mode == .pi {
+                switch room.mode {
+                case .pi:
                     let absIndex = piSessionStart + currentDigitIndex
                     Text(String(format: String(localized: "pi_digits_guessed"), absIndex))
                         .mdStyle(.caption)
@@ -347,7 +349,7 @@ struct MultiplayerGameView: View {
                         .font(.system(size: 24, weight: .heavy, design: .monospaced))
                         .foregroundStyle(Color.mdText)
                         .frame(maxWidth: .infinity, alignment: .center)
-                } else {
+                case .math:
                     Text(String(format: String(localized: "math_level_problem"),
                                 room.startLevel, 1))
                         .mdStyle(.caption)
@@ -361,6 +363,21 @@ struct MultiplayerGameView: View {
                         .font(.system(size: 24, weight: .heavy, design: .monospaced))
                         .foregroundStyle(Color.mdText)
                         .frame(maxWidth: .infinity, alignment: .center)
+                case .chemistry:
+                    Text(String(format: String(localized: "chem_level_problem"),
+                                room.startLevel, 1))
+                        .mdStyle(.caption)
+                        .foregroundStyle(Color.mdText2)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    Text(ChemistryProblemGenerator.curriculumLabel(forLevel: room.startLevel))
+                        .mdStyle(.micro)
+                        .foregroundStyle(Color.mdText3)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    Text(chemProblem.prompt)
+                        .font(.system(size: 18, weight: .heavy))
+                        .foregroundStyle(Color.mdText)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
             .padding(.vertical, MDSpacing.sm)
@@ -369,10 +386,41 @@ struct MultiplayerGameView: View {
 
     @ViewBuilder
     private func answerArea(room: MultiplayerRoom) -> some View {
-        if room.mode == .pi {
-            piDigitGrid
-        } else {
-            mathAnswerGrid
+        switch room.mode {
+        case .pi:        piDigitGrid
+        case .math:      mathAnswerGrid
+        case .chemistry: chemAnswerGrid
+        }
+    }
+
+    private var chemAnswerGrid: some View {
+        let columns = Array(repeating: GridItem(.flexible(), spacing: MDSpacing.sm), count: 2)
+        return LazyVGrid(columns: columns, spacing: MDSpacing.sm) {
+            ForEach(chemProblem.options.indices, id: \.self) { i in
+                AnswerButton(
+                    label: chemProblem.options[i],
+                    feedbackState: mathButtonState(for: i)
+                ) {
+                    handleChemTap(i)
+                }
+                .disabled(feedbackIsCorrect != nil || progression.isQuotaExhausted)
+            }
+        }
+    }
+
+    private func handleChemTap(_ index: Int) {
+        guard feedbackIsCorrect == nil, !progression.isQuotaExhausted,
+              let room = store.currentRoom, room.isMyTurn else { return }
+        let correct = chemProblem.options[index] == chemProblem.correctAnswer
+        selectedIndex = index
+        feedbackIsCorrect = correct
+        let time = elapsedSeconds
+        Task {
+            try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
+            selectedIndex = nil
+            feedbackIsCorrect = nil
+            elapsedSeconds = 0
+            store.submitAnswer(correct: correct, answerTime: time)
         }
     }
 
@@ -536,8 +584,13 @@ struct MultiplayerGameView: View {
 
     private func refreshMathProblem() {
         guard let room = store.currentRoom else { return }
-        if room.mode == .math {
+        switch room.mode {
+        case .math:
             mathProblem = MathProblemGenerator.generate(level: max(1, room.startLevel))
+        case .chemistry:
+            chemProblem = ChemistryProblemGenerator.generate(level: max(1, room.startLevel))
+        case .pi:
+            break
         }
     }
 }

@@ -21,6 +21,10 @@ import SwiftUI
     @Published private(set) var mathLevelProgress: Int
     @Published private(set) var mathBestScore: Int
 
+    @Published private(set) var chemLevel: Int
+    @Published private(set) var chemLevelProgress: Int
+    @Published private(set) var chemBestScore: Int
+
     @Published private(set) var dailyUsed: Int
     @Published private(set) var totalRoundsPlayed: Int
     @Published private(set) var isFlagged: Bool
@@ -38,6 +42,10 @@ import SwiftUI
         mathLevel         = storedLevel < 1 ? 1 : storedLevel
         mathLevelProgress = d.integer(forKey: "mathLevelProgress")
         mathBestScore     = d.integer(forKey: "mathBestScore")
+        let storedChemLvl = d.integer(forKey: "chemLevel")
+        chemLevel         = storedChemLvl < 1 ? 1 : storedChemLvl
+        chemLevelProgress = d.integer(forKey: "chemLevelProgress")
+        chemBestScore     = d.integer(forKey: "chemBestScore")
         dailyUsed         = d.integer(forKey: "dailyUsed")
         quotaResetEpoch   = d.double(forKey: "quotaResetEpoch")
         totalRoundsPlayed = d.integer(forKey: "totalRoundsPlayed")
@@ -95,6 +103,13 @@ import SwiftUI
         return max(0, Int(pts * (Self.K / avgTime)))
     }
 
+    /// Chemistry uses the same level-scaled scoring formula as Math.
+    func chemScore(correctCount: Int, level: Int, avgTime: Double) -> Int {
+        guard !isFlagged, correctCount > 0, avgTime > 0.2 else { return 0 }
+        let pts = Double(level * correctCount)
+        return max(0, Int(pts * (Self.K / avgTime)))
+    }
+
     // MARK: – Round results
 
     struct RoundResult {
@@ -138,6 +153,34 @@ import SwiftUI
         if nextFrontier > piPosition {
             set(piPosition: nextFrontier)
         }
+    }
+
+    /// Live chem-level progression — same threshold model as Math.
+    func advanceChemLevel() {
+        var prog = chemLevelProgress + 1
+        var lvl  = chemLevel
+        if prog >= Self.mathLevelUpThreshold {
+            prog = 0
+            lvl  = min(20, lvl + 1)
+        }
+        set(chemLevel: lvl, chemLevelProgress: prog)
+    }
+
+    func applyChemRound(correctCount: Int, level: Int, avgTime: Double, won: Bool) -> RoundResult {
+        let score = chemScore(correctCount: correctCount, level: level, avgTime: avgTime)
+        if !won && correctCount > 0 {
+            let rollback     = max(0, Int(Double(correctCount) * Self.rollbackRate))
+            var total        = (chemLevel - 1) * Self.mathLevelUpThreshold + chemLevelProgress
+            total            = max(0, total - rollback)
+            let newLevel     = min(20, max(1, total / Self.mathLevelUpThreshold + 1))
+            let newProgress  = total % Self.mathLevelUpThreshold
+            set(chemLevel: newLevel, chemLevelProgress: newProgress)
+        }
+        let pb = score > 0
+        if pb { set(chemBestScore: chemBestScore + score) }
+        incrementRounds()
+        checkAntiCheat(avgTime: avgTime, correctCount: correctCount)
+        return RoundResult(score: score, isPersonalBest: pb)
     }
 
     func applyMathRound(correctCount: Int, level: Int, avgTime: Double, won: Bool) -> RoundResult {
@@ -198,6 +241,18 @@ import SwiftUI
         UserDefaults.standard.set(val, forKey: "mathBestScore")
     }
 
+    private func set(chemLevel lvl: Int, chemLevelProgress prog: Int) {
+        chemLevel = lvl
+        chemLevelProgress = prog
+        UserDefaults.standard.set(lvl,  forKey: "chemLevel")
+        UserDefaults.standard.set(prog, forKey: "chemLevelProgress")
+    }
+
+    private func set(chemBestScore val: Int) {
+        chemBestScore = val
+        UserDefaults.standard.set(val, forKey: "chemBestScore")
+    }
+
     private func set(dailyUsed val: Int) {
         dailyUsed = val
         UserDefaults.standard.set(val, forKey: "dailyUsed")
@@ -206,13 +261,16 @@ import SwiftUI
     // MARK: – Multiplayer integration
 
     func recordMultiplayerScore(mode: GameMode, score: Int, correctCount: Int = 0) {
-        if mode == .pi {
-            // Accumulate so every game contributes, regardless of round size
+        switch mode {
+        case .pi:
             if score > 0 { set(piBestScore: piBestScore + score) }
             if correctCount > 0 { set(piPosition: piPosition + correctCount) }
-        } else {
+        case .math:
             if score > 0 { set(mathBestScore: mathBestScore + score) }
             for _ in 0..<correctCount { advanceMathLevel() }
+        case .chemistry:
+            if score > 0 { set(chemBestScore: chemBestScore + score) }
+            for _ in 0..<correctCount { advanceChemLevel() }
         }
         incrementRounds()
     }

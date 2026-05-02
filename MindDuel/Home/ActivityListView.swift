@@ -61,7 +61,7 @@ struct ActivityListView: View {
                     .mdStyle(.caption)
                     .foregroundStyle(Color.mdText)
                 Text(String(format: String(localized: "activity_score_format"),
-                            item.mode == .pi ? String(localized: "mode_pi") : String(localized: "mode_math"),
+                            modeLabel(for: item.mode),
                             item.score))
                     .mdStyle(.micro)
                     .foregroundStyle(Color.mdText3)
@@ -76,5 +76,13 @@ struct ActivityListView: View {
         .background(Color.mdSurface)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.mdBorder2, lineWidth: 0.5))
+    }
+
+    private func modeLabel(for mode: GameMode) -> String {
+        switch mode {
+        case .pi:        return String(localized: "mode_pi")
+        case .math:      return String(localized: "mode_math")
+        case .chemistry: return String(localized: "mode_chemistry")
+        }
     }
 }

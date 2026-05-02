@@ -539,6 +539,38 @@
         }
       }
     },
+    "chem_level_problem" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Level %lld · Question %lld"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nivå %lld · Spørsmål %lld"
+          }
+        }
+      }
+    },
+    "mode_chemistry" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chemistry"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kjemi"
+          }
+        }
+      }
+    },
     "MindDuel" : {
 
     },
