@@ -117,6 +117,6 @@ struct MDQuickPill: View {
 }
 
 func formatPoints(_ n: Int) -> String {
-    if n >= 10_000 { return "\(n / 1000)k p" }
-    return "\(n)p"
+    if n >= 10_000 { return "\(n / 1000)k \(String(localized: "points_word"))" }
+    return "\(n) \(String(localized: "points_word"))"
 }

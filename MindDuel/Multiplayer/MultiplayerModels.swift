@@ -64,6 +64,14 @@ enum RoomStatus: String, Codable { case lobby, playing, finished }
 struct MultiplayerRoom: Identifiable, Codable {
     let id: String          // room code, e.g. "4F2A"
     var mode: GameMode
+    /// Optional human-readable name set by the host (#83). When empty, UI
+    /// falls back to the room code so older saved rooms keep working.
+    var customName: String = ""
+    /// Usernames of everyone the host invited, including those dropped at
+    /// start because they never accepted (#109). Populated alongside
+    /// `players` so we can still show participants on Active Games rows
+    /// after the not-ready filter has run in `startGame`.
+    var invitedUsernames: [String] = []
     /// Math difficulty level the room started at (1 – 20).
     /// Only meaningful for `mode == .math`; ignored for Pi (Pi uses
     /// `myPiDigitIndex` + the user's piLevel boundary). Default 1 keeps

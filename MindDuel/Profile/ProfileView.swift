@@ -57,16 +57,19 @@ struct ProfileView: View {
 
                         // FREMGANG — same compact horizontal cards as the
                         // home screen's favorites grid for visual continuity.
-                        sectionContainer(String(localized: "progress_section_title")) {
-                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
-                                                GridItem(.flexible(), spacing: 10)],
-                                      spacing: 10) {
-                                ForEach(GameMode.allCases) { mode in
-                                    MDFeaturedCard(
-                                        mode: mode,
-                                        score: progression.bestScore(for: mode),
-                                        level: progression.level(for: mode)
-                                    )
+                        let playedModes = GameMode.allCases.filter { progression.bestScore(for: $0) > 0 }
+                        if !playedModes.isEmpty {
+                            sectionContainer(String(localized: "progress_section_title")) {
+                                LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                                    GridItem(.flexible(), spacing: 10)],
+                                          spacing: 10) {
+                                    ForEach(playedModes) { mode in
+                                        MDFeaturedCard(
+                                            mode: mode,
+                                            score: progression.bestScore(for: mode),
+                                            level: progression.level(for: mode)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -114,7 +117,7 @@ struct ProfileView: View {
         .fullScreenCover(isPresented: $showSettings) {
             SettingsView(onSignOut: onSignOut)
         }
-        .sheet(item: $selectedFriend) { friend in
+        .fullScreenCover(item: $selectedFriend) { friend in
             OtherProfileView(profile: friend, ownUsername: username)
         }
     }

@@ -1,14 +1,28 @@
 import SwiftUI
+import CoreLocation
 
 struct ScoreboardView: View {
     let ownUsername: String
     @ObservedObject private var social = SocialStore.shared
     @ObservedObject private var progression = ProgressionStore.shared
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedTab = 2          // default: Globalt
+    @State private var selectedTab = 0          // default: Venner (#76)
     @State private var selectedProfile: UserProfile? = nil
     @State private var searchText = ""
     @State private var scoreMode: GameMode = .pi
+    @State private var timeRange: TimeRange = .today
+
+    private enum TimeRange: String, CaseIterable, Identifiable {
+        case today, week, all
+        var id: String { rawValue }
+        var labelKey: String.LocalizationValue {
+            switch self {
+            case .today: return "scoreboard_time_today"
+            case .week:  return "scoreboard_time_week"
+            case .all:   return "scoreboard_time_all"
+            }
+        }
+    }
 
     private var ownEntry: UserProfile {
         UserProfile(
@@ -48,6 +62,10 @@ struct ScoreboardView: View {
                     .padding(.horizontal, MDSpacing.md)
                     .padding(.top, MDSpacing.xs)
 
+                timeRangeSelector
+                    .padding(.horizontal, MDSpacing.md)
+                    .padding(.top, MDSpacing.xs)
+
                 // Search bar (shown on Lokalt and Globalt tabs)
                 if selectedTab != 0 {
                     searchBar
@@ -58,9 +76,39 @@ struct ScoreboardView: View {
                 leaderboardList
             }
         }
-        .sheet(item: $selectedProfile) { profile in
+        .fullScreenCover(item: $selectedProfile) { profile in
             OtherProfileView(profile: profile, ownUsername: ownUsername)
         }
+    }
+
+    // MARK: – Time range selector (#76)
+    //
+    // Mock data has no per-day timestamps so all three ranges currently
+    // surface the same entries. The control is wired up so that when
+    // server-backed scoring lands the filter just needs to be applied in
+    // `score(for:profile)` / `buildRanked`.
+
+    private var timeRangeSelector: some View {
+        HStack(spacing: 0) {
+            ForEach(TimeRange.allCases) { range in
+                let active = timeRange == range
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) { timeRange = range }
+                } label: {
+                    Text(String(localized: range.labelKey))
+                        .font(.system(size: 12, weight: active ? .heavy : .medium))
+                        .foregroundStyle(active ? Color.mdText : Color.mdText3)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
+                        .background(active ? Color.mdSurface2 : Color.clear)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(3)
+        .background(Color.mdBgDeep)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     // MARK: – Score mode toggle
@@ -126,6 +174,9 @@ struct ScoreboardView: View {
                     withAnimation(.easeInOut(duration: 0.15)) {
                         selectedTab = i
                         searchText = ""
+                        // Friends defaults to Today; the wider boards default
+                        // to All-time so an empty-day mock doesn't look broken.
+                        timeRange = (i == 0) ? .today : .all
                     }
                 } label: {
                     Text(label)
@@ -194,6 +245,8 @@ struct ScoreboardView: View {
             LazyVStack(spacing: MDSpacing.xs) {
                 if selectedTab == 0 {
                     friendsSection
+                } else if selectedTab == 1 && !isLocationAuthorized {
+                    locationPermissionPrompt
                 } else {
                     globalSection(entries: filteredGlobalEntries)
                 }
@@ -203,6 +256,38 @@ struct ScoreboardView: View {
             .padding(.top, MDSpacing.md)
             .padding(.bottom, MDSpacing.xl)
         }
+    }
+
+    // MARK: – Location permission (#77)
+
+    private var isLocationAuthorized: Bool {
+        switch CLLocationManager().authorizationStatus {
+        case .authorizedAlways, .authorizedWhenInUse: return true
+        default: return false
+        }
+    }
+
+    private var locationPermissionPrompt: some View {
+        VStack(spacing: MDSpacing.sm) {
+            Image(systemName: "location.slash.fill")
+                .font(.system(size: 32))
+                .foregroundStyle(Color.mdAmber)
+            Text(String(localized: "scoreboard_local_no_permission_title"))
+                .mdStyle(.heading)
+                .foregroundStyle(Color.mdText)
+            Text(String(localized: "scoreboard_local_no_permission_body"))
+                .mdStyle(.body)
+                .foregroundStyle(Color.mdText2)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            MDButton(.primary, title: String(localized: "scoreboard_open_location_settings")) {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(MDSpacing.lg)
     }
 
     // MARK: – Friends section
@@ -290,10 +375,18 @@ struct ScoreboardView: View {
             if !isOwn { selectedProfile = profile }
         } label: {
             HStack(spacing: MDSpacing.sm) {
-                Text("\(rank)")
-                    .mdStyle(.bodyMd)
-                    .foregroundStyle(rank == 1 && !isOwn ? Color.mdAmber : Color.mdText3)
-                    .frame(width: 24, alignment: .center)
+                Group {
+                    if let trophy = trophyColor(forRank: rank), !isOwn {
+                        Image(systemName: "trophy.fill")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(trophy)
+                    } else {
+                        Text("\(rank)")
+                            .mdStyle(.bodyMd)
+                            .foregroundStyle(Color.mdText3)
+                    }
+                }
+                .frame(width: 24, alignment: .center)
 
                 MDAvatar(username: profile.username, size: .sm)
 
@@ -320,9 +413,14 @@ struct ScoreboardView: View {
 
                 Spacer()
 
-                Text("\(score(for: profile, mode: scoreMode))p")
+                Text("\(score(for: profile, mode: scoreMode)) \(String(localized: "points_word"))")
                     .mdStyle(.bodyMd)
-                    .foregroundStyle(rank == 1 && !isOwn ? Color.mdAmber : Color.mdText2)
+                    .foregroundStyle((!isOwn ? trophyColor(forRank: rank) : nil) ?? Color.mdText2)
+
+                // #78: quick "+venn" action so users can add new friends
+                // discovered on Lokalt/Globalt boards without opening the
+                // profile sheet first.
+                if !isOwn { addFriendButton(for: profile) }
             }
             .padding(.horizontal, MDSpacing.md)
             .padding(.vertical, MDSpacing.sm)
@@ -334,10 +432,53 @@ struct ScoreboardView: View {
         .disabled(isOwn)
     }
 
+    @ViewBuilder
+    private func addFriendButton(for profile: UserProfile) -> some View {
+        if social.friendUsernames.contains(profile.username) {
+            Image(systemName: "person.fill.checkmark")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.mdGreen)
+        } else if social.sentRequestUsernames.contains(profile.username) {
+            Text(String(localized: "friend_request_pending_short"))
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.mdText3)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(Color.white.opacity(0.05)))
+        } else {
+            Button {
+                social.sendFriendRequest(to: profile.username)
+            } label: {
+                HStack(spacing: 3) {
+                    Image(systemName: "person.badge.plus")
+                        .font(.system(size: 11, weight: .bold))
+                    Text(String(localized: "add_friend_short_action"))
+                        .font(.system(size: 11, weight: .semibold))
+                }
+                .foregroundStyle(Color.mdAccent)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(Color.mdAccentSoft))
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
     private func rowBackground(rank: Int, isOwn: Bool) -> Color {
         if isOwn        { return .mdAccentSoft }
         if rank == 1    { return .mdAmberSoft }
         return .mdSurface2
+    }
+
+    /// Trophy tint for top-3 ranks (#85). Bronze for 3rd uses a brown-ish tone
+    /// blended from amber+red so it reads distinct from gold.
+    private func trophyColor(forRank rank: Int) -> Color? {
+        switch rank {
+        case 1: return Color(red: 1.00, green: 0.80, blue: 0.20)   // gold
+        case 2: return Color(red: 0.78, green: 0.78, blue: 0.82)   // silver
+        case 3: return Color(red: 0.70, green: 0.43, blue: 0.20)   // bronze
+        default: return nil
+        }
     }
 
     // MARK: – Rank builder

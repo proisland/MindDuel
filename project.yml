@@ -27,6 +27,18 @@ targets:
           - UIInterfaceOrientationPortrait
         UIUserInterfaceStyle: Dark
         NSLocationWhenInUseUsageDescription: "MindDuel bruker din posisjon kun til å vise spillere i nærheten på scoreboardet."
+        GitBranch: ""
+    preBuildScripts:
+      - name: Inject git branch
+        runOnlyWhenInstalling: false
+        basedOnDependencyAnalysis: false
+        script: |
+          BRANCH=$(cd "$SRCROOT" && git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+          INFO_PLIST="$BUILT_PRODUCTS_DIR/$INFOPLIST_PATH"
+          if [ -f "$INFO_PLIST" ]; then
+            /usr/libexec/PlistBuddy -c "Set :GitBranch $BRANCH" "$INFO_PLIST" 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :GitBranch string $BRANCH" "$INFO_PLIST"
+          fi
     # entitlements: Sign in with Apple added in later milestone (requires paid Apple Developer account)
     settings:
       base:

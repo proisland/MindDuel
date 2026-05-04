@@ -112,6 +112,9 @@ import UserNotifications
     func inviteFriend(username: String, playerID: String) {
         guard currentRoom != nil else { return }
         guard !(currentRoom?.players.contains(where: { $0.username == username }) ?? false) else { return }
+        if !(currentRoom?.invitedUsernames.contains(username) ?? false) {
+            currentRoom?.invitedUsernames.append(username)
+        }
         var player = MultiplayerPlayer(id: playerID, username: username, isHost: false, isReady: false)
         // Mock invitee stats — deterministic from username so the lobby line
         // doesn't jitter between renders. Replace with server data in M5+.
@@ -192,6 +195,16 @@ import UserNotifications
     var allReady: Bool { currentRoom?.players.allSatisfy(\.isReady) ?? false }
 
     func startGame() {
+        // #81: drop invitees who never accepted so the turn loop isn't blocked.
+        // Their usernames are preserved on the room (`invitedUsernames`) so the
+        // Active Games row can still show participants for host-created rooms
+        // that were started before everyone responded (#109).
+        if var room = currentRoom {
+            let dropped = room.players.filter { !$0.isHost && !$0.isReady }.map(\.username)
+            room.invitedUsernames = Array(Set(room.invitedUsernames + dropped))
+            room.players.removeAll { !$0.isHost && !$0.isReady }
+            currentRoom = room
+        }
         currentRoom?.status = .playing
         currentRoom?.currentTurnIndex = 0
         scheduleBotTurn()
@@ -430,7 +443,7 @@ import UserNotifications
 
     private func applyResult(to room: inout MultiplayerRoom, playerIdx: Int, correct: Bool, answerTime: Double) {
         if correct {
-            let pts = Int(100.0 / max(0.5, answerTime))
+            let pts = Int(50.0 / max(0.5, answerTime))
             room.players[playerIdx].score += pts
             room.players[playerIdx].correctCount += 1
         } else {

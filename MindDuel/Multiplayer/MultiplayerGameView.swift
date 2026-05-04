@@ -184,7 +184,11 @@ struct MultiplayerGameView: View {
             Spacer()
 
             if let room = store.currentRoom {
-                Text(String(format: String(localized: "multiplayer_room_code_format"), room.id))
+                // #110: prefer the host-chosen custom name; fall back to the
+                // generated room code so older saved rooms still show something.
+                Text(room.customName.isEmpty
+                     ? String(format: String(localized: "multiplayer_room_code_format"), room.id)
+                     : room.customName)
                     .mdStyle(.micro)
                     .lineLimit(1)
                     .foregroundStyle(Color.mdAccent)
@@ -235,7 +239,7 @@ struct MultiplayerGameView: View {
                     .font(.system(size: 8, weight: .bold))
                     .foregroundStyle(isMine ? Color.mdAccent : Color.mdText3)
             } else {
-                Text("\(player.score)p")
+                Text("\(player.score) \(String(localized: "points_word"))")
                     .font(.system(size: 8, weight: .semibold))
                     .foregroundStyle(player.isEliminated ? Color.mdText3.opacity(0.4) : Color.mdText3)
             }

@@ -10,7 +10,13 @@ import SwiftUI
     static let dailyQuota = 20
     private static let rollbackRate: Double = 0.15
     private static let mathLevelUpThreshold = 12
-    private static let K: Double = 100.0
+    private static let K: Double = 50.0
+    /// Gentler level multiplier so high levels don't dwarf low-level
+    /// scores (#69). Linear `level` made level-20 worth 20× a level-1
+    /// answer; this curve is ~5× at level 20 and ~2× at level 10.
+    private static func levelMultiplier(_ level: Int) -> Double {
+        (3.0 + Double(level)) / 4.0
+    }
 
     /// Adaptive level-up threshold (#43). Uses the player's pace within the
     /// CURRENT level — not lifetime — so a long-tenured player who has slowed
@@ -207,21 +213,21 @@ import SwiftUI
 
     func mathScore(correctCount: Int, level: Int, avgTime: Double) -> Int {
         guard !isFlagged, correctCount > 0, avgTime > 0.2 else { return 0 }
-        let pts = Double(level * correctCount)
+        let pts = Double(correctCount) * Self.levelMultiplier(level)
         return max(0, Int(pts * (Self.K / avgTime)))
     }
 
     /// Chemistry uses the same level-scaled scoring formula as Math.
     func chemScore(correctCount: Int, level: Int, avgTime: Double) -> Int {
         guard !isFlagged, correctCount > 0, avgTime > 0.2 else { return 0 }
-        let pts = Double(level * correctCount)
+        let pts = Double(correctCount) * Self.levelMultiplier(level)
         return max(0, Int(pts * (Self.K / avgTime)))
     }
 
     /// Geography uses the same level-scaled scoring formula as Math/Chem.
     func geoScore(correctCount: Int, level: Int, avgTime: Double) -> Int {
         guard !isFlagged, correctCount > 0, avgTime > 0.2 else { return 0 }
-        let pts = Double(level * correctCount)
+        let pts = Double(correctCount) * Self.levelMultiplier(level)
         return max(0, Int(pts * (Self.K / avgTime)))
     }
 

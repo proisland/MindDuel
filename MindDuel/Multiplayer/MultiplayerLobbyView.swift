@@ -11,6 +11,7 @@ struct MultiplayerLobbyView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showGame        = false
     @State private var showFriendPicker = false
+    @State private var pickerSelection: Set<String> = []
 
     var body: some View {
         ZStack {
@@ -21,6 +22,7 @@ struct MultiplayerLobbyView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: MDSpacing.lg) {
                         if let room = store.currentRoom {
+                            nameSection(room: room, editable: isHost(room))
                             modeSection(room: room, editable: isHost(room))
                             if isHost(room) && (room.mode == .math || room.mode == .chemistry || room.mode == .geography) {
                                 startLevelSection(room: room)
@@ -70,12 +72,21 @@ struct MultiplayerLobbyView: View {
         room.players.first(where: { $0.isYou })?.isHost == true
     }
 
+    /// Disable Start while the host is the only one in the room — they can't
+    /// duel themselves. As soon as one invitee shows up the button enables,
+    /// even if they haven't accepted yet (#81).
+    private func hasOnlyHost(_ room: MultiplayerRoom) -> Bool {
+        room.players.count <= 1
+    }
+
     // MARK: – Top bar
 
     private var topBar: some View {
         MDTopBar(title: String(localized: "multiplayer_lobby_title"), leadingAction: { dismiss() }) {
             if let room = store.currentRoom {
-                Text(String(format: String(localized: "multiplayer_room_code_format"), room.id))
+                Text(room.customName.isEmpty
+                     ? String(format: String(localized: "multiplayer_room_code_format"), room.id)
+                     : room.customName)
                     .mdStyle(.micro)
                     .lineLimit(1)
                     .foregroundStyle(Color.mdAccent)
@@ -88,6 +99,43 @@ struct MultiplayerLobbyView: View {
     }
 
     // MARK: – Mode section
+
+    // MARK: – Name section (#83)
+
+    @ViewBuilder
+    private func nameSection(room: MultiplayerRoom, editable: Bool) -> some View {
+        VStack(alignment: .leading, spacing: MDSpacing.xs) {
+            sectionLabel(String(localized: "multiplayer_name_label"))
+            if editable {
+                TextField(
+                    String(localized: "multiplayer_name_placeholder"),
+                    text: Binding(
+                        get: { store.currentRoom?.customName ?? "" },
+                        set: { store.currentRoom?.customName = $0 }
+                    )
+                )
+                .mdStyle(.bodyMd)
+                .foregroundStyle(Color.mdText)
+                .padding(.horizontal, MDSpacing.md)
+                .padding(.vertical, MDSpacing.sm)
+                .background(Color.mdSurface2)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdBorder2, lineWidth: 0.5))
+            } else {
+                Text(room.customName.isEmpty
+                     ? String(format: String(localized: "multiplayer_room_code_format"), room.id)
+                     : room.customName)
+                    .mdStyle(.bodyMd)
+                    .foregroundStyle(Color.mdText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, MDSpacing.md)
+                    .padding(.vertical, MDSpacing.sm)
+                    .background(Color.mdSurface2)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdBorder2, lineWidth: 0.5))
+            }
+        }
+    }
 
     @ViewBuilder
     private func modeSection(room: MultiplayerRoom, editable: Bool) -> some View {
@@ -266,11 +314,15 @@ struct MultiplayerLobbyView: View {
     @ViewBuilder
     private func startButton(room: MultiplayerRoom) -> some View {
         if isHost(room) {
+            // #81: Host can press Start without waiting for all invitees to
+            // accept. Pending invitees are dropped from the room on start
+            // (handled in MultiplayerStore.startGame) so the game proceeds
+            // with whoever responded.
             MDButton(.primary, title: String(localized: "multiplayer_start_action")) {
                 store.startGame()
                 showGame = true
             }
-            .disabled(!store.allReady || progression.isQuotaExhausted)
+            .disabled(progression.isQuotaExhausted || hasOnlyHost(room))
         } else {
             let youReady = room.players.first(where: { $0.isYou })?.isReady ?? false
             MDButton(youReady ? .ghost : .primary,
@@ -283,58 +335,128 @@ struct MultiplayerLobbyView: View {
         }
     }
 
-    // MARK: – Friend picker sheet
+    // MARK: – Friend picker sheet (#79, #80)
+    //
+    // Multi-select: the row trailing affordance is a checkmark, and the
+    // host commits the whole batch with "Continue" at the bottom. Each row
+    // also shows the friend's level for the chosen mode and a "last active"
+    // timestamp so the host can pick active opponents.
 
     private var friendPickerSheet: some View {
         let inRoom = store.currentRoom?.players.map(\.username) ?? []
         let available = social.friends.filter { !inRoom.contains($0.username) }
-        return NavigationView {
-            ZStack {
-                Color.mdBg.ignoresSafeArea()
-                Group {
-                    if available.isEmpty {
-                        VStack(spacing: MDSpacing.sm) {
-                            Image(systemName: "person.2.slash")
-                                .font(.system(size: 32))
-                                .foregroundStyle(Color.mdText3)
-                            Text(String(localized: "no_friends_to_invite"))
-                                .mdStyle(.body)
-                                .foregroundStyle(Color.mdText3)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else {
-                        List(available) { friend in
-                            Button {
-                                store.inviteFriend(username: friend.username, playerID: friend.id)
-                                showFriendPicker = false
-                            } label: {
-                                HStack(spacing: MDSpacing.sm) {
-                                    MDAvatar(username: friend.username, size: .sm)
-                                    Text("\(friend.username)")
-                                        .mdStyle(.caption)
-                                        .foregroundStyle(Color.mdText)
-                                    Spacer()
-                                    Image(systemName: "person.badge.plus")
-                                        .foregroundStyle(Color.mdAccent)
-                                }
-                                .padding(.vertical, MDSpacing.xs)
-                            }
-                            .listRowBackground(Color.mdSurface2)
-                        }
-                        .listStyle(.plain)
-                        .scrollContentBackground(.hidden)
+        let mode = store.currentRoom?.mode ?? .pi
+        return ZStack {
+            Color.mdBg.ignoresSafeArea()
+            VStack(spacing: 0) {
+                MDTopBar(title: String(localized: "multiplayer_invite_label"),
+                         leadingAction: { closeFriendPicker() }) { EmptyView() }
+
+                if available.isEmpty {
+                    VStack(spacing: MDSpacing.sm) {
+                        Image(systemName: "person.2.slash")
+                            .font(.system(size: 32))
+                            .foregroundStyle(Color.mdText3)
+                        Text(String(localized: "no_friends_to_invite"))
+                            .mdStyle(.body)
+                            .foregroundStyle(Color.mdText3)
                     }
-                }
-            }
-            .navigationTitle(String(localized: "multiplayer_invite_label"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(String(localized: "continue_action")) { showFriendPicker = false }
-                        .foregroundStyle(Color.mdAccent)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: MDSpacing.xs) {
+                            ForEach(available) { friend in
+                                pickerRow(friend: friend, mode: mode)
+                            }
+                        }
+                        .padding(MDSpacing.md)
+                    }
+
+                    HStack(spacing: MDSpacing.sm) {
+                        MDButton(.primary,
+                                 title: String(format: String(localized: "multiplayer_invite_continue_format"),
+                                               pickerSelection.count)) {
+                            commitFriendPickerSelection(from: available)
+                        }
+                        .disabled(pickerSelection.isEmpty)
+                        Spacer()
+                        Button { closeFriendPicker() } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(Color.mdText2)
+                                .frame(width: 44, height: 44)
+                                .background(Color.mdSurface2)
+                                .clipShape(Circle())
+                                .overlay(Circle().stroke(Color.mdBorder2, lineWidth: 0.5))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, MDSpacing.md)
+                    .padding(.bottom, MDSpacing.lg)
                 }
             }
         }
+    }
+
+    private func pickerRow(friend: UserProfile, mode: GameMode) -> some View {
+        let isSelected = pickerSelection.contains(friend.username)
+        let level = friend.level(for: mode)
+        return Button {
+            if isSelected { pickerSelection.remove(friend.username) }
+            else          { pickerSelection.insert(friend.username) }
+        } label: {
+            HStack(spacing: MDSpacing.sm) {
+                MDAvatar(username: friend.username, size: .sm)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(friend.username)")
+                        .mdStyle(.caption)
+                        .foregroundStyle(Color.mdText)
+                    HStack(spacing: 4) {
+                        Text(String(format: String(localized: "multiplayer_invite_level_format"),
+                                    mode.localizedTitle, level))
+                            .mdStyle(.micro)
+                            .foregroundStyle(Color.mdText3)
+                        Text("·").mdStyle(.micro).foregroundStyle(Color.mdText3)
+                        Text(String(format: String(localized: "stats_last_active_inline"),
+                                    friend.lastActive))
+                            .mdStyle(.micro)
+                            .foregroundStyle(Color.mdText3)
+                    }
+                }
+                Spacer()
+                ZStack {
+                    Circle()
+                        .stroke(isSelected ? Color.mdAccent : Color.mdBorder2,
+                                lineWidth: isSelected ? 2 : 1)
+                        .frame(width: 22, height: 22)
+                    if isSelected {
+                        Circle().fill(Color.mdAccent).frame(width: 22, height: 22)
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .heavy))
+                            .foregroundStyle(.white)
+                    }
+                }
+            }
+            .padding(MDSpacing.sm)
+            .background(Color.mdSurface2)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(
+                isSelected ? Color.mdAccent.opacity(0.5) : Color.mdBorder2,
+                lineWidth: isSelected ? 1 : 0.5))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func commitFriendPickerSelection(from friends: [UserProfile]) {
+        for friend in friends where pickerSelection.contains(friend.username) {
+            store.inviteFriend(username: friend.username, playerID: friend.id)
+        }
+        closeFriendPicker()
+    }
+
+    private func closeFriendPicker() {
+        pickerSelection.removeAll()
+        showFriendPicker = false
     }
 
     // MARK: – Helpers
