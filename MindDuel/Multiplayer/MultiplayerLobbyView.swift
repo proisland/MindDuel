@@ -92,12 +92,16 @@ struct MultiplayerLobbyView: View {
     @ViewBuilder
     private func modeSection(room: MultiplayerRoom, editable: Bool) -> some View {
         sectionLabel(String(localized: "multiplayer_mode_label"))
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: MDSpacing.sm),
-                            GridItem(.flexible(), spacing: MDSpacing.sm)],
-                  spacing: MDSpacing.sm) {
-            ForEach(GameMode.allCases) { mode in
-                modeButton(mode, room: room, editable: editable)
+        // Horizontally scrollable pills, mirroring the Home screen's
+        // "Hurtig tilgang" layout so the host can pick from every mode
+        // without crowding the lobby (per Claude Design iteration).
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(GameMode.allCases) { mode in
+                    modeButton(mode, room: room, editable: editable)
+                }
             }
+            .padding(.vertical, 2)
         }
     }
 
@@ -107,26 +111,26 @@ struct MultiplayerLobbyView: View {
         return Button {
             if editable { store.currentRoom?.mode = mode }
         } label: {
-            HStack(spacing: 10) {
+            VStack(spacing: 5) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(isActive ? color.opacity(0.13) : Color.white.opacity(0.07))
-                    ModeGlyph(mode: mode, size: 15, color: color)
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(color.opacity(isActive ? 0.15 : 0.09))
+                    ModeGlyph(mode: mode, size: 16, color: color)
                 }
-                .frame(width: 28, height: 28)
+                .frame(width: 34, height: 34)
                 Text(mode.localizedTitle)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 10, weight: isActive ? .heavy : .medium))
                     .foregroundStyle(isActive ? Color.mdText : Color.mdText3)
-                Spacer(minLength: 0)
+                    .lineLimit(1)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(isActive ? Color.clear : Color.white.opacity(0.04))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(minWidth: 66)
+            .background(isActive ? mode.deepBg : Color.white.opacity(0.05))
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay(RoundedRectangle(cornerRadius: 14)
-                        .stroke(isActive ? color : Color.white.opacity(0.08),
-                                lineWidth: 1.5))
+                        .stroke(isActive ? color.opacity(0.7) : Color.white.opacity(0.08),
+                                lineWidth: isActive ? 1.5 : 1))
         }
         .buttonStyle(.plain)
         .disabled(!editable && !isActive)
