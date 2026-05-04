@@ -55,20 +55,18 @@ struct ProfileView: View {
                         }
                         .padding(.top, MDSpacing.lg)
 
-                        // FREMGANG
+                        // FREMGANG — same compact horizontal cards as the
+                        // home screen's favorites grid for visual continuity.
                         sectionContainer(String(localized: "progress_section_title")) {
-                            LazyVGrid(columns: [GridItem(.flexible(), spacing: MDSpacing.sm),
-                                                GridItem(.flexible(), spacing: MDSpacing.sm)],
-                                      spacing: MDSpacing.sm) {
+                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                                GridItem(.flexible(), spacing: 10)],
+                                      spacing: 10) {
                                 ForEach(GameMode.allCases) { mode in
-                                    MDModeCard(
+                                    MDFeaturedCard(
                                         mode: mode,
                                         score: progression.bestScore(for: mode),
-                                        level: progression.level(for: mode),
-                                        maxLevel: 20,
-                                        compact: true
-                                    ) { }
-                                    .disabled(true)
+                                        level: progression.level(for: mode)
+                                    )
                                 }
                             }
                         }

@@ -67,31 +67,36 @@ struct ScoreboardView: View {
 
     private var scoreModeToggle: some View {
         // Horizontal scroll so additional modes don't crowd the row (#52).
+        // Pill row matches design: each mode is a separate capsule with its
+        // accent-color border when selected.
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 4) {
+            HStack(spacing: 8) {
                 ForEach(GameMode.allCases) { mode in
+                    let selected = scoreMode == mode
                     Button {
                         withAnimation(.easeInOut(duration: 0.15)) { scoreMode = mode }
                     } label: {
-                        HStack(spacing: 4) {
-                            ModeGlyph(mode: mode, size: 13, weight: .bold,
-                                      color: scoreMode == mode ? Color.mdText : Color.mdText3)
+                        HStack(spacing: 6) {
+                            ModeGlyph(mode: mode, size: 13, weight: .bold, color: mode.accentColor)
                             Text(scoreboardLabel(for: mode))
-                                .mdStyle(.caption)
-                                .foregroundStyle(scoreMode == mode ? Color.mdText : Color.mdText3)
+                                .font(.system(size: 12, weight: selected ? .heavy : .medium))
+                                .foregroundStyle(selected ? Color.mdText : Color.mdText3)
                         }
-                        .padding(.horizontal, MDSpacing.sm)
+                        .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(scoreMode == mode ? Color.mdSurface2 : Color.clear)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .background(selected ? mode.accentColor.opacity(0.13) : Color.white.opacity(0.05))
+                        .clipShape(Capsule())
+                        .overlay(
+                            Capsule().stroke(
+                                selected ? mode.accentColor.opacity(0.7) : Color.white.opacity(0.08),
+                                lineWidth: 1.5
+                            )
+                        )
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(3)
         }
-        .background(Color.mdBgDeep)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     private func scoreboardLabel(for mode: GameMode) -> String {

@@ -1588,6 +1588,84 @@
         }
       }
     },
+    "active_games_my_turn_format" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your turn (%lld)" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Din tur (%lld)" } }
+      }
+    },
+    "active_games_waiting_format" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Waiting for opponent (%lld)" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Venter på motstander (%lld)" } }
+      }
+    },
+    "active_games_empty" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No active games" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Ingen pågående spill" } }
+      }
+    },
+    "all_modes_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "All game modes" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Alle spillmoduser" } }
+      }
+    },
+    "all_modes_count_suffix" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "game modes" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "spillmoduser" } }
+      }
+    },
+    "all_modes_drag_hint" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Drag ☰ to reorder" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Dra ☰ for å sortere" } }
+      }
+    },
+    "all_modes_search_placeholder" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Search game modes..." } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Søk i spillmoduser..." } }
+      }
+    },
+    "favorites_section_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Favorites" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Favoritter" } }
+      }
+    },
+    "favorites_section_most_played" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Most played" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Mest spilt" } }
+      }
+    },
+    "favorites_see_all" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "See all →" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Se alle →" } }
+      }
+    },
+    "quick_access_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quick access" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Hurtig tilgang" } }
+      }
+    },
+    "activity_won_prefix" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You won against" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Du vant mot" } }
+      }
+    },
+    "activity_lost_prefix" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You lost to" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Du tapte mot" } }
+      }
+    },
     "recent_activity_see_all" : {
       "extractionState" : "stale",
       "localizations" : {

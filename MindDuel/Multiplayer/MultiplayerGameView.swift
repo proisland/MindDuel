@@ -245,19 +245,19 @@ struct MultiplayerGameView: View {
         }
     }
 
-    /// Five-dot lives indicator under each player's chip (issue #36).
-    /// Dimmed when the player is eliminated or has 0 lives left.
+    /// Compact "♥ N" lives indicator under each player's chip (issue #36 +
+    /// design refresh: five separate hearts crowded the bar, switched to a
+    /// single heart with the count).
     private func livesRow(for player: MultiplayerPlayer) -> some View {
-        let maxLives = 5
-        let remaining = max(0, min(maxLives, player.lives))
-        return HStack(spacing: 2) {
-            ForEach(0..<maxLives, id: \.self) { i in
-                Image(systemName: i < remaining ? "heart.fill" : "heart")
-                    .font(.system(size: 7, weight: .bold))
-                    .foregroundStyle(player.isEliminated
-                                     ? Color.mdRed.opacity(0.3)
-                                     : (i < remaining ? Color.mdRed : Color.mdText3.opacity(0.4)))
-            }
+        let remaining = max(0, min(5, player.lives))
+        let dim = player.isEliminated || remaining == 0
+        return HStack(spacing: 3) {
+            Image(systemName: "heart.fill")
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(dim ? Color.mdRed.opacity(0.4) : Color.mdRed)
+            Text("\(remaining)")
+                .font(.system(size: 9, weight: .heavy))
+                .foregroundStyle(dim ? Color.mdText3.opacity(0.4) : Color.mdText2)
         }
     }
 

@@ -18,9 +18,29 @@ struct ActiveGamesView: View {
                 }
 
                 ScrollView {
-                    LazyVStack(spacing: MDSpacing.xs) {
-                        ForEach(store.playingRooms) { room in
-                            roomRow(room)
+                    let myTurn = store.playingRooms.filter { $0.isMyTurn }
+                    let waiting = store.playingRooms.filter { !$0.isMyTurn }
+                    LazyVStack(alignment: .leading, spacing: MDSpacing.sm) {
+                        if !myTurn.isEmpty {
+                            sectionHeader(String(format: String(localized: "active_games_my_turn_format"), myTurn.count))
+                            ForEach(myTurn) { roomRow($0) }
+                        }
+                        if !waiting.isEmpty {
+                            sectionHeader(String(format: String(localized: "active_games_waiting_format"), waiting.count))
+                                .padding(.top, myTurn.isEmpty ? 0 : MDSpacing.sm)
+                            ForEach(waiting) { roomRow($0) }
+                        }
+                        if store.playingRooms.isEmpty {
+                            VStack(spacing: MDSpacing.sm) {
+                                Image(systemName: "gamecontroller")
+                                    .font(.system(size: 32))
+                                    .foregroundStyle(Color.mdText3)
+                                Text(String(localized: "active_games_empty"))
+                                    .mdStyle(.body)
+                                    .foregroundStyle(Color.mdText3)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, MDSpacing.xxl)
                         }
                     }
                     .padding(.horizontal, MDSpacing.md)
@@ -139,6 +159,15 @@ struct ActiveGamesView: View {
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(
             isMyTurn ? Color.mdGreen.opacity(0.5) : Color.mdBorder2,
             lineWidth: isMyTurn ? 1 : 0.5))
+    }
+
+    private func sectionHeader(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 10, weight: .heavy))
+            .tracking(0.8)
+            .textCase(.uppercase)
+            .foregroundStyle(Color.mdText3)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func levelForRoom(_ room: MultiplayerRoom) -> Int {

@@ -103,26 +103,30 @@ struct MultiplayerLobbyView: View {
 
     private func modeButton(_ mode: GameMode, room: MultiplayerRoom, editable: Bool) -> some View {
         let isActive = room.mode == mode
-        let title = String(localized: String.LocalizationValue(mode.titleKey))
-        let color: Color
-        switch mode {
-        case .pi:        color = .mdAccent
-        case .math:      color = .mdPink
-        case .chemistry: color = .mdGreen
-        case .geography: color = .mdAmber
-        }
+        let color = mode.accentColor
         return Button {
             if editable { store.currentRoom?.mode = mode }
         } label: {
-            HStack(spacing: MDSpacing.xs) {
-                ModeGlyph(mode: mode, size: 16, color: isActive ? color : Color.mdText3)
-                Text(title).mdStyle(.bodyMd).foregroundStyle(isActive ? Color.mdText : Color.mdText3)
+            HStack(spacing: 10) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(isActive ? color.opacity(0.13) : Color.white.opacity(0.07))
+                    ModeGlyph(mode: mode, size: 15, color: color)
+                }
+                .frame(width: 28, height: 28)
+                Text(mode.localizedTitle)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(isActive ? Color.mdText : Color.mdText3)
+                Spacer(minLength: 0)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, MDSpacing.sm)
-            .background(isActive ? Color.mdSurface2 : Color.clear)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(isActive ? color : Color.mdBorder2, lineWidth: isActive ? 1 : 0.5))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(isActive ? Color.clear : Color.white.opacity(0.04))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14)
+                        .stroke(isActive ? color : Color.white.opacity(0.08),
+                                lineWidth: 1.5))
         }
         .buttonStyle(.plain)
         .disabled(!editable && !isActive)
