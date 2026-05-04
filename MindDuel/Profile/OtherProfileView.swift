@@ -57,17 +57,16 @@ struct OtherProfileView: View {
                         }
                         .padding(.top, MDSpacing.lg)
 
-                        // Mode cards
+                        // Mode cards — same compact horizontal layout as the
+                        // home screen's favorites grid.
                         sectionContainer(String(localized: "progress_section_title")) {
-                            LazyVGrid(columns: [GridItem(.flexible(), spacing: MDSpacing.sm),
-                                                GridItem(.flexible(), spacing: MDSpacing.sm)],
-                                      spacing: MDSpacing.sm) {
+                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                                GridItem(.flexible(), spacing: 10)],
+                                      spacing: 10) {
                                 ForEach(GameMode.allCases) { mode in
-                                    MDModeCard(mode: mode,
-                                               score: profile.score(for: mode),
-                                               level: profile.level(for: mode),
-                                               maxLevel: 20, compact: true) { }
-                                        .disabled(true)
+                                    MDFeaturedCard(mode: mode,
+                                                   score: profile.score(for: mode),
+                                                   level: profile.level(for: mode))
                                 }
                             }
                         }
