@@ -55,7 +55,7 @@ struct MDModeCard: View {
                 Text(verbatim: localizedTitle)
                     .mdStyle(.bodyMd)
 
-                Text("\(score)p")
+                Text("\(score) \(String(localized: "points_word"))")
                     .font(.system(size: 14, weight: .heavy))
                     .foregroundStyle(accentColor)
 

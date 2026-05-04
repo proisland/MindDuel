@@ -69,9 +69,14 @@ struct FlagView: View {
     }
 
     private var fallback: some View {
-        // Last-ditch fallback while loading or if the network is down.
-        // Looks worse than the real flag but at least conveys something.
-        Text(verbatim: emoji)
-            .font(.system(size: size))
+        // While the CDN image is loading we used to render the flag emoji
+        // here, but on iOS Simulator that path produces a "?" glyph for a
+        // few hundred ms (#91). A neutral placeholder rectangle is less
+        // jarring than a question mark flashing before the real flag.
+        RoundedRectangle(cornerRadius: 6)
+            .fill(Color.white.opacity(0.06))
+            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.12), lineWidth: 1))
+            .frame(width: size * 1.5, height: size)
+            .accessibilityLabel(emoji)
     }
 }

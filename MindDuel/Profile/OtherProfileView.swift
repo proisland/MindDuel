@@ -16,7 +16,7 @@ struct OtherProfileView: View {
             Color.mdBg.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                MDTopBar(title: "\(profile.username)", leadingAction: { dismiss() }) {
+                MDTopBar(title: "", leadingAction: { dismiss() }) {
                     EmptyView()
                 }
 
@@ -57,17 +57,19 @@ struct OtherProfileView: View {
                         }
                         .padding(.top, MDSpacing.lg)
 
-                        // Mode cards
-                        sectionContainer(String(localized: "progress_section_title")) {
-                            LazyVGrid(columns: [GridItem(.flexible(), spacing: MDSpacing.sm),
-                                                GridItem(.flexible(), spacing: MDSpacing.sm)],
-                                      spacing: MDSpacing.sm) {
-                                ForEach(GameMode.allCases) { mode in
-                                    MDModeCard(mode: mode,
-                                               score: profile.score(for: mode),
-                                               level: profile.level(for: mode),
-                                               maxLevel: 20, compact: true) { }
-                                        .disabled(true)
+                        // Mode cards — same compact horizontal layout as the
+                        // home screen's favorites grid.
+                        let playedModes = GameMode.allCases.filter { profile.score(for: $0) > 0 }
+                        if !playedModes.isEmpty {
+                            sectionContainer(String(localized: "progress_section_title")) {
+                                LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                                    GridItem(.flexible(), spacing: 10)],
+                                          spacing: 10) {
+                                    ForEach(playedModes) { mode in
+                                        MDFeaturedCard(mode: mode,
+                                                       score: profile.score(for: mode),
+                                                       level: profile.level(for: mode))
+                                    }
                                 }
                             }
                         }

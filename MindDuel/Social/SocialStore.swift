@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 struct UserProfile: Identifiable {
     let id: String
@@ -135,7 +136,43 @@ struct UserProfile: Identifiable {
         if let magnus = Self.mockUsers.first(where: { $0.username == "magnus" }) {
             pendingRequests = [magnus]
             savePending()
+            notifyIncomingFriendRequest(from: magnus.username)
         }
+    }
+
+    /// Schedule a local notification when a new friend request arrives (#105).
+    /// Fires immediately so iOS surfaces it whether the app is foreground or
+    /// locked. Tapping the notification deep-links to the profile screen via
+    /// the userInfo payload (handled in App/RootView when wired up).
+    func notifyIncomingFriendRequest(from username: String) {
+        Task {
+            let center = UNUserNotificationCenter.current()
+            let granted = (try? await center.requestAuthorization(options: [.alert, .sound])) ?? false
+            guard granted else { return }
+            let content = UNMutableNotificationContent()
+            content.title = String(localized: "notification_friend_request_title")
+            content.body  = String(format: String(localized: "notification_friend_request_body"),
+                                   username)
+            content.sound = .default
+            content.userInfo = ["kind": "friendRequest", "username": username]
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
+            let request = UNNotificationRequest(identifier: "friendRequest-\(username)",
+                                                content: content, trigger: trigger)
+            try? await center.add(request)
+        }
+    }
+
+    /// Test hook used by the debug section to simulate an inbound request
+    /// without restarting the app.
+    func simulateIncomingRequest() {
+        let candidates = Self.mockUsers.filter { user in
+            !friendUsernames.contains(user.username) &&
+            !pendingRequests.contains(where: { $0.username == user.username })
+        }
+        guard let user = candidates.first else { return }
+        pendingRequests.append(user)
+        savePending()
+        notifyIncomingFriendRequest(from: user.username)
     }
 
     private func savePending() {

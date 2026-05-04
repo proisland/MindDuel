@@ -10,6 +10,9 @@ struct SettingsView: View {
     @State private var showLanguageRestartAlert = false
     @State private var debugTapCount = 0
     @State private var showDebugSection = false
+    @State private var showTerms = false
+    @State private var showDeleteConfirm = false
+    @State private var showDeleteDone = false
 
     var body: some View {
         ZStack {
@@ -60,14 +63,20 @@ struct SettingsView: View {
                         }
 
                         settingsSection(String(localized: "settings_privacy_section")) {
-                            chevronRow(
-                                icon: "doc.text.fill", iconBg: .mdAccentSoft, iconColor: .mdAccent,
-                                label: String(localized: "settings_terms_label")
-                            )
-                            destructiveRow(
-                                icon: "trash.fill",
-                                label: String(localized: "settings_delete_account_label")
-                            )
+                            Button { showTerms = true } label: {
+                                chevronRow(
+                                    icon: "doc.text.fill", iconBg: .mdAccentSoft, iconColor: .mdAccent,
+                                    label: String(localized: "settings_terms_label")
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            Button { showDeleteConfirm = true } label: {
+                                destructiveRow(
+                                    icon: "trash.fill",
+                                    label: String(localized: "settings_delete_account_label")
+                                )
+                            }
+                            .buttonStyle(.plain)
                         }
 
                         MDButton(.danger, title: String(localized: "settings_signout_action")) {
@@ -80,15 +89,20 @@ struct SettingsView: View {
                             debugSection
                         }
 
-                        Text("MindDuel M5")
-                            .mdStyle(.micro)
-                            .foregroundStyle(Color.mdText3.opacity(showDebugSection ? 0.6 : 0.2))
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .padding(.top, MDSpacing.sm)
-                            .onTapGesture {
-                                debugTapCount += 1
-                                if debugTapCount >= 5 { showDebugSection = true }
-                            }
+                        VStack(spacing: 2) {
+                            Text(versionLine)
+                                .mdStyle(.micro)
+                                .foregroundStyle(Color.mdText3.opacity(showDebugSection ? 0.7 : 0.4))
+                            Text(branchLine)
+                                .mdStyle(.micro)
+                                .foregroundStyle(Color.mdText3.opacity(showDebugSection ? 0.6 : 0.25))
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, MDSpacing.sm)
+                        .onTapGesture {
+                            debugTapCount += 1
+                            if debugTapCount >= 5 { showDebugSection = true }
+                        }
                     }
                     .padding(.top, MDSpacing.lg)
                     .padding(.bottom, MDSpacing.xl)
@@ -117,6 +131,57 @@ struct SettingsView: View {
         } message: {
             Text(String(localized: "settings_language_restart_message"))
         }
+        .sheet(isPresented: $showTerms) { TermsAndPrivacyView() }
+        .alert(
+            String(localized: "settings_delete_confirm_title"),
+            isPresented: $showDeleteConfirm
+        ) {
+            Button(String(localized: "settings_delete_confirm_action"), role: .destructive) {
+                performAccountDeletion()
+            }
+            Button(String(localized: "cancel_action"), role: .cancel) { }
+        } message: {
+            Text(String(localized: "settings_delete_confirm_message"))
+        }
+        .alert(
+            String(localized: "settings_delete_done_title"),
+            isPresented: $showDeleteDone
+        ) {
+            Button("OK", role: .cancel) { onSignOut() }
+        } message: {
+            Text(String(localized: "settings_delete_done_message"))
+        }
+    }
+
+    // MARK: – Account deletion (#74)
+
+    /// Wipes locally cached user data. The Sign in with Apple credential is
+    /// untouched (only Apple can revoke it from system settings); we just
+    /// reset progress, friends, multiplayer state, then sign out.
+    private func performAccountDeletion() {
+        let d = UserDefaults.standard
+        let keep: Set<String> = ["AppleLanguages", "AppleLocale", "selectedLanguageCode"]
+        for key in d.dictionaryRepresentation().keys where !keep.contains(key) {
+            d.removeObject(forKey: key)
+        }
+        SocialStore.shared.resetForTesting()
+        showDeleteDone = true
+    }
+
+    // MARK: – Version / branch info (#68)
+
+    private var versionLine: String {
+        let info = Bundle.main.infoDictionary
+        let version = (info?["CFBundleShortVersionString"] as? String) ?? "1.0"
+        let build   = (info?["CFBundleVersion"] as? String) ?? "1"
+        return "MindDuel v\(version) (build \(build))"
+    }
+
+    private var branchLine: String {
+        let branch = (Bundle.main.infoDictionary?["GitBranch"] as? String) ?? ""
+        return branch.isEmpty
+            ? String(localized: "settings_branch_unknown")
+            : String(format: String(localized: "settings_branch_format"), branch)
     }
 
     // MARK: – Language
@@ -156,6 +221,17 @@ struct SettingsView: View {
                 staticRow(
                     icon: "person.2.fill", iconBg: .mdAmberSoft, iconColor: .mdAmber,
                     label: String(localized: "debug_reset_social_action"),
+                    value: ""
+                )
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                SocialStore.shared.simulateIncomingRequest()
+            } label: {
+                staticRow(
+                    icon: "person.crop.circle.badge.plus", iconBg: .mdAmberSoft, iconColor: .mdAmber,
+                    label: String(localized: "debug_simulate_request_action"),
                     value: ""
                 )
             }

@@ -18,9 +18,29 @@ struct ActiveGamesView: View {
                 }
 
                 ScrollView {
-                    LazyVStack(spacing: MDSpacing.xs) {
-                        ForEach(store.playingRooms) { room in
-                            roomRow(room)
+                    let myTurn = store.playingRooms.filter { $0.isMyTurn }
+                    let waiting = store.playingRooms.filter { !$0.isMyTurn }
+                    LazyVStack(alignment: .leading, spacing: MDSpacing.sm) {
+                        if !myTurn.isEmpty {
+                            sectionHeader(String(format: String(localized: "active_games_my_turn_format"), myTurn.count))
+                            ForEach(myTurn) { roomRow($0) }
+                        }
+                        if !waiting.isEmpty {
+                            sectionHeader(String(format: String(localized: "active_games_waiting_format"), waiting.count))
+                                .padding(.top, myTurn.isEmpty ? 0 : MDSpacing.sm)
+                            ForEach(waiting) { roomRow($0) }
+                        }
+                        if store.playingRooms.isEmpty {
+                            VStack(spacing: MDSpacing.sm) {
+                                Image(systemName: "gamecontroller")
+                                    .font(.system(size: 32))
+                                    .foregroundStyle(Color.mdText3)
+                                Text(String(localized: "active_games_empty"))
+                                    .mdStyle(.body)
+                                    .foregroundStyle(Color.mdText3)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, MDSpacing.xxl)
                         }
                     }
                     .padding(.horizontal, MDSpacing.md)
@@ -64,25 +84,36 @@ struct ActiveGamesView: View {
                 }
             } label: {
                 HStack(spacing: MDSpacing.sm) {
+                    // #84: tighter avatar-sized circle so rows look like the
+                    // "All aktivitet" list. Information density unchanged.
                     ZStack {
-                        RoundedRectangle(cornerRadius: 10)
+                        Circle()
                             .fill(modeBgSoft)
-                            .frame(width: 40, height: 40)
-                        ModeGlyph(mode: room.mode, size: 18, color: modeColor)
+                            .frame(width: 32, height: 32)
+                        ModeGlyph(mode: room.mode, size: 15, color: modeColor)
                     }
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(String(format: String(localized: "multiplayer_room_code_format"), room.id))
-                            .mdStyle(.bodyMd)
-                            .foregroundStyle(Color.mdText)
                         if room.isStandaloneSolo {
+                            Text(room.mode.localizedTitle)
+                                .mdStyle(.bodyMd)
+                                .foregroundStyle(Color.mdText)
                             Text(String(localized: "solo_session_subtitle"))
                                 .mdStyle(.caption)
                                 .foregroundStyle(Color.mdText3)
                         } else {
-                            let opponents = room.players.filter { !$0.isYou }.map { "\($0.username)" }.joined(separator: ", ")
-                            Text(opponents)
+                            Text(roomDisplayName(room))
+                                .mdStyle(.bodyMd)
+                                .foregroundStyle(Color.mdText)
+                            // #109: previously showed only opponent names. For
+                            // host-created rooms with pending or dropped invitees
+                            // that string was empty, leaving an information-less
+                            // row. Now we always show participant count and a
+                            // friendly fallback when there are no opponents yet.
+                            Text(participantsLine(room))
                                 .mdStyle(.caption)
                                 .foregroundStyle(Color.mdText3)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
                         }
                         // #48 + #49: level + last-activity timestamp so players
                         // can decide whether to discard a stale session.
@@ -133,12 +164,47 @@ struct ActiveGamesView: View {
             .buttonStyle(.plain)
             .accessibilityLabel(String(localized: "discard_game_action"))
         }
-        .padding(MDSpacing.md)
+        .padding(MDSpacing.sm)
         .background(isMyTurn ? Color.mdGreen.opacity(0.06) : Color.mdSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(
             isMyTurn ? Color.mdGreen.opacity(0.5) : Color.mdBorder2,
             lineWidth: isMyTurn ? 1 : 0.5))
+    }
+
+    private func sectionHeader(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 10, weight: .heavy))
+            .tracking(0.8)
+            .textCase(.uppercase)
+            .foregroundStyle(Color.mdText3)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func roomDisplayName(_ room: MultiplayerRoom) -> String {
+        if !room.customName.isEmpty { return room.customName }
+        return String(format: String(localized: "multiplayer_room_code_format"), room.id)
+    }
+
+    /// Build the per-row participants line. Includes invitees who were
+    /// dropped at start (#109) so host-created rooms still show who was
+    /// invited even if no one accepted.
+    private func participantsLine(_ room: MultiplayerRoom) -> String {
+        let inRoom = Set(room.players.map(\.username))
+        let opponents = room.players.filter { !$0.isYou }.map(\.username)
+        let droppedInvitees = room.invitedUsernames.filter { !inRoom.contains($0) }
+        let totalCount = room.players.count + droppedInvitees.count
+        let countLabel = String(format: String(localized: "active_games_player_count_format"),
+                                totalCount)
+
+        var names = opponents
+        for name in droppedInvitees {
+            names.append("\(name) " + String(localized: "active_games_pending_suffix"))
+        }
+        if names.isEmpty {
+            return "\(countLabel) · \(String(localized: "active_games_waiting_for_players"))"
+        }
+        return "\(countLabel) · \(names.joined(separator: ", "))"
     }
 
     private func levelForRoom(_ room: MultiplayerRoom) -> Int {

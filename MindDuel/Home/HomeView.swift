@@ -9,6 +9,7 @@ private enum HomeDestination: Identifiable {
     case activityList
     case multiplayerGame
     case activeGames
+    case allModes
     var id: String {
         switch self {
         case .profile:                return "profile"
@@ -19,6 +20,7 @@ private enum HomeDestination: Identifiable {
         case .activityList:           return "activityList"
         case .multiplayerGame:        return "multiplayerGame"
         case .activeGames:            return "activeGames"
+        case .allModes:               return "allModes"
         }
     }
 }
@@ -29,6 +31,7 @@ struct HomeView: View {
     @ObservedObject private var progression = ProgressionStore.shared
     @ObservedObject private var social      = SocialStore.shared
     @ObservedObject private var multiplayer = MultiplayerStore.shared
+    @ObservedObject private var prefs       = ModePreferences.shared
     @State private var activeMode: GameMode? = nil
     @State private var activeDestination: HomeDestination? = nil
     @State private var resumeSoloRoomID: String? = nil
@@ -42,23 +45,7 @@ struct HomeView: View {
             Color.mdBg.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                MDTopBar(title: "MindDuel") {
-                    Button { activeDestination = .profile } label: {
-                        ZStack(alignment: .topTrailing) {
-                            MDAvatar(username: username, size: .sm)
-                            if pendingBadge > 0 {
-                                Text("\(pendingBadge)")
-                                    .font(.system(size: 8, weight: .bold))
-                                    .foregroundStyle(.white)
-                                    .padding(2)
-                                    .background(Color.mdRed)
-                                    .clipShape(Circle())
-                                    .offset(x: 4, y: -4)
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
+                centeredHeader
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: MDSpacing.lg) {
@@ -76,7 +63,7 @@ struct HomeView: View {
                                 .foregroundStyle(Color.mdText2)
                         }
                         .padding(.horizontal, MDSpacing.md)
-                        .padding(.top, MDSpacing.sm)
+                        .padding(.top, MDSpacing.xs)
 
                         // Quota warning banner
                         if progression.isNearQuota {
@@ -87,23 +74,8 @@ struct HomeView: View {
                             .padding(.horizontal, MDSpacing.md)
                         }
 
-                        // Mode cards — auto-wrapping 2-column grid driven by
-                        // GameMode.allCases so adding a new mode propagates
-                        // here without code changes (#52).
-                        LazyVGrid(columns: [GridItem(.flexible(), spacing: MDSpacing.sm),
-                                            GridItem(.flexible(), spacing: MDSpacing.sm)],
-                                  spacing: MDSpacing.sm) {
-                            ForEach(GameMode.allCases) { mode in
-                                MDModeCard(
-                                    mode: mode,
-                                    score: progression.bestScore(for: mode),
-                                    level: progression.level(for: mode),
-                                    maxLevel: 20,
-                                    compact: true
-                                ) { startOrResume(mode) }
-                            }
-                        }
-                        .padding(.horizontal, MDSpacing.md)
+                        favoritesSection
+                        quickAccessSection
 
                         // Rejoin banner (one or multiple active games)
                         if !playingRooms.isEmpty {
@@ -111,11 +83,11 @@ struct HomeView: View {
                                 .padding(.horizontal, MDSpacing.md)
                         }
 
-                        // Multiplayer card
+                        // Multiplayer card (redesigned: 52px icon, pill buttons)
                         multiplayerCard
                             .padding(.horizontal, MDSpacing.md)
 
-                        // Scoreboard shortcut
+                        // Scoreboard shortcut (redesigned)
                         scoreboardCard
                             .padding(.horizontal, MDSpacing.md)
 
@@ -128,16 +100,6 @@ struct HomeView: View {
             }
         }
         .onAppear { progression.checkResetQuota() }
-        // Two intentional entry points to single-player play:
-        //   • Mode cards here → PiGameView / MathGameView (this branch).
-        //     Quick daily-practice flow with a polished round-end summary,
-        //     replay button, and personal-best feedback.
-        //   • Multiplayer card → MultiplayerLobbyView with one player.
-        //     Same room model used for friends; less rich UX, but the user
-        //     is in a flow where they may add opponents.
-        // Both paths persist mid-session state via the shared
-        // MultiplayerStore.backgroundRooms infra (`isStandaloneSolo` flag
-        // distinguishes which UI to resume in — see ActiveGamesView).
         .fullScreenCover(item: $activeMode) { mode in
             switch mode {
             case .pi:        PiGameView(username: username, resumeRoomID: resumeSoloRoomID)
@@ -147,8 +109,6 @@ struct HomeView: View {
             }
         }
         .onChange(of: activeMode) { mode in
-            // Clear pending resume id once the cover is dismissed so the next
-            // fresh open from a mode card doesn't accidentally try to resume.
             if mode == nil { resumeSoloRoomID = nil }
         }
         .fullScreenCover(item: $activeDestination) { dest in
@@ -165,6 +125,92 @@ struct HomeView: View {
             case .activityList:    ActivityListView()
             case .multiplayerGame: MultiplayerGameView(ownUsername: username)
             case .activeGames:     ActiveGamesView(ownUsername: username)
+            case .allModes:        AllModesSheet(onPlay: { startOrResume($0) })
+            }
+        }
+    }
+
+    // MARK: – Centered header
+
+    private var centeredHeader: some View {
+        ZStack {
+            Text("MindDuel")
+                .font(.system(size: 16, weight: .heavy))
+                .foregroundStyle(Color.mdText)
+
+            HStack {
+                Spacer()
+                Button { activeDestination = .profile } label: {
+                    ZStack(alignment: .topTrailing) {
+                        MDAvatar(username: username, size: .sm)
+                        if pendingBadge > 0 {
+                            Circle()
+                                .fill(Color.mdRed)
+                                .frame(width: 9, height: 9)
+                                .overlay(Circle().stroke(Color.mdBg, lineWidth: 2))
+                                .offset(x: 1, y: -1)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, MDSpacing.md)
+        .frame(height: 44)
+    }
+
+    // MARK: – Favorites
+
+    private var favoritesSection: some View {
+        let featured = prefs.featured(count: 4)
+        let title = prefs.favorites.isEmpty
+            ? String(localized: "favorites_section_most_played")
+            : String(localized: "favorites_section_title")
+        return VStack(alignment: .leading, spacing: MDSpacing.sm) {
+            HStack {
+                Text(title)
+                    .font(.system(size: 13, weight: .heavy))
+                    .foregroundStyle(Color.mdText)
+                Spacer()
+                Button { activeDestination = .allModes } label: {
+                    Text(String(localized: "favorites_see_all"))
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Color.mdAccent)
+                }
+                .buttonStyle(.plain)
+            }
+
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                GridItem(.flexible(), spacing: 10)],
+                      spacing: 10) {
+                ForEach(featured, id: \.self) { mode in
+                    MDFeaturedCard(
+                        mode: mode,
+                        score: progression.bestScore(for: mode),
+                        level: progression.level(for: mode),
+                        action: { startOrResume(mode) }
+                    )
+                }
+            }
+        }
+        .padding(.horizontal, MDSpacing.md)
+    }
+
+    private var quickAccessSection: some View {
+        VStack(alignment: .leading, spacing: MDSpacing.xs) {
+            Text(String(localized: "quick_access_title"))
+                .font(.system(size: 13, weight: .heavy))
+                .foregroundStyle(Color.mdText)
+                .padding(.horizontal, MDSpacing.md)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(prefs.order, id: \.self) { mode in
+                        MDQuickPill(mode: mode) { startOrResume(mode) }
+                    }
+                }
+                .padding(.horizontal, MDSpacing.md)
+                .padding(.vertical, 2)
             }
         }
     }
@@ -213,31 +259,38 @@ struct HomeView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: – Multiplayer card
+    // MARK: – Multiplayer card (redesigned per design)
 
     private var multiplayerCard: some View {
-        VStack(alignment: .leading, spacing: MDSpacing.sm) {
+        VStack(alignment: .leading, spacing: MDSpacing.md) {
             HStack(spacing: MDSpacing.sm) {
                 ZStack(alignment: .topTrailing) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 10).fill(Color.mdPinkSoft).frame(width: 40, height: 40)
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(Color(red: 0.42, green: 0.10, blue: 0.18))
+                            .frame(width: 52, height: 52)
                         Image(systemName: "person.2.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(Color.mdPink)
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(.white)
                     }
                     if inviteBadge > 0 {
-                        Text("\(inviteBadge)")
-                            .font(.system(size: 8, weight: .bold))
-                            .foregroundStyle(.white)
-                            .padding(2)
-                            .background(Color.mdRed)
-                            .clipShape(Circle())
-                            .offset(x: 4, y: -4)
+                        Button { activeDestination = .multiplayerInvites } label: {
+                            Text("\(inviteBadge)")
+                                .font(.system(size: 11, weight: .heavy))
+                                .foregroundStyle(.white)
+                                .frame(minWidth: 20, minHeight: 20)
+                                .padding(.horizontal, 3)
+                                .background(Color.mdRed)
+                                .clipShape(Capsule())
+                                .overlay(Capsule().stroke(Color.mdSurface, lineWidth: 2.5))
+                        }
+                        .buttonStyle(.plain)
+                        .offset(x: 7, y: -7)
                     }
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(String(localized: "multiplayer_title"))
-                        .mdStyle(.bodyMd)
+                        .font(.system(size: 15, weight: .heavy))
                         .foregroundStyle(Color.mdText)
                     Text(String(localized: "multiplayer_subtitle"))
                         .mdStyle(.caption)
@@ -259,24 +312,28 @@ struct HomeView: View {
         }
         .padding(MDSpacing.md)
         .background(Color.mdSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.mdBorder2, lineWidth: 0.5))
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.mdBorder2, lineWidth: 0.5))
     }
 
-    // MARK: – Scoreboard card
+    // MARK: – Scoreboard card (redesigned)
 
     private var scoreboardCard: some View {
         Button { activeDestination = .scoreboard } label: {
             HStack(spacing: MDSpacing.sm) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 10).fill(Color.mdAccentSoft).frame(width: 40, height: 40)
-                    Image(systemName: "chart.bar.fill")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(Color.mdAccent)
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color(red: 0.12, green: 0.13, blue: 0.38))
+                        .frame(width: 52, height: 52)
+                    HStack(alignment: .bottom, spacing: 4) {
+                        Capsule().fill(Color.mdAccent).frame(width: 6, height: 12)
+                        Capsule().fill(Color.mdAccent).frame(width: 6, height: 17)
+                        Capsule().fill(Color.mdAccent).frame(width: 6, height: 22)
+                    }
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(String(localized: "scoreboard_title"))
-                        .mdStyle(.bodyMd)
+                        .font(.system(size: 15, weight: .heavy))
                         .foregroundStyle(Color.mdText)
                     Text(String(localized: "scoreboard_subtitle"))
                         .mdStyle(.caption)
@@ -284,13 +341,13 @@ struct HomeView: View {
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Color.mdText3)
             }
             .padding(MDSpacing.md)
             .background(Color.mdSurface)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.mdBorder2, lineWidth: 0.5))
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.mdBorder2, lineWidth: 0.5))
         }
         .buttonStyle(.plain)
     }
@@ -324,18 +381,19 @@ struct HomeView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.mdBorder2, lineWidth: 0.5))
             } else {
-                VStack(spacing: MDSpacing.xs) {
-                    ForEach(multiplayer.recentActivity.prefix(3)) { item in
+                VStack(spacing: 0) {
+                    let recent = Array(multiplayer.recentActivity.prefix(3))
+                    ForEach(Array(recent.enumerated()), id: \.element.id) { idx, item in
                         activityRow(item)
+                        if idx < recent.count - 1 {
+                            Divider().background(Color.white.opacity(0.05))
+                        }
                     }
                 }
             }
         }
     }
 
-    /// #50: tapping a mode card while an unfinished standalone-solo session
-    /// of that mode exists in backgroundRooms resumes it instead of starting
-    /// a fresh round (which would shadow the saved progress).
     private func startOrResume(_ mode: GameMode) {
         if let existing = multiplayer.backgroundRooms.first(where: {
             $0.isStandaloneSolo && $0.mode == mode && $0.status == .playing
@@ -348,12 +406,7 @@ struct HomeView: View {
     }
 
     private func modeLabel(for mode: GameMode) -> String {
-        switch mode {
-        case .pi:        return String(localized: "mode_pi")
-        case .math:      return String(localized: "mode_math")
-        case .chemistry: return String(localized: "mode_chemistry")
-        case .geography: return String(localized: "mode_geography")
-        }
+        mode.localizedTitle
     }
 
     private func activityRow(_ item: MultiplayerActivityItem) -> some View {
@@ -362,15 +415,21 @@ struct HomeView: View {
                 MDAvatar(username: item.opponentUsername, size: .sm)
                 Circle()
                     .fill(item.didWin ? Color.mdGreen : Color.mdRed)
-                    .frame(width: 8, height: 8)
+                    .frame(width: 11, height: 11)
+                    .overlay(Circle().stroke(Color.mdBg, lineWidth: 2))
                     .offset(x: 2, y: 2)
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text(item.didWin
-                     ? String(format: String(localized: "activity_won_format"), item.opponentUsername)
-                     : String(format: String(localized: "activity_lost_format"), item.opponentUsername))
-                    .mdStyle(.caption)
-                    .foregroundStyle(Color.mdText)
+                HStack(spacing: 3) {
+                    Text(item.didWin
+                         ? String(localized: "activity_won_prefix")
+                         : String(localized: "activity_lost_prefix"))
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Color.mdText)
+                    Text("@\(item.opponentUsername)")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Color.mdAccent)
+                }
                 Text(String(format: String(localized: "activity_score_format"),
                             modeLabel(for: item.mode),
                             item.score))
@@ -382,9 +441,6 @@ struct HomeView: View {
                 .mdStyle(.micro)
                 .foregroundStyle(Color.mdText3)
         }
-        .padding(MDSpacing.sm)
-        .background(Color.mdSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.mdBorder2, lineWidth: 0.5))
+        .padding(.vertical, 10)
     }
 }

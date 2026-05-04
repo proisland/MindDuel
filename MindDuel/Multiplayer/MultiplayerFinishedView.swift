@@ -67,7 +67,7 @@ struct MultiplayerFinishedView: View {
                 MDPillTag(label: String(localized: "your_label"), variant: .accent)
             }
             Spacer()
-            Text("\(player.score)p")
+            Text("\(player.score) \(String(localized: "points_word"))")
                 .mdStyle(.bodyMd)
                 .foregroundStyle(rank == 0 ? Color.mdAmber : Color.mdText2)
             Button {

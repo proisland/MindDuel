@@ -28,7 +28,7 @@ struct RoundEndView: View {
                         .tracking(0.5)
                         .foregroundStyle(Color.mdText2)
 
-                    Text("\(displayedScore)p")
+                    Text("\(displayedScore) \(String(localized: "points_word"))")
                         .mdStyle(.display)
                         .animation(.easeOut(duration: 0.05), value: displayedScore)
 

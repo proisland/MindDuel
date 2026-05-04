@@ -184,7 +184,11 @@ struct MultiplayerGameView: View {
             Spacer()
 
             if let room = store.currentRoom {
-                Text(String(format: String(localized: "multiplayer_room_code_format"), room.id))
+                // #110: prefer the host-chosen custom name; fall back to the
+                // generated room code so older saved rooms still show something.
+                Text(room.customName.isEmpty
+                     ? String(format: String(localized: "multiplayer_room_code_format"), room.id)
+                     : room.customName)
                     .mdStyle(.micro)
                     .lineLimit(1)
                     .foregroundStyle(Color.mdAccent)
@@ -235,7 +239,7 @@ struct MultiplayerGameView: View {
                     .font(.system(size: 8, weight: .bold))
                     .foregroundStyle(isMine ? Color.mdAccent : Color.mdText3)
             } else {
-                Text("\(player.score)p")
+                Text("\(player.score) \(String(localized: "points_word"))")
                     .font(.system(size: 8, weight: .semibold))
                     .foregroundStyle(player.isEliminated ? Color.mdText3.opacity(0.4) : Color.mdText3)
             }
@@ -245,19 +249,19 @@ struct MultiplayerGameView: View {
         }
     }
 
-    /// Five-dot lives indicator under each player's chip (issue #36).
-    /// Dimmed when the player is eliminated or has 0 lives left.
+    /// Compact "♥ N" lives indicator under each player's chip (issue #36 +
+    /// design refresh: five separate hearts crowded the bar, switched to a
+    /// single heart with the count).
     private func livesRow(for player: MultiplayerPlayer) -> some View {
-        let maxLives = 5
-        let remaining = max(0, min(maxLives, player.lives))
-        return HStack(spacing: 2) {
-            ForEach(0..<maxLives, id: \.self) { i in
-                Image(systemName: i < remaining ? "heart.fill" : "heart")
-                    .font(.system(size: 7, weight: .bold))
-                    .foregroundStyle(player.isEliminated
-                                     ? Color.mdRed.opacity(0.3)
-                                     : (i < remaining ? Color.mdRed : Color.mdText3.opacity(0.4)))
-            }
+        let remaining = max(0, min(5, player.lives))
+        let dim = player.isEliminated || remaining == 0
+        return HStack(spacing: 3) {
+            Image(systemName: "heart.fill")
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(dim ? Color.mdRed.opacity(0.4) : Color.mdRed)
+            Text("\(remaining)")
+                .font(.system(size: 9, weight: .heavy))
+                .foregroundStyle(dim ? Color.mdText3.opacity(0.4) : Color.mdText2)
         }
     }
 

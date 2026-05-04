@@ -7,6 +7,9 @@
     "@" : {
 
     },
+    "@%@" : {
+
+    },
     "%@" : {
 
     },
@@ -23,8 +26,15 @@
         }
       }
     },
-    "%@p" : {
-
+    "%@ %@" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
     },
     "∑" : {
 
@@ -49,6 +59,23 @@
         }
       }
     },
+    "active_games_empty" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No active games"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen pågående spill"
+          }
+        }
+      }
+    },
     "active_games_level_format" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -62,6 +89,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nivå %d"
+          }
+        }
+      }
+    },
+    "active_games_my_turn_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your turn (%lld)"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din tur (%lld)"
+          }
+        }
+      }
+    },
+    "active_games_pending_suffix" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(pending)"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(venter)"
+          }
+        }
+      }
+    },
+    "active_games_player_count_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld players"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld spillere"
           }
         }
       }
@@ -83,6 +161,40 @@
         }
       }
     },
+    "active_games_waiting_for_players" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for invitees"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Venter på inviterte"
+          }
+        }
+      }
+    },
+    "active_games_waiting_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for opponent (%lld)"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Venter på motstander (%lld)"
+          }
+        }
+      }
+    },
     "activity_lost_format" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -100,19 +212,36 @@
         }
       }
     },
+    "activity_lost_prefix" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You lost to"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du tapte mot"
+          }
+        }
+      }
+    },
     "activity_score_format" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ · Earned +%lldp"
+            "value" : "%@ · Earned +%lld Points"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ · Tjente +%lldp"
+            "value" : "%@ · Tjente +%lld Poeng"
           }
         }
       }
@@ -134,6 +263,23 @@
         }
       }
     },
+    "activity_won_prefix" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You won against"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du vant mot"
+          }
+        }
+      }
+    },
     "add_friend_action" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -151,6 +297,91 @@
         }
       }
     },
+    "add_friend_short_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Legg til"
+          }
+        }
+      }
+    },
+    "all_modes_count_suffix" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "game modes"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "spillmoduser"
+          }
+        }
+      }
+    },
+    "all_modes_drag_hint" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag ☰ to reorder"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dra ☰ for å sortere"
+          }
+        }
+      }
+    },
+    "all_modes_search_placeholder" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search game modes..."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Søk i spillmoduser..."
+          }
+        }
+      }
+    },
+    "all_modes_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All game modes"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle spillmoduser"
+          }
+        }
+      }
+    },
     "back_to_home_action" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -164,6 +395,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tilbake til hjem"
+          }
+        }
+      }
+    },
+    "cancel_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avbryt"
           }
         }
       }
@@ -372,6 +620,23 @@
         }
       }
     },
+    "debug_simulate_request_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simulate friend request"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simuler venneforespørsel"
+          }
+        }
+      }
+    },
     "debug_test_notification_action" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -423,6 +688,57 @@
         }
       }
     },
+    "favorites_section_most_played" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Most played"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mest spilt"
+          }
+        }
+      }
+    },
+    "favorites_section_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorites"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favoritter"
+          }
+        }
+      }
+    },
+    "favorites_see_all" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See all →"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se alle →"
+          }
+        }
+      }
+    },
     "flagged_explanation_body" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -453,6 +769,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Flagget for gjennomgang"
+          }
+        }
+      }
+    },
+    "friend_request_pending_short" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sendt"
           }
         }
       }
@@ -597,9 +930,6 @@
       }
     },
     "MindDuel" : {
-
-    },
-    "MindDuel M5" : {
 
     },
     "mode_chemistry" : {
@@ -772,6 +1102,23 @@
         }
       }
     },
+    "multiplayer_invite_continue_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue (%lld)"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fortsett (%lld)"
+          }
+        }
+      }
+    },
     "multiplayer_invite_from_format" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -802,6 +1149,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Inviter spiller"
+          }
+        }
+      }
+    },
+    "multiplayer_invite_level_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ level %lld"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ nivå %lld"
           }
         }
       }
@@ -921,6 +1285,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "MODUS"
+          }
+        }
+      }
+    },
+    "multiplayer_name_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Game name"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Navn på spillet"
+          }
+        }
+      }
+    },
+    "multiplayer_name_placeholder" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g. Friday match"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "f.eks. Fredagskampen"
           }
         }
       }
@@ -1282,6 +1680,40 @@
         }
       }
     },
+    "notification_friend_request_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "@%@ wants to be your friend"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "@%@ vil legge deg til som venn"
+          }
+        }
+      }
+    },
+    "notification_friend_request_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New friend request"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ny venneforespørsel"
+          }
+        }
+      }
+    },
     "notification_game_waiting_body" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1401,6 +1833,23 @@
         }
       }
     },
+    "points_word" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Points"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poeng"
+          }
+        }
+      }
+    },
     "premium_label" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1448,6 +1897,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "FREMGANG"
+          }
+        }
+      }
+    },
+    "quick_access_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick access"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hurtig tilgang"
           }
         }
       }
@@ -1911,6 +2377,40 @@
         }
       }
     },
+    "scoreboard_local_no_permission_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share your location to see local players. You can change this in Settings."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Del posisjonen din for å se spillere i nærheten. Du kan endre dette i Innstillinger."
+          }
+        }
+      }
+    },
+    "scoreboard_local_no_permission_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location not shared"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Posisjon ikke delt"
+          }
+        }
+      }
+    },
     "scoreboard_local_tab" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1945,6 +2445,23 @@
         }
       }
     },
+    "scoreboard_open_location_settings" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Settings"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Åpne Innstillinger"
+          }
+        }
+      }
+    },
     "scoreboard_pi_mode" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1975,6 +2492,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sammenlign poeng med andre"
+          }
+        }
+      }
+    },
+    "scoreboard_time_all" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All-time"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alltid"
+          }
+        }
+      }
+    },
+    "scoreboard_time_today" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I dag"
+          }
+        }
+      }
+    },
+    "scoreboard_time_week" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This week"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne uken"
           }
         }
       }
@@ -2026,6 +2594,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "KONTO"
+          }
+        }
+      }
+    },
+    "settings_branch_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "branch: %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "branch: %@"
+          }
+        }
+      }
+    },
+    "settings_branch_unknown" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "branch: unknown"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "branch: ukjent"
           }
         }
       }
@@ -2128,6 +2730,91 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Slett konto og data"
+          }
+        }
+      }
+    },
+    "settings_delete_confirm_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slett"
+          }
+        }
+      }
+    },
+    "settings_delete_confirm_message" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All progress, friends and game history will be removed from this device. This cannot be undone."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All fremgang, venner og spillhistorikk vil bli fjernet fra denne enheten. Handlingen kan ikke angres."
+          }
+        }
+      }
+    },
+    "settings_delete_confirm_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete account and data?"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slett konto og data?"
+          }
+        }
+      }
+    },
+    "settings_delete_done_message" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You will now be signed out."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du vil nå bli logget ut."
+          }
+        }
+      }
+    },
+    "settings_delete_done_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Account deleted"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konto slettet"
           }
         }
       }
@@ -2484,7 +3171,7 @@
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Snittsvartid"
+            "value" : "Gjennomsnittlig svartid"
           }
         }
       }
@@ -2502,6 +3189,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Venner"
+          }
+        }
+      }
+    },
+    "stats_last_active_inline" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "active %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "aktiv %@"
           }
         }
       }
@@ -2638,6 +3342,142 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Trykk for å fortsette"
+          }
+        }
+      }
+    },
+    "terms_section_contact_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questions about these terms or your data? Reach us at support@mindduel.no."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spørsmål om disse vilkårene eller dine data? Kontakt oss på support@mindduel.no."
+          }
+        }
+      }
+    },
+    "terms_section_contact_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contact"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontakt"
+          }
+        }
+      }
+    },
+    "terms_section_data_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can request a copy of your data and delete your account at any time from Settings → Delete account and data. Data is hosted in the EU."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du kan be om en kopi av dine data og slette kontoen din når som helst fra Innstillinger → Slett konto og data. Data lagres i EU."
+          }
+        }
+      }
+    },
+    "terms_section_data_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your data and rights"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dine data og rettigheter"
+          }
+        }
+      }
+    },
+    "terms_section_privacy_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We use Sign in with Apple. Your username, score and game history are stored to power friends, leaderboards and progression. Your real name and email are never shared with other players."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vi bruker Logg inn med Apple. Brukernavn, poengsum og spillhistorikk lagres for å drive venner, scoreboards og fremgang. Ditt fulle navn og e-post deles aldri med andre spillere."
+          }
+        }
+      }
+    },
+    "terms_section_privacy_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personvern"
+          }
+        }
+      }
+    },
+    "terms_section_terms_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MindDuel is provided as-is for personal use. By using the app you agree to play fair and not to attempt to circumvent the daily question quota or anti-cheat systems. We may suspend accounts that show automated or otherwise abusive behavior."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MindDuel leveres som det er, til personlig bruk. Ved å bruke appen samtykker du til å spille rent og ikke forsøke å omgå daglig spørsmålskvote eller anti-juks-systemene. Vi kan suspendere kontoer som viser automatisert eller på annen måte misbrukende adferd."
+          }
+        }
+      }
+    },
+    "terms_section_terms_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terms of use"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vilkår for bruk"
           }
         }
       }
