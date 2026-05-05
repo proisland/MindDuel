@@ -13,6 +13,7 @@ struct MultiplayerGameView: View {
     @State private var mathProblem: MathProblem = MathProblemGenerator.generate(level: 1)
     @State private var chemProblem: ChemistryProblem = ChemistryProblemGenerator.generate(level: 1)
     @State private var geoProblem: GeographyProblem = GeographyProblemGenerator.generate(level: 1)
+    @State private var brainProblem: BrainTrainingProblem = BrainTrainingProblemGenerator.generate(level: 1)
     @State private var elapsedSeconds: Double   = 0
     @State private var feedbackIsCorrect: Bool? = nil
     @State private var selectedIndex: Int?      = nil
@@ -97,11 +98,24 @@ struct MultiplayerGameView: View {
                 elapsedSeconds = 0
                 feedbackIsCorrect = nil
                 selectedIndex = nil
-                refreshMathProblem()
+                hydrateFromShared()
             }
+        }
+        .onChange(of: store.currentRoom?.currentQuestionIndex) { _ in
+            hydrateFromShared()
         }
         .onChange(of: store.lastGameEvent?.id) { _ in
             showToast()
+        }
+        .fullScreenCover(isPresented: Binding(
+            get: { store.lastRoundSummary != nil },
+            set: { if !$0 { store.dismissRoundSummary() } }
+        )) {
+            if let summary = store.lastRoundSummary {
+                MultiplayerRoundSummaryView(summary: summary) {
+                    store.dismissRoundSummary()
+                }
+            }
         }
         .onAppear {
             store.cancelGameReminderNotification()
@@ -407,6 +421,21 @@ struct MultiplayerGameView: View {
                         .foregroundStyle(Color.mdText)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity, alignment: .center)
+                case .brainTraining:
+                    Text(String(format: String(localized: "brain_training_level_problem"),
+                                room.startLevel, 1))
+                        .mdStyle(.caption)
+                        .foregroundStyle(Color.mdText2)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    Text(BrainTrainingProblemGenerator.curriculumLabel(forLevel: room.startLevel))
+                        .mdStyle(.micro)
+                        .foregroundStyle(Color.mdText3)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    Text(brainProblem.prompt)
+                        .font(.system(size: 18, weight: .heavy))
+                        .foregroundStyle(Color.mdText)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
             .padding(.vertical, MDSpacing.sm)
@@ -416,10 +445,40 @@ struct MultiplayerGameView: View {
     @ViewBuilder
     private func answerArea(room: MultiplayerRoom) -> some View {
         switch room.mode {
-        case .pi:        piDigitGrid
-        case .math:      mathAnswerGrid
-        case .chemistry: chemAnswerGrid
-        case .geography: geoAnswerGrid
+        case .pi:            piDigitGrid
+        case .math:          mathAnswerGrid
+        case .chemistry:     chemAnswerGrid
+        case .geography:     geoAnswerGrid
+        case .brainTraining: brainAnswerGrid
+        }
+    }
+
+    private var brainAnswerGrid: some View {
+        let columns = Array(repeating: GridItem(.flexible(), spacing: MDSpacing.sm), count: 2)
+        return LazyVGrid(columns: columns, spacing: MDSpacing.sm) {
+            ForEach(brainProblem.options.indices, id: \.self) { i in
+                AnswerButton(
+                    label: brainProblem.options[i],
+                    feedbackState: mathButtonState(for: i)
+                ) { handleBrainTap(i) }
+                .disabled(feedbackIsCorrect != nil || progression.isQuotaExhausted)
+            }
+        }
+    }
+
+    private func handleBrainTap(_ index: Int) {
+        guard feedbackIsCorrect == nil, !progression.isQuotaExhausted,
+              let room = store.currentRoom, room.isMyTurn else { return }
+        let correct = brainProblem.options[index] == brainProblem.correctAnswer
+        selectedIndex = index
+        feedbackIsCorrect = correct
+        let time = elapsedSeconds
+        Task {
+            try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
+            selectedIndex = nil
+            feedbackIsCorrect = nil
+            elapsedSeconds = 0
+            store.submitAnswer(correct: correct, answerTime: time)
         }
     }
 
@@ -639,6 +698,13 @@ struct MultiplayerGameView: View {
     private func handleTimerTick() {
         guard let room = store.currentRoom, room.isMyTurn,
               feedbackIsCorrect == nil, !progression.isQuotaExhausted else { return }
+        // #120: don't keep ticking — and certainly don't auto-skip — while the
+        // round-summary sheet is up; otherwise the next round's first question
+        // gets force-skipped before the user even closes the summary.
+        guard store.lastRoundSummary == nil else {
+            elapsedSeconds = 0
+            return
+        }
         elapsedSeconds = min(elapsedSeconds + 0.1, 10.0)
         if elapsedSeconds >= 10.0 { handleSkip() }
     }
@@ -652,6 +718,45 @@ struct MultiplayerGameView: View {
             chemProblem = ChemistryProblemGenerator.generate(level: max(1, room.startLevel))
         case .geography:
             geoProblem = GeographyProblemGenerator.generate(level: max(1, room.startLevel))
+        case .brainTraining:
+            brainProblem = BrainTrainingProblemGenerator.generate(level: max(1, room.startLevel))
+        case .pi:
+            break
+        }
+    }
+
+    /// #93: hydrate the local view's problem state from the room's shared
+    /// problem set so every player sees the same prompt for a given
+    /// `currentQuestionIndex`. Falls back to a local generator only if the
+    /// shared list is somehow missing (e.g. legacy saved rooms).
+    private func hydrateFromShared() {
+        guard let room = store.currentRoom else { return }
+        let idx = room.currentQuestionIndex
+        guard idx < room.roundProblems.count else {
+            refreshMathProblem()
+            return
+        }
+        let s = room.roundProblems[idx]
+        switch s.mode {
+        case .math:
+            let opts = s.options.compactMap(Int.init)
+            let answer = Int(s.options[s.correctIndex]) ?? 0
+            mathProblem = MathProblem(display: s.prompt,
+                                      correctAnswer: answer,
+                                      options: opts)
+        case .chemistry:
+            chemProblem = ChemistryProblem(prompt: s.prompt,
+                                           correctAnswer: s.options[s.correctIndex],
+                                           options: s.options)
+        case .geography:
+            geoProblem = GeographyProblem(prompt: s.prompt,
+                                          flag: s.flag,
+                                          correctAnswer: s.options[s.correctIndex],
+                                          options: s.options)
+        case .brainTraining:
+            brainProblem = BrainTrainingProblem(prompt: s.prompt,
+                                                correctAnswer: s.options[s.correctIndex],
+                                                options: s.options)
         case .pi:
             break
         }

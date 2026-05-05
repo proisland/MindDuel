@@ -27,6 +27,10 @@ struct ModeGlyph: View {
             Image(systemName: "globe.europe.africa.fill")
                 .font(.system(size: size, weight: weight))
                 .foregroundStyle(color)
+        case .brainTraining:
+            Image(systemName: "brain.head.profile")
+                .font(.system(size: size, weight: weight))
+                .foregroundStyle(color)
         }
     }
 }

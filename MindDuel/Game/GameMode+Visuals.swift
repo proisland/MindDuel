@@ -5,10 +5,11 @@ extension GameMode {
     /// selectors. Mirrors the design system's named colors.
     var accentColor: Color {
         switch self {
-        case .pi:        return .mdAccent
-        case .math:      return .mdPink
-        case .chemistry: return .mdGreen
-        case .geography: return .mdAmber
+        case .pi:            return .mdAccent
+        case .math:          return .mdPink
+        case .chemistry:     return .mdGreen
+        case .geography:     return .mdAmber
+        case .brainTraining: return .mdRed
         }
     }
 
@@ -19,19 +20,21 @@ extension GameMode {
     /// tokens (mdAccentDeep / mdPinkDeep) are too bright for that role.
     var deepBg: Color {
         switch self {
-        case .pi:        return Color(red: 0.067, green: 0.063, blue: 0.165)  // #11102a
-        case .math:      return Color(red: 0.094, green: 0.039, blue: 0.071)  // #180a12
-        case .chemistry: return Color(red: 0.05,  green: 0.13,  blue: 0.09)   // dark green
-        case .geography: return Color(red: 0.13,  green: 0.08,  blue: 0.03)   // dark amber
+        case .pi:            return Color(red: 0.067, green: 0.063, blue: 0.165)  // #11102a
+        case .math:          return Color(red: 0.094, green: 0.039, blue: 0.071)  // #180a12
+        case .chemistry:     return Color(red: 0.05,  green: 0.13,  blue: 0.09)   // dark green
+        case .geography:     return Color(red: 0.13,  green: 0.08,  blue: 0.03)   // dark amber
+        case .brainTraining: return Color(red: 0.13,  green: 0.04,  blue: 0.05)   // dark red
         }
     }
 
     var localizedTitle: String {
         switch self {
-        case .pi:        return String(localized: "mode_pi")
-        case .math:      return String(localized: "mode_math")
-        case .chemistry: return String(localized: "mode_chemistry")
-        case .geography: return String(localized: "mode_geography")
+        case .pi:            return String(localized: "mode_pi")
+        case .math:          return String(localized: "mode_math")
+        case .chemistry:     return String(localized: "mode_chemistry")
+        case .geography:     return String(localized: "mode_geography")
+        case .brainTraining: return String(localized: "mode_brain_training")
         }
     }
 }

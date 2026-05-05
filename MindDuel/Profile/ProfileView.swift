@@ -5,8 +5,10 @@ struct ProfileView: View {
     let onSignOut: () -> Void
     @ObservedObject private var progression = ProgressionStore.shared
     @ObservedObject private var social = SocialStore.shared
+    @ObservedObject private var avatar = AvatarStore.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showSettings = false
+    @State private var showAvatarPicker = false
     @State private var selectedFriend: UserProfile? = nil
     @State private var showFlagExplanation = false
 
@@ -32,7 +34,21 @@ struct ProfileView: View {
 
                         // Avatar + identity
                         VStack(spacing: MDSpacing.xs) {
-                            MDAvatar(username: username, size: .lg)
+                            Button { showAvatarPicker = true } label: {
+                                ZStack(alignment: .bottomTrailing) {
+                                    MDAvatar(username: username, size: .lg,
+                                             customEmoji: avatar.emoji,
+                                             customImageData: avatar.imageData)
+                                    ZStack {
+                                        Circle().fill(Color.mdAccent).frame(width: 22, height: 22)
+                                        Image(systemName: "pencil")
+                                            .font(.system(size: 11, weight: .bold))
+                                            .foregroundStyle(.white)
+                                    }
+                                    .offset(x: 2, y: 2)
+                                }
+                            }
+                            .buttonStyle(.plain)
                             HStack(spacing: MDSpacing.xxs) {
                                 Text("\(username)")
                                     .mdStyle(.title2)
@@ -90,9 +106,6 @@ struct ProfileView: View {
                                 Divider().background(Color.mdBorder2)
                                 statRow(label: String(localized: "stats_last_active_label"),
                                         value: timeAgoString(from: progression.lastActiveAt))
-                                Divider().background(Color.mdBorder2)
-                                statRow(label: String(localized: "stats_member_since_label"),
-                                        value: "april 2025")
                             }
                             .background(Color.mdSurface2)
                             .clipShape(RoundedRectangle(cornerRadius: 14))
@@ -116,6 +129,9 @@ struct ProfileView: View {
         .animation(.easeInOut(duration: 0.2), value: showFlagExplanation)
         .fullScreenCover(isPresented: $showSettings) {
             SettingsView(onSignOut: onSignOut)
+        }
+        .fullScreenCover(isPresented: $showAvatarPicker) {
+            AvatarPickerSheet()
         }
         .fullScreenCover(item: $selectedFriend) { friend in
             OtherProfileView(profile: friend, ownUsername: username)

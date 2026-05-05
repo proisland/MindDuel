@@ -32,10 +32,12 @@ struct ScoreboardView: View {
             mathScore: progression.mathBestScore,
             chemScore: progression.chemBestScore,
             geoScore: progression.geoBestScore,
+            brainScore: progression.brainBestScore,
             piLevel: progression.piLevel,
             mathLevel: progression.mathLevel,
             chemLevel: progression.chemLevel,
             geoLevel: progression.geoLevel,
+            brainLevel: progression.brainLevel,
             roundsPlayed: progression.totalRoundsPlayed,
             age: nil, city: nil,
             memberSince: "april 2025",
@@ -149,19 +151,21 @@ struct ScoreboardView: View {
 
     private func scoreboardLabel(for mode: GameMode) -> String {
         switch mode {
-        case .pi:        return String(localized: "mode_pi")
-        case .math:      return String(localized: "mode_math")
-        case .chemistry: return String(localized: "mode_chemistry")
-        case .geography: return String(localized: "mode_geography")
+        case .pi:            return String(localized: "mode_pi")
+        case .math:          return String(localized: "mode_math")
+        case .chemistry:     return String(localized: "mode_chemistry")
+        case .geography:     return String(localized: "mode_geography")
+        case .brainTraining: return String(localized: "mode_brain_training")
         }
     }
 
     private func score(for profile: UserProfile, mode: GameMode) -> Int {
         switch mode {
-        case .pi:        return profile.piScore
-        case .math:      return profile.mathScore
-        case .chemistry: return profile.chemScore
-        case .geography: return profile.geoScore
+        case .pi:            return profile.piScore
+        case .math:          return profile.mathScore
+        case .chemistry:     return profile.chemScore
+        case .geography:     return profile.geoScore
+        case .brainTraining: return profile.brainScore
         }
     }
 
@@ -417,10 +421,15 @@ struct ScoreboardView: View {
                     .mdStyle(.bodyMd)
                     .foregroundStyle((!isOwn ? trophyColor(forRank: rank) : nil) ?? Color.mdText2)
 
-                // #78: quick "+venn" action so users can add new friends
-                // discovered on Lokalt/Globalt boards without opening the
-                // profile sheet first.
-                if !isOwn { addFriendButton(for: profile) }
+                // #78/#112: quick "+venn" action so users can add new friends
+                // discovered on Lokalt/Globalt boards. Trailing slot is fixed
+                // width so the score column lines up across friends and
+                // non-friends rows.
+                Group {
+                    if !isOwn { addFriendButton(for: profile) }
+                    else { Color.clear }
+                }
+                .frame(width: 76, alignment: .trailing)
             }
             .padding(.horizontal, MDSpacing.md)
             .padding(.vertical, MDSpacing.sm)

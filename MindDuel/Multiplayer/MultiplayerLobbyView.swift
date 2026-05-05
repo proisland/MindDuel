@@ -24,8 +24,11 @@ struct MultiplayerLobbyView: View {
                         if let room = store.currentRoom {
                             nameSection(room: room, editable: isHost(room))
                             modeSection(room: room, editable: isHost(room))
-                            if isHost(room) && (room.mode == .math || room.mode == .chemistry || room.mode == .geography) {
+                            if isHost(room) && (room.mode == .math || room.mode == .chemistry || room.mode == .geography || room.mode == .brainTraining) {
                                 startLevelSection(room: room)
+                            }
+                            if isHost(room) {
+                                questionsPerTurnSection(room: room)
                             }
                             playersSection(room: room)
                             startButton(room: room)
@@ -236,6 +239,57 @@ struct MultiplayerLobbyView: View {
         }
     }
 
+    // MARK: – Questions per turn (#95)
+
+    private func questionsPerTurnSection(room: MultiplayerRoom) -> some View {
+        VStack(alignment: .leading, spacing: MDSpacing.xs) {
+            sectionLabel(String(localized: "multiplayer_questions_per_turn_label"))
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(String(format: String(localized: "multiplayer_questions_per_turn_value"),
+                                room.questionsPerTurn))
+                        .mdStyle(.caption)
+                        .foregroundStyle(Color.mdText)
+                    Text(String(localized: "multiplayer_questions_per_turn_hint"))
+                        .mdStyle(.micro)
+                        .foregroundStyle(Color.mdText3)
+                }
+                Spacer()
+                HStack(spacing: MDSpacing.sm) {
+                    Button {
+                        if let q = store.currentRoom?.questionsPerTurn, q > 1 {
+                            store.currentRoom?.questionsPerTurn = q - 1
+                        }
+                    } label: {
+                        Image(systemName: "minus.circle.fill")
+                            .font(.system(size: 22))
+                            .foregroundStyle(room.questionsPerTurn > 1 ? Color.mdAccent : Color.mdText3)
+                    }
+                    .buttonStyle(.plain)
+                    Text("\(room.questionsPerTurn)")
+                        .mdStyle(.bodyMd)
+                        .foregroundStyle(Color.mdText)
+                        .frame(width: 28, alignment: .center)
+                    Button {
+                        if let q = store.currentRoom?.questionsPerTurn, q < 10 {
+                            store.currentRoom?.questionsPerTurn = q + 1
+                        }
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 22))
+                            .foregroundStyle(room.questionsPerTurn < 10 ? Color.mdAccent : Color.mdText3)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, MDSpacing.md)
+            .padding(.vertical, MDSpacing.sm)
+            .background(Color.mdSurface2)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdBorder2, lineWidth: 0.5))
+        }
+    }
+
     // MARK: – Players section
 
     private func playersSection(room: MultiplayerRoom) -> some View {
@@ -260,10 +314,11 @@ struct MultiplayerLobbyView: View {
         let level: Int
         let score: Int
         switch mode {
-        case .pi:        level = player.piLevel;   score = player.piBestScore
-        case .math:      level = player.mathLevel; score = player.mathBestScore
-        case .chemistry: level = player.chemLevel; score = player.chemBestScore
-        case .geography: level = player.geoLevel;  score = player.geoBestScore
+        case .pi:            level = player.piLevel;    score = player.piBestScore
+        case .math:          level = player.mathLevel;  score = player.mathBestScore
+        case .chemistry:     level = player.chemLevel;  score = player.chemBestScore
+        case .geography:     level = player.geoLevel;   score = player.geoBestScore
+        case .brainTraining: level = player.brainLevel; score = player.brainBestScore
         }
         return HStack(spacing: MDSpacing.sm) {
             MDAvatar(username: player.username, size: .sm)
@@ -380,6 +435,19 @@ struct MultiplayerLobbyView: View {
                         }
                         .disabled(pickerSelection.isEmpty)
                         Spacer()
+                        // #18: share sheet to invite people who aren't on
+                        // MindDuel yet — they get a link to the App Store
+                        // (placeholder until App Store listing is live) along
+                        // with the room code so they can join after install.
+                        ShareLink(item: shareInviteText, subject: Text(String(localized: "multiplayer_share_invite_subject"))) {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(Color.mdAccent)
+                                .frame(width: 44, height: 44)
+                                .background(Color.mdAccentSoft)
+                                .clipShape(Circle())
+                                .overlay(Circle().stroke(Color.mdAccent.opacity(0.5), lineWidth: 0.5))
+                        }
                         Button { closeFriendPicker() } label: {
                             Image(systemName: "xmark")
                                 .font(.system(size: 14, weight: .semibold))
@@ -463,5 +531,12 @@ struct MultiplayerLobbyView: View {
 
     private func sectionLabel(_ text: String) -> some View {
         Text(text).mdStyle(.micro).foregroundStyle(Color.mdText3)
+    }
+
+    /// #18: text shared via the system share sheet so non-users can join.
+    /// Includes the room code so they can punch it in after installing.
+    private var shareInviteText: String {
+        let code = store.currentRoom?.id ?? ""
+        return String(format: String(localized: "multiplayer_share_invite_body"), code)
     }
 }
