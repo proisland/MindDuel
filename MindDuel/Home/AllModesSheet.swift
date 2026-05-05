@@ -117,14 +117,21 @@ struct AllModesSheet: View {
                 .font(.system(size: 12, weight: .heavy))
                 .foregroundStyle(mode.accentColor)
 
+            // #124: cap favorites at 4 — disable the star when the user is
+            // at the cap and this mode isn't already starred.
+            let isFav = prefs.isFavorite(mode)
+            let canStar = isFav || !prefs.isAtFavoriteCap
             Button {
                 prefs.toggleFavorite(mode)
             } label: {
-                Image(systemName: prefs.isFavorite(mode) ? "star.fill" : "star")
+                Image(systemName: isFav ? "star.fill" : "star")
                     .font(.system(size: 14))
-                    .foregroundStyle(prefs.isFavorite(mode) ? Color.mdAmber : Color.mdText3.opacity(0.4))
+                    .foregroundStyle(isFav
+                                     ? Color.mdAmber
+                                     : Color.mdText3.opacity(canStar ? 0.4 : 0.18))
             }
             .buttonStyle(.plain)
+            .disabled(!canStar)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)

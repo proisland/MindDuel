@@ -8,6 +8,7 @@ struct MultiplayerLobbyView: View {
     @ObservedObject private var store     = MultiplayerStore.shared
     @ObservedObject private var social    = SocialStore.shared
     @ObservedObject private var progression = ProgressionStore.shared
+    @ObservedObject private var modePrefs = ModePreferences.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showGame        = false
     @State private var showFriendPicker = false
@@ -148,7 +149,7 @@ struct MultiplayerLobbyView: View {
         // without crowding the lobby (per Claude Design iteration).
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(GameMode.allCases) { mode in
+                ForEach(modePrefs.order) { mode in
                     modeButton(mode, room: room, editable: editable)
                 }
             }
@@ -197,12 +198,7 @@ struct MultiplayerLobbyView: View {
                     Text(String(format: String(localized: "multiplayer_start_level_value"), room.startLevel))
                         .mdStyle(.caption)
                         .foregroundStyle(Color.mdText)
-                    // Curriculum label (issue #40) — same labelling as MathGameView
-                    // so the host knows what school level the start level maps to.
-                    Text(MathProblemGenerator.curriculumLabel(forLevel: room.startLevel))
-                        .mdStyle(.micro)
-                        .foregroundStyle(Color.mdText3)
-                }
+}
                 Spacer()
                 HStack(spacing: MDSpacing.sm) {
                     Button {

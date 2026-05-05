@@ -5,6 +5,7 @@ struct ScoreboardView: View {
     let ownUsername: String
     @ObservedObject private var social = SocialStore.shared
     @ObservedObject private var progression = ProgressionStore.shared
+    @ObservedObject private var modePrefs = ModePreferences.shared
     @Environment(\.dismiss) private var dismiss
     @State private var selectedTab = 0          // default: Venner (#76)
     @State private var selectedProfile: UserProfile? = nil
@@ -125,7 +126,7 @@ struct ScoreboardView: View {
         // accent-color border when selected.
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(GameMode.allCases) { mode in
+                ForEach(modePrefs.order) { mode in
                     let selected = scoreMode == mode
                     Button {
                         withAnimation(.easeInOut(duration: 0.15)) { scoreMode = mode }

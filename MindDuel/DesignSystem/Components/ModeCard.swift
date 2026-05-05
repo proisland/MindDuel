@@ -88,7 +88,7 @@ struct MDModeCard: View {
 
                 Text(String(format: String(localized: "level_of_format"), level, maxLevel))
                     .mdStyle(.micro)
-                    .foregroundStyle(Color.mdText3)
+                    .foregroundStyle(accentColor)
             }
             .padding(.vertical, compact ? 11 : 14)
             .padding(.horizontal, 11)

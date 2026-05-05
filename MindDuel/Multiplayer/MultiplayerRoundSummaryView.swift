@@ -83,6 +83,14 @@ struct MultiplayerRoundSummaryView: View {
             }
             Spacer()
             if let a = answer {
+                // #123: response time drives multiplayer scoring, so the
+                // round summary surfaces it next to each player's result.
+                if let t = a.answerTime, !a.skipped {
+                    Text(String(format: String(localized: "round_summary_answer_time_format"), t))
+                        .mdStyle(.micro)
+                        .foregroundStyle(Color.mdText3)
+                        .monospacedDigit()
+                }
                 if a.skipped {
                     Image(systemName: "forward.fill")
                         .font(.system(size: 13, weight: .bold))
