@@ -97,14 +97,16 @@ struct MDQuickPill: View {
                 }
                 .frame(width: 34, height: 34)
 
-                Text(mode.localizedTitle)
+                Text(quickPillTitle(mode))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(Color.mdText3)
-                    .lineLimit(1)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2, reservesSpace: true)
+                    .minimumScaleFactor(0.85)
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 10)
             .padding(.vertical, 10)
-            .frame(minWidth: 66)
+            .frame(width: 78)
             .background(mode.deepBg)
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay(
@@ -114,6 +116,17 @@ struct MDQuickPill: View {
         }
         .buttonStyle(.plain)
     }
+}
+
+/// Breaks "Naturvitenskap" between "Natur" and "vitenskap" on the two-line
+/// pill labels so the science card matches the height of the others without
+/// shrinking text. English ("Science") stays on one line.
+func quickPillTitle(_ mode: GameMode) -> String {
+    let title = mode.localizedTitle
+    if mode == .science, title == "Naturvitenskap" {
+        return "Natur\nvitenskap"
+    }
+    return title
 }
 
 func formatPoints(_ n: Int) -> String {

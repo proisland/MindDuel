@@ -3128,6 +3128,57 @@
         }
       }
     },
+    "scoreboard_local_request_permission_body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow MindDuel to use your location to see players nearby on the local leaderboard."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tillat MindDuel å bruke posisjonen din for å se spillere i nærheten på det lokale scoreboardet."
+          }
+        }
+      }
+    },
+    "scoreboard_local_request_permission_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share your location"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Del posisjonen din"
+          }
+        }
+      }
+    },
+    "scoreboard_share_location_action" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share location"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Del posisjon"
+          }
+        }
+      }
+    },
     "scoreboard_local_tab" : {
       "extractionState" : "stale",
       "localizations" : {
