@@ -10,21 +10,21 @@ extension GameMode {
         case .chemistry:     return .mdGreen
         case .geography:     return .mdAmber
         case .brainTraining: return .mdRed
+        case .science:       return .mdAccent
+        case .history:       return .mdAmber
         }
     }
 
     /// Deep tinted background used as the card surface for this mode.
-    /// Darkened tint used as the surface of cards/pills for this mode.
-    /// Pi & Math overrides match the design's #11102a / #180a12 so Pi (light
-    /// indigo) and Math (hot pink) don't wash out on-device — the asset
-    /// tokens (mdAccentDeep / mdPinkDeep) are too bright for that role.
     var deepBg: Color {
         switch self {
-        case .pi:            return Color(red: 0.067, green: 0.063, blue: 0.165)  // #11102a
-        case .math:          return Color(red: 0.094, green: 0.039, blue: 0.071)  // #180a12
-        case .chemistry:     return Color(red: 0.05,  green: 0.13,  blue: 0.09)   // dark green
-        case .geography:     return Color(red: 0.13,  green: 0.08,  blue: 0.03)   // dark amber
-        case .brainTraining: return Color(red: 0.13,  green: 0.04,  blue: 0.05)   // dark red
+        case .pi:            return Color(red: 0.067, green: 0.063, blue: 0.165)
+        case .math:          return Color(red: 0.094, green: 0.039, blue: 0.071)
+        case .chemistry:     return Color(red: 0.05,  green: 0.13,  blue: 0.09)
+        case .geography:     return Color(red: 0.13,  green: 0.08,  blue: 0.03)
+        case .brainTraining: return Color(red: 0.13,  green: 0.04,  blue: 0.05)
+        case .science:       return Color(red: 0.04,  green: 0.10,  blue: 0.16)
+        case .history:       return Color(red: 0.14,  green: 0.09,  blue: 0.04)
         }
     }
 
@@ -35,6 +35,8 @@ extension GameMode {
         case .chemistry:     return String(localized: "mode_chemistry")
         case .geography:     return String(localized: "mode_geography")
         case .brainTraining: return String(localized: "mode_brain_training")
+        case .science:       return String(localized: "mode_science")
+        case .history:       return String(localized: "mode_history")
         }
     }
 }

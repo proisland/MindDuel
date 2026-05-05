@@ -33,11 +33,15 @@ struct ScoreboardView: View {
             chemScore: progression.chemBestScore,
             geoScore: progression.geoBestScore,
             brainScore: progression.brainBestScore,
+            scienceScore: progression.scienceBestScore,
+            historyScore: progression.historyBestScore,
             piLevel: progression.piLevel,
             mathLevel: progression.mathLevel,
             chemLevel: progression.chemLevel,
             geoLevel: progression.geoLevel,
             brainLevel: progression.brainLevel,
+            scienceLevel: progression.scienceLevel,
+            historyLevel: progression.historyLevel,
             roundsPlayed: progression.totalRoundsPlayed,
             age: nil, city: nil,
             memberSince: "april 2025",
@@ -156,6 +160,8 @@ struct ScoreboardView: View {
         case .chemistry:     return String(localized: "mode_chemistry")
         case .geography:     return String(localized: "mode_geography")
         case .brainTraining: return String(localized: "mode_brain_training")
+        case .science:       return String(localized: "mode_science")
+        case .history:       return String(localized: "mode_history")
         }
     }
 
@@ -166,6 +172,8 @@ struct ScoreboardView: View {
         case .chemistry:     return profile.chemScore
         case .geography:     return profile.geoScore
         case .brainTraining: return profile.brainScore
+        case .science:       return profile.scienceScore
+        case .history:       return profile.historyScore
         }
     }
 
@@ -417,14 +425,18 @@ struct ScoreboardView: View {
 
                 Spacer()
 
+                // #112: fixed-width score column so the points text sits at the
+                // same horizontal position regardless of friend status, own row,
+                // or digit count. Right-aligned so larger scores grow leftward.
                 Text("\(score(for: profile, mode: scoreMode)) \(String(localized: "points_word"))")
                     .mdStyle(.bodyMd)
                     .foregroundStyle((!isOwn ? trophyColor(forRank: rank) : nil) ?? Color.mdText2)
+                    .lineLimit(1)
+                    .frame(width: 96, alignment: .trailing)
 
                 // #78/#112: quick "+venn" action so users can add new friends
                 // discovered on Lokalt/Globalt boards. Trailing slot is fixed
-                // width so the score column lines up across friends and
-                // non-friends rows.
+                // width so the action column lines up across rows.
                 Group {
                     if !isOwn { addFriendButton(for: profile) }
                     else { Color.clear }

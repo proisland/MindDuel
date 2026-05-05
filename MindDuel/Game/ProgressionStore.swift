@@ -39,11 +39,15 @@ import SwiftUI
     private var chemRecentWrongs: Int = 0
     private var geoRecentWrongs: Int = 0
     private var brainRecentWrongs: Int = 0
+    private var scienceRecentWrongs: Int = 0
+    private var historyRecentWrongs: Int = 0
 
     private var mathLevelTimeSum: Double = 0; private var mathLevelAnswerCount: Int = 0
     private var chemLevelTimeSum: Double = 0; private var chemLevelAnswerCount: Int = 0
     private var geoLevelTimeSum:  Double = 0; private var geoLevelAnswerCount:  Int = 0
     private var brainLevelTimeSum: Double = 0; private var brainLevelAnswerCount: Int = 0
+    private var scienceLevelTimeSum: Double = 0; private var scienceLevelAnswerCount: Int = 0
+    private var historyLevelTimeSum: Double = 0; private var historyLevelAnswerCount: Int = 0
 
     private var mathLevelAvgTime: Double {
         mathLevelAnswerCount > 0 ? mathLevelTimeSum / Double(mathLevelAnswerCount) : averageAnswerTime
@@ -56,6 +60,12 @@ import SwiftUI
     }
     private var brainLevelAvgTime: Double {
         brainLevelAnswerCount > 0 ? brainLevelTimeSum / Double(brainLevelAnswerCount) : averageAnswerTime
+    }
+    private var scienceLevelAvgTime: Double {
+        scienceLevelAnswerCount > 0 ? scienceLevelTimeSum / Double(scienceLevelAnswerCount) : averageAnswerTime
+    }
+    private var historyLevelAvgTime: Double {
+        historyLevelAnswerCount > 0 ? historyLevelTimeSum / Double(historyLevelAnswerCount) : averageAnswerTime
     }
 
     // MARK: – Published state (mirrors UserDefaults)
@@ -78,6 +88,14 @@ import SwiftUI
     @Published private(set) var brainLevel: Int
     @Published private(set) var brainLevelProgress: Int
     @Published private(set) var brainBestScore: Int
+
+    @Published private(set) var scienceLevel: Int
+    @Published private(set) var scienceLevelProgress: Int
+    @Published private(set) var scienceBestScore: Int
+
+    @Published private(set) var historyLevel: Int
+    @Published private(set) var historyLevelProgress: Int
+    @Published private(set) var historyBestScore: Int
 
     @Published private(set) var dailyUsed: Int
     @Published private(set) var totalRoundsPlayed: Int
@@ -122,6 +140,14 @@ import SwiftUI
         brainLevel         = storedBrainLvl < 1 ? 1 : storedBrainLvl
         brainLevelProgress = d.integer(forKey: "brainLevelProgress")
         brainBestScore     = d.integer(forKey: "brainBestScore")
+        let storedSciLvl   = d.integer(forKey: "scienceLevel")
+        scienceLevel       = storedSciLvl < 1 ? 1 : storedSciLvl
+        scienceLevelProgress = d.integer(forKey: "scienceLevelProgress")
+        scienceBestScore   = d.integer(forKey: "scienceBestScore")
+        let storedHistLvl  = d.integer(forKey: "historyLevel")
+        historyLevel       = storedHistLvl < 1 ? 1 : storedHistLvl
+        historyLevelProgress = d.integer(forKey: "historyLevelProgress")
+        historyBestScore   = d.integer(forKey: "historyBestScore")
         dailyUsed         = d.integer(forKey: "dailyUsed")
         quotaResetEpoch   = d.double(forKey: "quotaResetEpoch")
         totalRoundsPlayed = d.integer(forKey: "totalRoundsPlayed")
@@ -152,6 +178,8 @@ import SwiftUI
         case .chemistry: chemLevelTimeSum += seconds; chemLevelAnswerCount += 1
         case .geography: geoLevelTimeSum  += seconds; geoLevelAnswerCount  += 1
         case .brainTraining: brainLevelTimeSum += seconds; brainLevelAnswerCount += 1
+        case .science:   scienceLevelTimeSum += seconds; scienceLevelAnswerCount += 1
+        case .history:   historyLevelTimeSum += seconds; historyLevelAnswerCount += 1
         case .pi:        break
         }
     }
@@ -198,6 +226,8 @@ import SwiftUI
         case .chemistry:     return chemBestScore
         case .geography:     return geoBestScore
         case .brainTraining: return brainBestScore
+        case .science:       return scienceBestScore
+        case .history:       return historyBestScore
         }
     }
 
@@ -208,6 +238,8 @@ import SwiftUI
         case .chemistry:     return chemLevel
         case .geography:     return geoLevel
         case .brainTraining: return brainLevel
+        case .science:       return scienceLevel
+        case .history:       return historyLevel
         }
     }
 
@@ -295,6 +327,8 @@ import SwiftUI
         case .chemistry:     chemRecentWrongs += 1
         case .geography:     geoRecentWrongs += 1
         case .brainTraining: brainRecentWrongs += 1
+        case .science:       scienceRecentWrongs += 1
+        case .history:       historyRecentWrongs += 1
         case .pi:            break  // Pi has its own digit-position progression
         }
     }
@@ -429,6 +463,110 @@ import SwiftUI
         UserDefaults.standard.set(val, forKey: "brainBestScore")
     }
 
+    // MARK: – Science (#98)
+
+    func scienceScore(correctCount: Int, level: Int, avgTime: Double) -> Int {
+        guard !isFlagged, correctCount > 0, avgTime > 0.2 else { return 0 }
+        let pts = Double(correctCount) * Self.levelMultiplier(level)
+        return max(0, Int(pts * (Self.K / avgTime)))
+    }
+
+    func advanceScienceLevel() {
+        var prog = scienceLevelProgress + 1
+        var lvl  = scienceLevel
+        let threshold = Self.adaptiveThreshold(avgTime: scienceLevelAvgTime,
+                                               recentWrongs: scienceRecentWrongs)
+        if prog >= threshold {
+            prog = 0
+            lvl  = min(20, lvl + 1)
+            scienceRecentWrongs = 0
+            scienceLevelTimeSum = 0
+            scienceLevelAnswerCount = 0
+        }
+        set(scienceLevel: lvl, scienceLevelProgress: prog)
+    }
+
+    func applyScienceRound(correctCount: Int, level: Int, avgTime: Double, won: Bool) -> RoundResult {
+        let score = scienceScore(correctCount: correctCount, level: level, avgTime: avgTime)
+        if !won && correctCount > 0 {
+            let rollback     = max(0, Int(Double(correctCount) * Self.rollbackRate))
+            var total        = (scienceLevel - 1) * Self.mathLevelUpThreshold + scienceLevelProgress
+            total            = max(0, total - rollback)
+            let newLevel     = min(20, max(1, total / Self.mathLevelUpThreshold + 1))
+            let newProgress  = total % Self.mathLevelUpThreshold
+            set(scienceLevel: newLevel, scienceLevelProgress: newProgress)
+        }
+        let pb = score > 0
+        if pb { set(scienceBestScore: scienceBestScore + score) }
+        incrementRounds()
+        checkAntiCheat(avgTime: avgTime, correctCount: correctCount)
+        return RoundResult(score: score, isPersonalBest: pb)
+    }
+
+    private func set(scienceLevel lvl: Int, scienceLevelProgress prog: Int) {
+        scienceLevel = lvl
+        scienceLevelProgress = prog
+        UserDefaults.standard.set(lvl,  forKey: "scienceLevel")
+        UserDefaults.standard.set(prog, forKey: "scienceLevelProgress")
+    }
+
+    private func set(scienceBestScore val: Int) {
+        scienceBestScore = val
+        UserDefaults.standard.set(val, forKey: "scienceBestScore")
+    }
+
+    // MARK: – History (#59)
+
+    func historyScore(correctCount: Int, level: Int, avgTime: Double) -> Int {
+        guard !isFlagged, correctCount > 0, avgTime > 0.2 else { return 0 }
+        let pts = Double(correctCount) * Self.levelMultiplier(level)
+        return max(0, Int(pts * (Self.K / avgTime)))
+    }
+
+    func advanceHistoryLevel() {
+        var prog = historyLevelProgress + 1
+        var lvl  = historyLevel
+        let threshold = Self.adaptiveThreshold(avgTime: historyLevelAvgTime,
+                                               recentWrongs: historyRecentWrongs)
+        if prog >= threshold {
+            prog = 0
+            lvl  = min(20, lvl + 1)
+            historyRecentWrongs = 0
+            historyLevelTimeSum = 0
+            historyLevelAnswerCount = 0
+        }
+        set(historyLevel: lvl, historyLevelProgress: prog)
+    }
+
+    func applyHistoryRound(correctCount: Int, level: Int, avgTime: Double, won: Bool) -> RoundResult {
+        let score = historyScore(correctCount: correctCount, level: level, avgTime: avgTime)
+        if !won && correctCount > 0 {
+            let rollback     = max(0, Int(Double(correctCount) * Self.rollbackRate))
+            var total        = (historyLevel - 1) * Self.mathLevelUpThreshold + historyLevelProgress
+            total            = max(0, total - rollback)
+            let newLevel     = min(20, max(1, total / Self.mathLevelUpThreshold + 1))
+            let newProgress  = total % Self.mathLevelUpThreshold
+            set(historyLevel: newLevel, historyLevelProgress: newProgress)
+        }
+        let pb = score > 0
+        if pb { set(historyBestScore: historyBestScore + score) }
+        incrementRounds()
+        checkAntiCheat(avgTime: avgTime, correctCount: correctCount)
+        return RoundResult(score: score, isPersonalBest: pb)
+    }
+
+    private func set(historyLevel lvl: Int, historyLevelProgress prog: Int) {
+        historyLevel = lvl
+        historyLevelProgress = prog
+        UserDefaults.standard.set(lvl,  forKey: "historyLevel")
+        UserDefaults.standard.set(prog, forKey: "historyLevelProgress")
+    }
+
+    private func set(historyBestScore val: Int) {
+        historyBestScore = val
+        UserDefaults.standard.set(val, forKey: "historyBestScore")
+    }
+
     func applyMathRound(correctCount: Int, level: Int, avgTime: Double, won: Bool) -> RoundResult {
         let score = mathScore(correctCount: correctCount, level: level, avgTime: avgTime)
         if !won && correctCount > 0 {
@@ -535,6 +673,12 @@ import SwiftUI
         case .brainTraining:
             if score > 0 { set(brainBestScore: brainBestScore + score) }
             for _ in 0..<correctCount { advanceBrainLevel() }
+        case .science:
+            if score > 0 { set(scienceBestScore: scienceBestScore + score) }
+            for _ in 0..<correctCount { advanceScienceLevel() }
+        case .history:
+            if score > 0 { set(historyBestScore: historyBestScore + score) }
+            for _ in 0..<correctCount { advanceHistoryLevel() }
         }
         incrementRounds()
     }

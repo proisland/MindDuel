@@ -147,11 +147,15 @@ import UserNotifications
         player.chemLevel     = p.chemLevel
         player.geoLevel      = p.geoLevel
         player.brainLevel    = p.brainLevel
+        player.scienceLevel  = p.scienceLevel
+        player.historyLevel  = p.historyLevel
         player.piBestScore   = p.piBestScore
         player.mathBestScore = p.mathBestScore
         player.chemBestScore = p.chemBestScore
         player.geoBestScore  = p.geoBestScore
         player.brainBestScore = p.brainBestScore
+        player.scienceBestScore = p.scienceBestScore
+        player.historyBestScore = p.historyBestScore
     }
 
     private func simulatePlayerReady(playerID: String) {

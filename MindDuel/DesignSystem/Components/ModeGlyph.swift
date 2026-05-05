@@ -31,6 +31,14 @@ struct ModeGlyph: View {
             Image(systemName: "brain.head.profile")
                 .font(.system(size: size, weight: weight))
                 .foregroundStyle(color)
+        case .science:
+            Image(systemName: "atom")
+                .font(.system(size: size, weight: weight))
+                .foregroundStyle(color)
+        case .history:
+            Image(systemName: "scroll.fill")
+                .font(.system(size: size, weight: weight))
+                .foregroundStyle(color)
         }
     }
 }
