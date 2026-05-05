@@ -55,6 +55,8 @@ struct MultiplayerInvitesView: View {
         case .chemistry:     modeColor = .mdGreen;  modeName = String(localized: "mode_chemistry")
         case .geography:     modeColor = .mdAmber;  modeName = String(localized: "mode_geography")
         case .brainTraining: modeColor = .mdRed;    modeName = String(localized: "mode_brain_training")
+        case .science:       modeColor = .mdAccent; modeName = String(localized: "mode_science")
+        case .history:       modeColor = .mdAmber;  modeName = String(localized: "mode_history")
         }
         return HStack(spacing: MDSpacing.sm) {
             ZStack {

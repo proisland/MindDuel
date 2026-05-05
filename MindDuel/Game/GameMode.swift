@@ -9,6 +9,10 @@ enum GameMode: String, Identifiable, Codable, CaseIterable {
     /// arithmetic shortcuts, working-memory drills). Same scoring/lives
     /// model as the existing modes.
     case brainTraining
+    /// #98: natural science questions (biology, physics, astronomy, geology).
+    case science
+    /// #59: history questions (Norway + world, prehistory through modern era).
+    case history
 
     var id: String { rawValue }
 
@@ -21,6 +25,8 @@ enum GameMode: String, Identifiable, Codable, CaseIterable {
         case .chemistry:     return "mode_chemistry"
         case .geography:     return "mode_geography"
         case .brainTraining: return "mode_brain_training"
+        case .science:       return "mode_science"
+        case .history:       return "mode_history"
         }
     }
 }

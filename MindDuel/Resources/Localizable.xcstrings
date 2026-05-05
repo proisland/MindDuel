@@ -1320,6 +1320,23 @@
         }
       }
     },
+    "history_level_problem" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Level %1$d · Problem %2$d"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nivå %1$d · Oppgave %2$d"
+          }
+        }
+      }
+    },
     "home_subtitle" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1445,6 +1462,23 @@
         }
       }
     },
+    "mode_history" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "History"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Historie"
+          }
+        }
+      }
+    },
     "mode_math" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1509,6 +1543,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gjett neste desimal i π"
+          }
+        }
+      }
+    },
+    "mode_science" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Science"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Natur og vitenskap"
           }
         }
       }
@@ -2937,6 +2988,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "3–20 tegn"
+          }
+        }
+      }
+    },
+    "science_level_problem" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Level %1$d · Problem %2$d"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nivå %1$d · Oppgave %2$d"
           }
         }
       }

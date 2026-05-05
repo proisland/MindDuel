@@ -14,6 +14,8 @@ struct MultiplayerGameView: View {
     @State private var chemProblem: ChemistryProblem = ChemistryProblemGenerator.generate(level: 1)
     @State private var geoProblem: GeographyProblem = GeographyProblemGenerator.generate(level: 1)
     @State private var brainProblem: BrainTrainingProblem = BrainTrainingProblemGenerator.generate(level: 1)
+    @State private var scienceProblem: ScienceProblem = ScienceProblemGenerator.generate(level: 1)
+    @State private var historyProblem: HistoryProblem = HistoryProblemGenerator.generate(level: 1)
     @State private var elapsedSeconds: Double   = 0
     @State private var feedbackIsCorrect: Bool? = nil
     @State private var selectedIndex: Int?      = nil
@@ -436,6 +438,36 @@ struct MultiplayerGameView: View {
                         .foregroundStyle(Color.mdText)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity, alignment: .center)
+                case .science:
+                    Text(String(format: String(localized: "science_level_problem"),
+                                room.startLevel, 1))
+                        .mdStyle(.caption)
+                        .foregroundStyle(Color.mdText2)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    Text(ScienceProblemGenerator.curriculumLabel(forLevel: room.startLevel))
+                        .mdStyle(.micro)
+                        .foregroundStyle(Color.mdText3)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    Text(scienceProblem.prompt)
+                        .font(.system(size: 18, weight: .heavy))
+                        .foregroundStyle(Color.mdText)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                case .history:
+                    Text(String(format: String(localized: "history_level_problem"),
+                                room.startLevel, 1))
+                        .mdStyle(.caption)
+                        .foregroundStyle(Color.mdText2)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    Text(HistoryProblemGenerator.curriculumLabel(forLevel: room.startLevel))
+                        .mdStyle(.micro)
+                        .foregroundStyle(Color.mdText3)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    Text(historyProblem.prompt)
+                        .font(.system(size: 18, weight: .heavy))
+                        .foregroundStyle(Color.mdText)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
             .padding(.vertical, MDSpacing.sm)
@@ -450,6 +482,66 @@ struct MultiplayerGameView: View {
         case .chemistry:     chemAnswerGrid
         case .geography:     geoAnswerGrid
         case .brainTraining: brainAnswerGrid
+        case .science:       scienceAnswerGrid
+        case .history:       historyAnswerGrid
+        }
+    }
+
+    private var scienceAnswerGrid: some View {
+        let columns = Array(repeating: GridItem(.flexible(), spacing: MDSpacing.sm), count: 2)
+        return LazyVGrid(columns: columns, spacing: MDSpacing.sm) {
+            ForEach(scienceProblem.options.indices, id: \.self) { i in
+                AnswerButton(
+                    label: scienceProblem.options[i],
+                    feedbackState: mathButtonState(for: i)
+                ) { handleScienceTap(i) }
+                .disabled(feedbackIsCorrect != nil || progression.isQuotaExhausted)
+            }
+        }
+    }
+
+    private var historyAnswerGrid: some View {
+        let columns = Array(repeating: GridItem(.flexible(), spacing: MDSpacing.sm), count: 2)
+        return LazyVGrid(columns: columns, spacing: MDSpacing.sm) {
+            ForEach(historyProblem.options.indices, id: \.self) { i in
+                AnswerButton(
+                    label: historyProblem.options[i],
+                    feedbackState: mathButtonState(for: i)
+                ) { handleHistoryTap(i) }
+                .disabled(feedbackIsCorrect != nil || progression.isQuotaExhausted)
+            }
+        }
+    }
+
+    private func handleScienceTap(_ index: Int) {
+        guard feedbackIsCorrect == nil, !progression.isQuotaExhausted,
+              let room = store.currentRoom, room.isMyTurn else { return }
+        let correct = scienceProblem.options[index] == scienceProblem.correctAnswer
+        selectedIndex = index
+        feedbackIsCorrect = correct
+        let time = elapsedSeconds
+        Task {
+            try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
+            selectedIndex = nil
+            feedbackIsCorrect = nil
+            elapsedSeconds = 0
+            store.submitAnswer(correct: correct, answerTime: time)
+        }
+    }
+
+    private func handleHistoryTap(_ index: Int) {
+        guard feedbackIsCorrect == nil, !progression.isQuotaExhausted,
+              let room = store.currentRoom, room.isMyTurn else { return }
+        let correct = historyProblem.options[index] == historyProblem.correctAnswer
+        selectedIndex = index
+        feedbackIsCorrect = correct
+        let time = elapsedSeconds
+        Task {
+            try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
+            selectedIndex = nil
+            feedbackIsCorrect = nil
+            elapsedSeconds = 0
+            store.submitAnswer(correct: correct, answerTime: time)
         }
     }
 
@@ -720,6 +812,10 @@ struct MultiplayerGameView: View {
             geoProblem = GeographyProblemGenerator.generate(level: max(1, room.startLevel))
         case .brainTraining:
             brainProblem = BrainTrainingProblemGenerator.generate(level: max(1, room.startLevel))
+        case .science:
+            scienceProblem = ScienceProblemGenerator.generate(level: max(1, room.startLevel))
+        case .history:
+            historyProblem = HistoryProblemGenerator.generate(level: max(1, room.startLevel))
         case .pi:
             break
         }
@@ -757,6 +853,14 @@ struct MultiplayerGameView: View {
             brainProblem = BrainTrainingProblem(prompt: s.prompt,
                                                 correctAnswer: s.options[s.correctIndex],
                                                 options: s.options)
+        case .science:
+            scienceProblem = ScienceProblem(prompt: s.prompt,
+                                            correctAnswer: s.options[s.correctIndex],
+                                            options: s.options)
+        case .history:
+            historyProblem = HistoryProblem(prompt: s.prompt,
+                                            correctAnswer: s.options[s.correctIndex],
+                                            options: s.options)
         case .pi:
             break
         }

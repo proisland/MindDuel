@@ -107,6 +107,8 @@ struct HomeView: View {
             case .chemistry:     ChemistryGameView(username: username, resumeRoomID: resumeSoloRoomID)
             case .geography:     GeographyGameView(username: username, resumeRoomID: resumeSoloRoomID)
             case .brainTraining: BrainTrainingGameView(username: username)
+            case .science:       ScienceGameView(username: username)
+            case .history:       HistoryGameView(username: username)
             }
         }
         .onChange(of: activeMode) { mode in
