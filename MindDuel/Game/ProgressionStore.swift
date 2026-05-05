@@ -41,6 +41,8 @@ import SwiftUI
     private var brainRecentWrongs: Int = 0
     private var scienceRecentWrongs: Int = 0
     private var historyRecentWrongs: Int = 0
+    private var physicsRecentWrongs: Int = 0
+    private var sportRecentWrongs: Int = 0
 
     private var mathLevelTimeSum: Double = 0; private var mathLevelAnswerCount: Int = 0
     private var chemLevelTimeSum: Double = 0; private var chemLevelAnswerCount: Int = 0
@@ -48,6 +50,8 @@ import SwiftUI
     private var brainLevelTimeSum: Double = 0; private var brainLevelAnswerCount: Int = 0
     private var scienceLevelTimeSum: Double = 0; private var scienceLevelAnswerCount: Int = 0
     private var historyLevelTimeSum: Double = 0; private var historyLevelAnswerCount: Int = 0
+    private var physicsLevelTimeSum: Double = 0; private var physicsLevelAnswerCount: Int = 0
+    private var sportLevelTimeSum:   Double = 0; private var sportLevelAnswerCount:   Int = 0
 
     private var mathLevelAvgTime: Double {
         mathLevelAnswerCount > 0 ? mathLevelTimeSum / Double(mathLevelAnswerCount) : averageAnswerTime
@@ -66,6 +70,12 @@ import SwiftUI
     }
     private var historyLevelAvgTime: Double {
         historyLevelAnswerCount > 0 ? historyLevelTimeSum / Double(historyLevelAnswerCount) : averageAnswerTime
+    }
+    private var physicsLevelAvgTime: Double {
+        physicsLevelAnswerCount > 0 ? physicsLevelTimeSum / Double(physicsLevelAnswerCount) : averageAnswerTime
+    }
+    private var sportLevelAvgTime: Double {
+        sportLevelAnswerCount > 0 ? sportLevelTimeSum / Double(sportLevelAnswerCount) : averageAnswerTime
     }
 
     // MARK: – Published state (mirrors UserDefaults)
@@ -96,6 +106,14 @@ import SwiftUI
     @Published private(set) var historyLevel: Int
     @Published private(set) var historyLevelProgress: Int
     @Published private(set) var historyBestScore: Int
+
+    @Published private(set) var physicsLevel: Int
+    @Published private(set) var physicsLevelProgress: Int
+    @Published private(set) var physicsBestScore: Int
+
+    @Published private(set) var sportLevel: Int
+    @Published private(set) var sportLevelProgress: Int
+    @Published private(set) var sportBestScore: Int
 
     @Published private(set) var dailyUsed: Int
     @Published private(set) var totalRoundsPlayed: Int
@@ -148,6 +166,14 @@ import SwiftUI
         historyLevel       = storedHistLvl < 1 ? 1 : storedHistLvl
         historyLevelProgress = d.integer(forKey: "historyLevelProgress")
         historyBestScore   = d.integer(forKey: "historyBestScore")
+        let storedPhysLvl  = d.integer(forKey: "physicsLevel")
+        physicsLevel       = storedPhysLvl < 1 ? 1 : storedPhysLvl
+        physicsLevelProgress = d.integer(forKey: "physicsLevelProgress")
+        physicsBestScore   = d.integer(forKey: "physicsBestScore")
+        let storedSportLvl = d.integer(forKey: "sportLevel")
+        sportLevel         = storedSportLvl < 1 ? 1 : storedSportLvl
+        sportLevelProgress = d.integer(forKey: "sportLevelProgress")
+        sportBestScore     = d.integer(forKey: "sportBestScore")
         dailyUsed         = d.integer(forKey: "dailyUsed")
         quotaResetEpoch   = d.double(forKey: "quotaResetEpoch")
         totalRoundsPlayed = d.integer(forKey: "totalRoundsPlayed")
@@ -180,6 +206,8 @@ import SwiftUI
         case .brainTraining: brainLevelTimeSum += seconds; brainLevelAnswerCount += 1
         case .science:   scienceLevelTimeSum += seconds; scienceLevelAnswerCount += 1
         case .history:   historyLevelTimeSum += seconds; historyLevelAnswerCount += 1
+        case .physics:   physicsLevelTimeSum += seconds; physicsLevelAnswerCount += 1
+        case .sport:     sportLevelTimeSum   += seconds; sportLevelAnswerCount   += 1
         case .pi:        break
         }
     }
@@ -228,6 +256,8 @@ import SwiftUI
         case .brainTraining: return brainBestScore
         case .science:       return scienceBestScore
         case .history:       return historyBestScore
+        case .physics:       return physicsBestScore
+        case .sport:         return sportBestScore
         }
     }
 
@@ -240,6 +270,8 @@ import SwiftUI
         case .brainTraining: return brainLevel
         case .science:       return scienceLevel
         case .history:       return historyLevel
+        case .physics:       return physicsLevel
+        case .sport:         return sportLevel
         }
     }
 
@@ -329,6 +361,8 @@ import SwiftUI
         case .brainTraining: brainRecentWrongs += 1
         case .science:       scienceRecentWrongs += 1
         case .history:       historyRecentWrongs += 1
+        case .physics:       physicsRecentWrongs += 1
+        case .sport:         sportRecentWrongs   += 1
         case .pi:            break  // Pi has its own digit-position progression
         }
     }
@@ -567,6 +601,110 @@ import SwiftUI
         UserDefaults.standard.set(val, forKey: "historyBestScore")
     }
 
+    // MARK: – Physics (#16)
+
+    func physicsScore(correctCount: Int, level: Int, avgTime: Double) -> Int {
+        guard !isFlagged, correctCount > 0, avgTime > 0.2 else { return 0 }
+        let pts = Double(correctCount) * Self.levelMultiplier(level)
+        return max(0, Int(pts * (Self.K / avgTime)))
+    }
+
+    func advancePhysicsLevel() {
+        var prog = physicsLevelProgress + 1
+        var lvl  = physicsLevel
+        let threshold = Self.adaptiveThreshold(avgTime: physicsLevelAvgTime,
+                                               recentWrongs: physicsRecentWrongs)
+        if prog >= threshold {
+            prog = 0
+            lvl  = min(20, lvl + 1)
+            physicsRecentWrongs = 0
+            physicsLevelTimeSum = 0
+            physicsLevelAnswerCount = 0
+        }
+        set(physicsLevel: lvl, physicsLevelProgress: prog)
+    }
+
+    func applyPhysicsRound(correctCount: Int, level: Int, avgTime: Double, won: Bool) -> RoundResult {
+        let score = physicsScore(correctCount: correctCount, level: level, avgTime: avgTime)
+        if !won && correctCount > 0 {
+            let rollback     = max(0, Int(Double(correctCount) * Self.rollbackRate))
+            var total        = (physicsLevel - 1) * Self.mathLevelUpThreshold + physicsLevelProgress
+            total            = max(0, total - rollback)
+            let newLevel     = min(20, max(1, total / Self.mathLevelUpThreshold + 1))
+            let newProgress  = total % Self.mathLevelUpThreshold
+            set(physicsLevel: newLevel, physicsLevelProgress: newProgress)
+        }
+        let pb = score > 0
+        if pb { set(physicsBestScore: physicsBestScore + score) }
+        incrementRounds()
+        checkAntiCheat(avgTime: avgTime, correctCount: correctCount)
+        return RoundResult(score: score, isPersonalBest: pb)
+    }
+
+    private func set(physicsLevel lvl: Int, physicsLevelProgress prog: Int) {
+        physicsLevel = lvl
+        physicsLevelProgress = prog
+        UserDefaults.standard.set(lvl,  forKey: "physicsLevel")
+        UserDefaults.standard.set(prog, forKey: "physicsLevelProgress")
+    }
+
+    private func set(physicsBestScore val: Int) {
+        physicsBestScore = val
+        UserDefaults.standard.set(val, forKey: "physicsBestScore")
+    }
+
+    // MARK: – Sport (#67)
+
+    func sportScore(correctCount: Int, level: Int, avgTime: Double) -> Int {
+        guard !isFlagged, correctCount > 0, avgTime > 0.2 else { return 0 }
+        let pts = Double(correctCount) * Self.levelMultiplier(level)
+        return max(0, Int(pts * (Self.K / avgTime)))
+    }
+
+    func advanceSportLevel() {
+        var prog = sportLevelProgress + 1
+        var lvl  = sportLevel
+        let threshold = Self.adaptiveThreshold(avgTime: sportLevelAvgTime,
+                                               recentWrongs: sportRecentWrongs)
+        if prog >= threshold {
+            prog = 0
+            lvl  = min(20, lvl + 1)
+            sportRecentWrongs = 0
+            sportLevelTimeSum = 0
+            sportLevelAnswerCount = 0
+        }
+        set(sportLevel: lvl, sportLevelProgress: prog)
+    }
+
+    func applySportRound(correctCount: Int, level: Int, avgTime: Double, won: Bool) -> RoundResult {
+        let score = sportScore(correctCount: correctCount, level: level, avgTime: avgTime)
+        if !won && correctCount > 0 {
+            let rollback     = max(0, Int(Double(correctCount) * Self.rollbackRate))
+            var total        = (sportLevel - 1) * Self.mathLevelUpThreshold + sportLevelProgress
+            total            = max(0, total - rollback)
+            let newLevel     = min(20, max(1, total / Self.mathLevelUpThreshold + 1))
+            let newProgress  = total % Self.mathLevelUpThreshold
+            set(sportLevel: newLevel, sportLevelProgress: newProgress)
+        }
+        let pb = score > 0
+        if pb { set(sportBestScore: sportBestScore + score) }
+        incrementRounds()
+        checkAntiCheat(avgTime: avgTime, correctCount: correctCount)
+        return RoundResult(score: score, isPersonalBest: pb)
+    }
+
+    private func set(sportLevel lvl: Int, sportLevelProgress prog: Int) {
+        sportLevel = lvl
+        sportLevelProgress = prog
+        UserDefaults.standard.set(lvl,  forKey: "sportLevel")
+        UserDefaults.standard.set(prog, forKey: "sportLevelProgress")
+    }
+
+    private func set(sportBestScore val: Int) {
+        sportBestScore = val
+        UserDefaults.standard.set(val, forKey: "sportBestScore")
+    }
+
     func applyMathRound(correctCount: Int, level: Int, avgTime: Double, won: Bool) -> RoundResult {
         let score = mathScore(correctCount: correctCount, level: level, avgTime: avgTime)
         if !won && correctCount > 0 {
@@ -679,6 +817,12 @@ import SwiftUI
         case .history:
             if score > 0 { set(historyBestScore: historyBestScore + score) }
             for _ in 0..<correctCount { advanceHistoryLevel() }
+        case .physics:
+            if score > 0 { set(physicsBestScore: physicsBestScore + score) }
+            for _ in 0..<correctCount { advancePhysicsLevel() }
+        case .sport:
+            if score > 0 { set(sportBestScore: sportBestScore + score) }
+            for _ in 0..<correctCount { advanceSportLevel() }
         }
         incrementRounds()
     }

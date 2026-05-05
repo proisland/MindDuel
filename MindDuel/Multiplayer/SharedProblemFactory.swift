@@ -82,6 +82,26 @@ enum SharedProblemFactory {
                     correctIndex: p.correctIndex ?? 0,
                     curriculumLabel: HistoryProblemGenerator.curriculumLabel(forLevel: level)
                 )
+            case .physics:
+                let p = PhysicsProblemGenerator.generate(level: level)
+                return SharedProblem(
+                    mode: .physics,
+                    prompt: p.prompt,
+                    flag: nil,
+                    options: p.options,
+                    correctIndex: p.correctIndex ?? 0,
+                    curriculumLabel: PhysicsProblemGenerator.curriculumLabel(forLevel: level)
+                )
+            case .sport:
+                let p = SportProblemGenerator.generate(level: level)
+                return SharedProblem(
+                    mode: .sport,
+                    prompt: p.prompt,
+                    flag: nil,
+                    options: p.options,
+                    correctIndex: p.correctIndex ?? 0,
+                    curriculumLabel: SportProblemGenerator.curriculumLabel(forLevel: level)
+                )
             }
         }
     }

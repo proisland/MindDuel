@@ -13,6 +13,10 @@ enum GameMode: String, Identifiable, Codable, CaseIterable {
     case science
     /// #59: history questions (Norway + world, prehistory through modern era).
     case history
+    /// #16: physics questions (mekanikk, elektrisitet, termodynamikk, m.m.).
+    case physics
+    /// #67: sport questions (populære idretter, regler, kjente utøvere, OL).
+    case sport
 
     var id: String { rawValue }
 
@@ -27,6 +31,8 @@ enum GameMode: String, Identifiable, Codable, CaseIterable {
         case .brainTraining: return "mode_brain_training"
         case .science:       return "mode_science"
         case .history:       return "mode_history"
+        case .physics:       return "mode_physics"
+        case .sport:         return "mode_sport"
         }
     }
 }
