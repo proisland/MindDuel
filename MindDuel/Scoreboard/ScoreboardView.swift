@@ -6,6 +6,7 @@ struct ScoreboardView: View {
     @ObservedObject private var social = SocialStore.shared
     @ObservedObject private var progression = ProgressionStore.shared
     @ObservedObject private var modePrefs = ModePreferences.shared
+    @ObservedObject private var locationAuth = LocationAuthStore.shared
     @Environment(\.dismiss) private var dismiss
     @State private var selectedTab = 0          // default: Venner (#76)
     @State private var selectedProfile: UserProfile? = nil
@@ -273,28 +274,40 @@ struct ScoreboardView: View {
 
     // MARK: – Location permission (#77)
 
-    private var isLocationAuthorized: Bool {
-        switch CLLocationManager().authorizationStatus {
-        case .authorizedAlways, .authorizedWhenInUse: return true
-        default: return false
-        }
-    }
+    private var isLocationAuthorized: Bool { locationAuth.isAuthorized }
 
     private var locationPermissionPrompt: some View {
-        VStack(spacing: MDSpacing.sm) {
+        // First time (.notDetermined): trigger native prompt directly. iOS only
+        // adds the app to Innstillinger → Personvern → Posisjonstjenester after
+        // the prompt has been shown once, so going straight to Settings before
+        // that leaves the user on a page without a Location row.
+        let needsPrompt = locationAuth.status == .notDetermined
+        let titleKey: String.LocalizationValue = needsPrompt
+            ? "scoreboard_local_request_permission_title"
+            : "scoreboard_local_no_permission_title"
+        let bodyKey: String.LocalizationValue = needsPrompt
+            ? "scoreboard_local_request_permission_body"
+            : "scoreboard_local_no_permission_body"
+        let actionKey: String.LocalizationValue = needsPrompt
+            ? "scoreboard_share_location_action"
+            : "scoreboard_open_location_settings"
+
+        return VStack(spacing: MDSpacing.sm) {
             Image(systemName: "location.slash.fill")
                 .font(.system(size: 32))
                 .foregroundStyle(Color.mdAmber)
-            Text(String(localized: "scoreboard_local_no_permission_title"))
+            Text(String(localized: titleKey))
                 .mdStyle(.heading)
                 .foregroundStyle(Color.mdText)
-            Text(String(localized: "scoreboard_local_no_permission_body"))
+            Text(String(localized: bodyKey))
                 .mdStyle(.body)
                 .foregroundStyle(Color.mdText2)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-            MDButton(.primary, title: String(localized: "scoreboard_open_location_settings")) {
-                if let url = URL(string: UIApplication.openSettingsURLString) {
+            MDButton(.primary, title: String(localized: actionKey)) {
+                if needsPrompt {
+                    locationAuth.requestPermission()
+                } else if let url = URL(string: UIApplication.openSettingsURLString) {
                     UIApplication.shared.open(url)
                 }
             }

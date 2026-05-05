@@ -10,18 +10,20 @@ struct ModeGlyph: View {
     let color: Color
 
     var body: some View {
+        // Tekstglyfer (π og ⚗︎) har lavere cap-height enn SF Symbols ved samme
+        // font size, så de fremstår visuelt mindre. Skaler opp for å matche.
         switch mode {
         case .pi:
             Text("π")
-                .font(.system(size: size, weight: weight))
+                .font(.system(size: size * 1.35, weight: weight))
                 .foregroundStyle(color)
         case .math:
             Text("∑")
-                .font(.system(size: size, weight: weight))
+                .font(.system(size: size * 1.25, weight: weight))
                 .foregroundStyle(color)
         case .chemistry:
             Text("⚗︎")
-                .font(.system(size: size, weight: weight))
+                .font(.system(size: size * 1.4, weight: weight))
                 .foregroundStyle(color)
         case .geography:
             Image(systemName: "globe.europe.africa.fill")
