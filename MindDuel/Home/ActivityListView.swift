@@ -80,10 +80,11 @@ struct ActivityListView: View {
 
     private func modeLabel(for mode: GameMode) -> String {
         switch mode {
-        case .pi:        return String(localized: "mode_pi")
-        case .math:      return String(localized: "mode_math")
-        case .chemistry: return String(localized: "mode_chemistry")
-        case .geography: return String(localized: "mode_geography")
+        case .pi:            return String(localized: "mode_pi")
+        case .math:          return String(localized: "mode_math")
+        case .chemistry:     return String(localized: "mode_chemistry")
+        case .geography:     return String(localized: "mode_geography")
+        case .brainTraining: return String(localized: "mode_brain_training")
         }
     }
 }

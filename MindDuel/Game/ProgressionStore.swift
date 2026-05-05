@@ -38,10 +38,12 @@ import SwiftUI
     private var mathRecentWrongs: Int = 0
     private var chemRecentWrongs: Int = 0
     private var geoRecentWrongs: Int = 0
+    private var brainRecentWrongs: Int = 0
 
     private var mathLevelTimeSum: Double = 0; private var mathLevelAnswerCount: Int = 0
     private var chemLevelTimeSum: Double = 0; private var chemLevelAnswerCount: Int = 0
     private var geoLevelTimeSum:  Double = 0; private var geoLevelAnswerCount:  Int = 0
+    private var brainLevelTimeSum: Double = 0; private var brainLevelAnswerCount: Int = 0
 
     private var mathLevelAvgTime: Double {
         mathLevelAnswerCount > 0 ? mathLevelTimeSum / Double(mathLevelAnswerCount) : averageAnswerTime
@@ -51,6 +53,9 @@ import SwiftUI
     }
     private var geoLevelAvgTime: Double {
         geoLevelAnswerCount > 0 ? geoLevelTimeSum / Double(geoLevelAnswerCount) : averageAnswerTime
+    }
+    private var brainLevelAvgTime: Double {
+        brainLevelAnswerCount > 0 ? brainLevelTimeSum / Double(brainLevelAnswerCount) : averageAnswerTime
     }
 
     // MARK: – Published state (mirrors UserDefaults)
@@ -69,6 +74,10 @@ import SwiftUI
     @Published private(set) var geoLevel: Int
     @Published private(set) var geoLevelProgress: Int
     @Published private(set) var geoBestScore: Int
+
+    @Published private(set) var brainLevel: Int
+    @Published private(set) var brainLevelProgress: Int
+    @Published private(set) var brainBestScore: Int
 
     @Published private(set) var dailyUsed: Int
     @Published private(set) var totalRoundsPlayed: Int
@@ -109,6 +118,10 @@ import SwiftUI
         geoLevel          = storedGeoLvl < 1 ? 1 : storedGeoLvl
         geoLevelProgress  = d.integer(forKey: "geoLevelProgress")
         geoBestScore      = d.integer(forKey: "geoBestScore")
+        let storedBrainLvl = d.integer(forKey: "brainLevel")
+        brainLevel         = storedBrainLvl < 1 ? 1 : storedBrainLvl
+        brainLevelProgress = d.integer(forKey: "brainLevelProgress")
+        brainBestScore     = d.integer(forKey: "brainBestScore")
         dailyUsed         = d.integer(forKey: "dailyUsed")
         quotaResetEpoch   = d.double(forKey: "quotaResetEpoch")
         totalRoundsPlayed = d.integer(forKey: "totalRoundsPlayed")
@@ -138,6 +151,7 @@ import SwiftUI
         case .math:      mathLevelTimeSum += seconds; mathLevelAnswerCount += 1
         case .chemistry: chemLevelTimeSum += seconds; chemLevelAnswerCount += 1
         case .geography: geoLevelTimeSum  += seconds; geoLevelAnswerCount  += 1
+        case .brainTraining: brainLevelTimeSum += seconds; brainLevelAnswerCount += 1
         case .pi:        break
         }
     }
@@ -179,19 +193,21 @@ import SwiftUI
     /// `GameMode.allCases` without a per-mode switch (#52).
     func bestScore(for mode: GameMode) -> Int {
         switch mode {
-        case .pi:        return piBestScore
-        case .math:      return mathBestScore
-        case .chemistry: return chemBestScore
-        case .geography: return geoBestScore
+        case .pi:            return piBestScore
+        case .math:          return mathBestScore
+        case .chemistry:     return chemBestScore
+        case .geography:     return geoBestScore
+        case .brainTraining: return brainBestScore
         }
     }
 
     func level(for mode: GameMode) -> Int {
         switch mode {
-        case .pi:        return piLevel
-        case .math:      return mathLevel
-        case .chemistry: return chemLevel
-        case .geography: return geoLevel
+        case .pi:            return piLevel
+        case .math:          return mathLevel
+        case .chemistry:     return chemLevel
+        case .geography:     return geoLevel
+        case .brainTraining: return brainLevel
         }
     }
 
@@ -275,10 +291,11 @@ import SwiftUI
     /// up after slip-ups.
     func recordWrongAnswer(mode: GameMode) {
         switch mode {
-        case .math:      mathRecentWrongs += 1
-        case .chemistry: chemRecentWrongs += 1
-        case .geography: geoRecentWrongs += 1
-        case .pi:        break  // Pi has its own digit-position progression
+        case .math:          mathRecentWrongs += 1
+        case .chemistry:     chemRecentWrongs += 1
+        case .geography:     geoRecentWrongs += 1
+        case .brainTraining: brainRecentWrongs += 1
+        case .pi:            break  // Pi has its own digit-position progression
         }
     }
 
@@ -358,6 +375,58 @@ import SwiftUI
         incrementRounds()
         checkAntiCheat(avgTime: avgTime, correctCount: correctCount)
         return RoundResult(score: score, isPersonalBest: pb)
+    }
+
+    /// Same scoring formula as math/chem/geo — keeps brain-training a peer
+    /// rather than a special case.
+    func brainScore(correctCount: Int, level: Int, avgTime: Double) -> Int {
+        guard !isFlagged, correctCount > 0, avgTime > 0.2 else { return 0 }
+        let pts = Double(correctCount) * Self.levelMultiplier(level)
+        return max(0, Int(pts * (Self.K / avgTime)))
+    }
+
+    func advanceBrainLevel() {
+        var prog = brainLevelProgress + 1
+        var lvl  = brainLevel
+        let threshold = Self.adaptiveThreshold(avgTime: brainLevelAvgTime,
+                                               recentWrongs: brainRecentWrongs)
+        if prog >= threshold {
+            prog = 0
+            lvl  = min(20, lvl + 1)
+            brainRecentWrongs = 0
+            brainLevelTimeSum = 0
+            brainLevelAnswerCount = 0
+        }
+        set(brainLevel: lvl, brainLevelProgress: prog)
+    }
+
+    func applyBrainRound(correctCount: Int, level: Int, avgTime: Double, won: Bool) -> RoundResult {
+        let score = brainScore(correctCount: correctCount, level: level, avgTime: avgTime)
+        if !won && correctCount > 0 {
+            let rollback     = max(0, Int(Double(correctCount) * Self.rollbackRate))
+            var total        = (brainLevel - 1) * Self.mathLevelUpThreshold + brainLevelProgress
+            total            = max(0, total - rollback)
+            let newLevel     = min(20, max(1, total / Self.mathLevelUpThreshold + 1))
+            let newProgress  = total % Self.mathLevelUpThreshold
+            set(brainLevel: newLevel, brainLevelProgress: newProgress)
+        }
+        let pb = score > 0
+        if pb { set(brainBestScore: brainBestScore + score) }
+        incrementRounds()
+        checkAntiCheat(avgTime: avgTime, correctCount: correctCount)
+        return RoundResult(score: score, isPersonalBest: pb)
+    }
+
+    private func set(brainLevel lvl: Int, brainLevelProgress prog: Int) {
+        brainLevel = lvl
+        brainLevelProgress = prog
+        UserDefaults.standard.set(lvl,  forKey: "brainLevel")
+        UserDefaults.standard.set(prog, forKey: "brainLevelProgress")
+    }
+
+    private func set(brainBestScore val: Int) {
+        brainBestScore = val
+        UserDefaults.standard.set(val, forKey: "brainBestScore")
     }
 
     func applyMathRound(correctCount: Int, level: Int, avgTime: Double, won: Bool) -> RoundResult {
@@ -463,6 +532,9 @@ import SwiftUI
         case .geography:
             if score > 0 { set(geoBestScore: geoBestScore + score) }
             for _ in 0..<correctCount { advanceGeoLevel() }
+        case .brainTraining:
+            if score > 0 { set(brainBestScore: brainBestScore + score) }
+            for _ in 0..<correctCount { advanceBrainLevel() }
         }
         incrementRounds()
     }

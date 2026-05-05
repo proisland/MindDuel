@@ -38,6 +38,17 @@ import UserNotifications
     }
     @Published var recentActivity: [MultiplayerActivityItem] = [] { didSet { persistRecentActivity() } }
     @Published var lastGameEvent: GameEvent?
+    /// #96: when a full round (every active player has completed their turn)
+    /// finishes, this is set to the round's answer log so the GameView can
+    /// surface a summary modal. Cleared by `dismissRoundSummary()`.
+    @Published var lastRoundSummary: RoundSummary? = nil
+
+    struct RoundSummary {
+        let roundIndex: Int
+        let problems: [SharedProblem]
+        let answers: [RoundAnswer]
+        let players: [MultiplayerPlayer]
+    }
 
     private var botTask: Task<Void, Never>?
     private var backgroundSimTask: Task<Void, Never>?
@@ -135,10 +146,12 @@ import UserNotifications
         player.mathLevel     = p.mathLevel
         player.chemLevel     = p.chemLevel
         player.geoLevel      = p.geoLevel
+        player.brainLevel    = p.brainLevel
         player.piBestScore   = p.piBestScore
         player.mathBestScore = p.mathBestScore
         player.chemBestScore = p.chemBestScore
         player.geoBestScore  = p.geoBestScore
+        player.brainBestScore = p.brainBestScore
     }
 
     private func simulatePlayerReady(playerID: String) {
@@ -207,7 +220,39 @@ import UserNotifications
         }
         currentRoom?.status = .playing
         currentRoom?.currentTurnIndex = 0
+        currentRoom?.currentTurnQuestionsAnswered = 0
+        currentRoom?.currentQuestionIndex = 0
+        currentRoom?.currentRoundIndex = 1
+        currentRoom?.roundAnswers = []
+        seedRoundProblems()
         scheduleBotTurn()
+    }
+
+    func dismissRoundSummary() {
+        lastRoundSummary = nil
+    }
+
+    /// #93: generate the round's shared problems on the host. Every player
+    /// (incl. mock bots) reads from the same list so questions are
+    /// identical across the room.
+    private func seedRoundProblems() {
+        guard var room = currentRoom else { return }
+        let count = max(1, room.questionsPerTurn)
+        let piStart: Int
+        if room.mode == .pi {
+            piStart = room.myPiDigitIndex > 0
+                ? room.myPiDigitIndex
+                : max(0, (ProgressionStore.shared.piLevel - 1) * 50)
+        } else {
+            piStart = 0
+        }
+        room.roundProblems = SharedProblemFactory.makeRound(
+            mode: room.mode,
+            level: room.startLevel,
+            count: count,
+            piStartIndex: piStart
+        )
+        currentRoom = room
     }
 
     // MARK: – Room lifecycle
@@ -349,8 +394,10 @@ import UserNotifications
     func submitAnswer(correct: Bool, answerTime: Double) {
         guard var room = currentRoom, room.isMyTurn else { return }
         ProgressionStore.shared.consumeQuestion()
+        recordRoundAnswer(to: &room, playerIdx: room.players.firstIndex(where: { $0.isYou }) ?? 0,
+                          correct: correct, skipped: false)
         applyResult(to: &room, playerID: "me", correct: correct, answerTime: answerTime)
-        advanceTurn(&room)
+        advanceQuestionOrTurn(&room)
         currentRoom = room
         if room.status == .finished { recordActivity(room) }
         else { scheduleBotTurn() }
@@ -360,9 +407,10 @@ import UserNotifications
         guard var room = currentRoom, room.isMyTurn else { return }
         ProgressionStore.shared.consumeQuestion()
         guard let idx = room.players.firstIndex(where: { $0.isYou }) else { return }
+        recordRoundAnswer(to: &room, playerIdx: idx, correct: false, skipped: true)
         room.players[idx].skips = max(0, room.players[idx].skips - 1)
         if room.players[idx].skips == 0 { room.players[idx].isEliminated = true }
-        advanceTurn(&room)
+        advanceQuestionOrTurn(&room)
         currentRoom = room
         if room.status == .finished { recordActivity(room) }
         else { scheduleBotTurn() }
@@ -416,6 +464,7 @@ import UserNotifications
         let correct = Double.random(in: 0...1) > 0.28
         let answerTime = Double.random(in: 0.8...3.5)
         let prevLives = room.players[idx].lives
+        recordRoundAnswer(to: &room, playerIdx: idx, correct: correct, skipped: false)
         applyResult(to: &room, playerIdx: idx, correct: correct, answerTime: answerTime)
 
         if !correct && room.players[idx].lives < prevLives {
@@ -425,7 +474,7 @@ import UserNotifications
             )
         }
 
-        advanceTurn(&room)
+        advanceQuestionOrTurn(&room)
         currentRoom = room
 
         if room.status == .finished {
@@ -467,6 +516,70 @@ import UserNotifications
         room.currentTurnIndex = (room.currentTurnIndex + 1) % max(1, active.count)
     }
 
+    /// #95: handle the "answer N questions before passing" flow. Advances
+    /// the question pointer and only hands off control to the next player
+    /// once the current player has answered `questionsPerTurn` questions.
+    /// When a full round (every active player has finished their turn)
+    /// completes, snapshots the round answers for the summary view (#96)
+    /// and seeds the next round's shared problems (#93).
+    private func advanceQuestionOrTurn(_ room: inout MultiplayerRoom) {
+        room.currentTurnQuestionsAnswered += 1
+        let perTurn = max(1, room.questionsPerTurn)
+        if room.currentTurnQuestionsAnswered < perTurn && !(room.currentPlayer?.isEliminated ?? false) {
+            // Same player still has questions left this turn.
+            room.currentQuestionIndex = room.currentTurnQuestionsAnswered
+            return
+        }
+        // Player has finished their turn.
+        let prevTurnIndex = room.currentTurnIndex
+        advanceTurn(&room)
+        room.currentTurnQuestionsAnswered = 0
+        room.currentQuestionIndex = 0
+
+        guard room.status == .playing else { return }
+
+        // Detect end-of-round: the new turn index wrapped back to (or before)
+        // the previous, meaning every active player has now had a turn this
+        // round. We snapshot the round before clearing it.
+        let active = room.activePlayers
+        let wrapped = active.isEmpty || (room.currentTurnIndex <= prevTurnIndex)
+        if wrapped {
+            lastRoundSummary = RoundSummary(
+                roundIndex: room.currentRoundIndex,
+                problems: room.roundProblems,
+                answers: room.roundAnswers,
+                players: room.players
+            )
+            room.currentRoundIndex += 1
+            room.roundAnswers = []
+            currentRoom = room
+            seedRoundProblems()
+            // seedRoundProblems mutates currentRoom, copy back so caller's
+            // `currentRoom = room` doesn't overwrite it.
+            if let updated = currentRoom { room = updated }
+        }
+    }
+
+    private func recordRoundAnswer(to room: inout MultiplayerRoom, playerIdx: Int, correct: Bool, skipped: Bool) {
+        guard playerIdx >= 0, playerIdx < room.players.count else { return }
+        let player = room.players[playerIdx]
+        let qIndex = min(room.currentTurnQuestionsAnswered, max(0, room.questionsPerTurn - 1))
+        let prompt: String
+        if qIndex < room.roundProblems.count {
+            prompt = room.roundProblems[qIndex].prompt
+        } else {
+            prompt = ""
+        }
+        room.roundAnswers.append(RoundAnswer(
+            playerID: player.id,
+            username: player.username,
+            questionInRound: qIndex,
+            correct: correct,
+            skipped: skipped,
+            problemPrompt: prompt
+        ))
+    }
+
     private func startBackgroundSimulation(roomID: String) {
         backgroundSimTask?.cancel()
         backgroundSimTask = Task {
@@ -496,8 +609,19 @@ import UserNotifications
                 }
                 let correct = Double.random(in: 0...1) > 0.28
                 let answerTime = Double.random(in: 0.8...3.5)
+                recordRoundAnswer(to: &updatedRoom, playerIdx: botIdx, correct: correct, skipped: false)
                 applyResult(to: &updatedRoom, playerIdx: botIdx, correct: correct, answerTime: answerTime)
-                advanceTurn(&updatedRoom)
+                // Background simulation has no foreground room to mirror,
+                // so the simpler advanceTurn is fine here — round summary
+                // will surface the next time the user rejoins.
+                updatedRoom.currentTurnQuestionsAnswered += 1
+                if updatedRoom.currentTurnQuestionsAnswered >= max(1, updatedRoom.questionsPerTurn) {
+                    advanceTurn(&updatedRoom)
+                    updatedRoom.currentTurnQuestionsAnswered = 0
+                    updatedRoom.currentQuestionIndex = 0
+                } else {
+                    updatedRoom.currentQuestionIndex = updatedRoom.currentTurnQuestionsAnswered
+                }
                 backgroundRooms[roomIdx] = updatedRoom
                 if updatedRoom.status == .finished {
                     backgroundRooms.remove(at: roomIdx)

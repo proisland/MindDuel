@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "no",
   "strings" : {
+    "–" : {
+
+    },
     "·" : {
 
     },
@@ -382,6 +385,91 @@
         }
       }
     },
+    "avatar_picker_choose_photo" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose from library"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Velg fra galleriet"
+          }
+        }
+      }
+    },
+    "avatar_picker_photo_section" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PHOTO"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "BILDE"
+          }
+        }
+      }
+    },
+    "avatar_picker_preview_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PREVIEW"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FORHÅNDSVISNING"
+          }
+        }
+      }
+    },
+    "avatar_picker_reset" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset avatar"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tilbakestill avatar"
+          }
+        }
+      }
+    },
+    "avatar_picker_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose avatar"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Velg avatar"
+          }
+        }
+      }
+    },
     "back_to_home_action" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -395,6 +483,125 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tilbake til hjem"
+          }
+        }
+      }
+    },
+    "brain_training_label_advanced" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Advanced"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avansert"
+          }
+        }
+      }
+    },
+    "brain_training_label_standard" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard"
+          }
+        }
+      }
+    },
+    "brain_training_label_warmup" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warm-up"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oppvarming"
+          }
+        }
+      }
+    },
+    "brain_training_level_problem" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Level %1$d · Problem %2$d"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nivå %1$d · Oppgave %2$d"
+          }
+        }
+      }
+    },
+    "brain_training_memory_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sequence: %1$@\nWhat was digit #%2$d?"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sekvens: %1$@\nHvilket siffer var nr %2$d?"
+          }
+        }
+      }
+    },
+    "brain_training_odd_one_out_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which one doesn't fit?\n%@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hvilket tall passer ikke inn?\n%@"
+          }
+        }
+      }
+    },
+    "brain_training_percent_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What is %1$d%% of %2$d?"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hva er %1$d%% av %2$d?"
           }
         }
       }
@@ -739,6 +946,261 @@
         }
       }
     },
+    "feedback_body_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DETAILS"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DETALJER"
+          }
+        }
+      }
+    },
+    "feedback_category_bug" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bug report"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rapporter feil"
+          }
+        }
+      }
+    },
+    "feedback_category_feature" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Feature request"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forslag til ny funksjon"
+          }
+        }
+      }
+    },
+    "feedback_category_feedback" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "General feedback"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generell tilbakemelding"
+          }
+        }
+      }
+    },
+    "feedback_category_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CATEGORY"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KATEGORI"
+          }
+        }
+      }
+    },
+    "feedback_category_task" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Task suggestion"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forslag til oppgave"
+          }
+        }
+      }
+    },
+    "feedback_submit_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in GitHub"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Åpne i GitHub"
+          }
+        }
+      }
+    },
+    "feedback_submitted_message" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your draft was opened in GitHub. Press Submit there to file the issue."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utkastet ble åpnet i GitHub. Trykk Submit der for å sende inn saken."
+          }
+        }
+      }
+    },
+    "feedback_submitted_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browser opened"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nettleser åpnet"
+          }
+        }
+      }
+    },
+    "feedback_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Feedback"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tilbakemelding"
+          }
+        }
+      }
+    },
+    "feedback_title_hint_bug" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What went wrong?"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hva gikk galt?"
+          }
+        }
+      }
+    },
+    "feedback_title_hint_feature" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What would you like to see?"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hva vil du gjerne se?"
+          }
+        }
+      }
+    },
+    "feedback_title_hint_feedback" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What's on your mind?"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hva tenker du om?"
+          }
+        }
+      }
+    },
+    "feedback_title_hint_task" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brief description of the task"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kort beskrivelse av oppgaven"
+          }
+        }
+      }
+    },
+    "feedback_title_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TITLE"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TITTEL"
+          }
+        }
+      }
+    },
     "flagged_explanation_body" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -931,6 +1393,23 @@
     },
     "MindDuel" : {
 
+    },
+    "mode_brain_training" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brain Training"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hjernetrim"
+          }
+        }
+      }
     },
     "mode_chemistry" : {
       "extractionState" : "stale",
@@ -1374,6 +1853,57 @@
         }
       }
     },
+    "multiplayer_questions_per_turn_hint" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each player answers this many before passing the turn"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hver spiller svarer på så mange før turen går videre"
+          }
+        }
+      }
+    },
+    "multiplayer_questions_per_turn_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questions per turn"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spørsmål per runde"
+          }
+        }
+      }
+    },
+    "multiplayer_questions_per_turn_value" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d question(s)"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d spørsmål"
+          }
+        }
+      }
+    },
     "multiplayer_ready_action" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1421,6 +1951,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "#%@"
+          }
+        }
+      }
+    },
+    "multiplayer_share_invite_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Join me in MindDuel! Room code: %@. Get the app: https://mindduel.app"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bli med i MindDuel! Romkode: %@. Last ned appen: https://mindduel.app"
+          }
+        }
+      }
+    },
+    "multiplayer_share_invite_subject" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Join my MindDuel game"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bli med i MindDuel-spillet mitt"
           }
         }
       }
@@ -1584,13 +2148,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "@%@ won"
+            "value" : "%@ won"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "@%@ vant"
+            "value" : "%@ vant"
           }
         }
       }
@@ -1601,13 +2165,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You won! 🏆"
+            "value" : "You won!"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Du vant! 🏆"
+            "value" : "Du vant!"
           }
         }
       }
@@ -2258,6 +2822,74 @@
         }
       }
     },
+    "round_summary_continue_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue playing"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fortsett spillet"
+          }
+        }
+      }
+    },
+    "round_summary_correct_answer_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Answer: %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Svar: %@"
+          }
+        }
+      }
+    },
+    "round_summary_question_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "QUESTION %d"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SPØRSMÅL %d"
+          }
+        }
+      }
+    },
+    "round_summary_title_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Round %d summary"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oppsummering, runde %d"
+          }
+        }
+      }
+    },
     "rule_available" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2819,6 +3451,40 @@
         }
       }
     },
+    "settings_feedback_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send feedback"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send tilbakemelding"
+          }
+        }
+      }
+    },
+    "settings_feedback_section" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FEEDBACK"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TILBAKEMELDING"
+          }
+        }
+      }
+    },
     "settings_free_plan_label" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2832,6 +3498,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gratis plan: 20 oppgaver per dag"
+          }
+        }
+      }
+    },
+    "settings_hide_last_active_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide last active"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skjul sist aktiv"
           }
         }
       }
@@ -2934,6 +3617,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Norsk"
+          }
+        }
+      }
+    },
+    "settings_mutual_friends_only_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only mutual friends can see profile"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kun felles venner kan se profilen"
           }
         }
       }

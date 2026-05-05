@@ -53,13 +53,46 @@ struct MultiplayerPlayer: Identifiable, Equatable, Codable {
     var mathLevel: Int = 1
     var chemLevel: Int = 1
     var geoLevel: Int = 1
+    var brainLevel: Int = 1
     var piBestScore: Int = 0
     var mathBestScore: Int = 0
     var chemBestScore: Int = 0
     var geoBestScore: Int = 0
+    var brainBestScore: Int = 0
 }
 
 enum RoomStatus: String, Codable { case lobby, playing, finished }
+
+/// #93/#96: a problem generated once per round and shared across all
+/// players. Stored on the room so every player sees identical questions
+/// and the round-summary view (#96) can render historical prompts.
+struct SharedProblem: Codable, Identifiable {
+    var id = UUID()
+    let mode: GameMode
+    let prompt: String
+    /// Flag emoji rendered above the prompt for geography questions.
+    let flag: String?
+    let options: [String]
+    let correctIndex: Int
+    /// Curriculum / context label rendered between header and prompt.
+    let curriculumLabel: String?
+
+    var correctAnswer: String { options[correctIndex] }
+}
+
+/// #96: one answer logged for the round-summary screen so every player
+/// can see how the others fared.
+struct RoundAnswer: Codable, Identifiable {
+    var id = UUID()
+    let playerID: String
+    let username: String
+    let questionInRound: Int
+    let correct: Bool
+    let skipped: Bool
+    /// Snapshot of the prompt so the summary remains readable even after
+    /// `roundProblems` flips to the next batch.
+    let problemPrompt: String
+}
 
 struct MultiplayerRoom: Identifiable, Codable {
     let id: String          // room code, e.g. "4F2A"
@@ -93,6 +126,26 @@ struct MultiplayerRoom: Identifiable, Codable {
     /// Surfaced on ActiveGamesView rows (#49) so players can decide whether
     /// to discard a stale game. Defaults to creation time.
     var lastActivityAt: Date = Date()
+    /// #95: how many questions each player must answer before their turn
+    /// hands off to the next player. Default 1 = original "1 question, 1
+    /// pass" behavior.
+    var questionsPerTurn: Int = 1
+    /// #95: how many questions the current player has answered this turn.
+    /// Resets to 0 when control passes to the next player.
+    var currentTurnQuestionsAnswered: Int = 0
+    /// #93: shared problem set for the current round, generated once on the
+    /// host and stored here so every player sees identical questions.
+    var roundProblems: [SharedProblem] = []
+    /// Index of the problem the current player is working through inside
+    /// `roundProblems`. Equal to currentTurnQuestionsAnswered for the active
+    /// player; used by views to render the right prompt.
+    var currentQuestionIndex: Int = 0
+    /// #96: per-round answer log used to render the round-summary view.
+    /// Cleared at the start of each new round.
+    var roundAnswers: [RoundAnswer] = []
+    /// Round number, starting at 1. Bumped after every full pass through
+    /// the active players.
+    var currentRoundIndex: Int = 1
 
     var activePlayers: [MultiplayerPlayer] { players.filter { !$0.isEliminated } }
 

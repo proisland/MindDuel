@@ -53,10 +53,11 @@ struct ActiveGamesView: View {
         }
         .fullScreenCover(item: $resumeSoloMode) { mode in
             switch mode {
-            case .pi:        PiGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
-            case .math:      MathGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
-            case .chemistry: ChemistryGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
-            case .geography: GeographyGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .pi:            PiGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .math:          MathGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .chemistry:     ChemistryGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .geography:     GeographyGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .brainTraining: BrainTrainingGameView(username: ownUsername)
             }
         }
     }
@@ -65,10 +66,11 @@ struct ActiveGamesView: View {
         let modeColor: Color
         let modeBgSoft: Color
         switch room.mode {
-        case .pi:        modeColor = .mdAccent; modeBgSoft = .mdAccentSoft
-        case .math:      modeColor = .mdPink;   modeBgSoft = .mdPinkSoft
-        case .chemistry: modeColor = .mdGreen;  modeBgSoft = .mdGreenSoft
-        case .geography: modeColor = .mdAmber;  modeBgSoft = .mdAmberSoft
+        case .pi:            modeColor = .mdAccent; modeBgSoft = .mdAccentSoft
+        case .math:          modeColor = .mdPink;   modeBgSoft = .mdPinkSoft
+        case .chemistry:     modeColor = .mdGreen;  modeBgSoft = .mdGreenSoft
+        case .geography:     modeColor = .mdAmber;  modeBgSoft = .mdAmberSoft
+        case .brainTraining: modeColor = .mdRed;    modeBgSoft = .mdRedSoft
         }
         let isMyTurn = room.isMyTurn
 
@@ -210,7 +212,7 @@ struct ActiveGamesView: View {
     private func levelForRoom(_ room: MultiplayerRoom) -> Int {
         switch room.mode {
         case .pi: return ProgressionStore.piLevel(forPosition: room.myPiDigitIndex)
-        case .math, .chemistry, .geography: return max(1, room.startLevel)
+        case .math, .chemistry, .geography, .brainTraining: return max(1, room.startLevel)
         }
     }
 

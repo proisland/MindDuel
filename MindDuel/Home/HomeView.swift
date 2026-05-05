@@ -102,10 +102,11 @@ struct HomeView: View {
         .onAppear { progression.checkResetQuota() }
         .fullScreenCover(item: $activeMode) { mode in
             switch mode {
-            case .pi:        PiGameView(username: username, resumeRoomID: resumeSoloRoomID)
-            case .math:      MathGameView(username: username, resumeRoomID: resumeSoloRoomID)
-            case .chemistry: ChemistryGameView(username: username, resumeRoomID: resumeSoloRoomID)
-            case .geography: GeographyGameView(username: username, resumeRoomID: resumeSoloRoomID)
+            case .pi:            PiGameView(username: username, resumeRoomID: resumeSoloRoomID)
+            case .math:          MathGameView(username: username, resumeRoomID: resumeSoloRoomID)
+            case .chemistry:     ChemistryGameView(username: username, resumeRoomID: resumeSoloRoomID)
+            case .geography:     GeographyGameView(username: username, resumeRoomID: resumeSoloRoomID)
+            case .brainTraining: BrainTrainingGameView(username: username)
             }
         }
         .onChange(of: activeMode) { mode in

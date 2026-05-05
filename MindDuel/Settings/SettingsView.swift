@@ -4,6 +4,8 @@ struct SettingsView: View {
     let onSignOut: () -> Void
     @Environment(\.dismiss) private var dismiss
     @AppStorage("selectedLanguageCode") private var selectedLanguageCode = "system"
+    @AppStorage("privacyHideLastActive") private var privacyHideLastActive = false
+    @AppStorage("privacyMutualFriendsOnly") private var privacyMutualFriendsOnly = false
     @State private var notificationsEnabled = UserDefaults.standard.bool(forKey: "notificationsEnabled")
     @State private var showSignOutModal = false
     @State private var showLanguagePicker = false
@@ -11,6 +13,7 @@ struct SettingsView: View {
     @State private var debugTapCount = 0
     @State private var showDebugSection = false
     @State private var showTerms = false
+    @State private var showFeedback = false
     @State private var showDeleteConfirm = false
     @State private var showDeleteDone = false
 
@@ -62,7 +65,37 @@ struct SettingsView: View {
                             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdBorder2, lineWidth: 0.5))
                         }
 
+                        // #89: send feedback / report bugs / suggest tasks
+                        settingsSection(String(localized: "settings_feedback_section")) {
+                            Button { showFeedback = true } label: {
+                                chevronRow(
+                                    icon: "bubble.left.and.bubble.right.fill",
+                                    iconBg: .mdAccentSoft, iconColor: .mdAccent,
+                                    label: String(localized: "settings_feedback_label")
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+
                         settingsSection(String(localized: "settings_privacy_section")) {
+                            // #72: hide "last active" timestamp from other players
+                            toggleRow(
+                                icon: "clock.fill", iconBg: .mdAccentSoft, iconColor: .mdAccent,
+                                label: String(localized: "settings_hide_last_active_label")
+                            ) {
+                                Toggle("", isOn: $privacyHideLastActive)
+                                    .tint(Color.mdAccent)
+                                    .labelsHidden()
+                            }
+                            // #72: only mutual friends can see your profile
+                            toggleRow(
+                                icon: "person.2.fill", iconBg: .mdAccentSoft, iconColor: .mdAccent,
+                                label: String(localized: "settings_mutual_friends_only_label")
+                            ) {
+                                Toggle("", isOn: $privacyMutualFriendsOnly)
+                                    .tint(Color.mdAccent)
+                                    .labelsHidden()
+                            }
                             Button { showTerms = true } label: {
                                 chevronRow(
                                     icon: "doc.text.fill", iconBg: .mdAccentSoft, iconColor: .mdAccent,
@@ -132,6 +165,7 @@ struct SettingsView: View {
             Text(String(localized: "settings_language_restart_message"))
         }
         .sheet(isPresented: $showTerms) { TermsAndPrivacyView() }
+        .fullScreenCover(isPresented: $showFeedback) { FeedbackView() }
         .alert(
             String(localized: "settings_delete_confirm_title"),
             isPresented: $showDeleteConfirm

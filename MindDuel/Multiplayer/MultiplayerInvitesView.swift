@@ -50,10 +50,11 @@ struct MultiplayerInvitesView: View {
         let modeColor: Color
         let modeName: String
         switch invite.mode {
-        case .pi:        modeColor = .mdAccent; modeName = String(localized: "mode_pi")
-        case .math:      modeColor = .mdPink;   modeName = String(localized: "mode_math")
-        case .chemistry: modeColor = .mdGreen;  modeName = String(localized: "mode_chemistry")
-        case .geography: modeColor = .mdAmber;  modeName = String(localized: "mode_geography")
+        case .pi:            modeColor = .mdAccent; modeName = String(localized: "mode_pi")
+        case .math:          modeColor = .mdPink;   modeName = String(localized: "mode_math")
+        case .chemistry:     modeColor = .mdGreen;  modeName = String(localized: "mode_chemistry")
+        case .geography:     modeColor = .mdAmber;  modeName = String(localized: "mode_geography")
+        case .brainTraining: modeColor = .mdRed;    modeName = String(localized: "mode_brain_training")
         }
         return HStack(spacing: MDSpacing.sm) {
             ZStack {
