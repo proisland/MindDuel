@@ -12,6 +12,8 @@ extension GameMode {
         case .brainTraining: return .mdRed
         case .science:       return .mdAccent
         case .history:       return .mdAmber
+        case .physics:       return .mdPink
+        case .sport:         return .mdGreen
         }
     }
 
@@ -25,6 +27,8 @@ extension GameMode {
         case .brainTraining: return Color(red: 0.13,  green: 0.04,  blue: 0.05)
         case .science:       return Color(red: 0.04,  green: 0.10,  blue: 0.16)
         case .history:       return Color(red: 0.14,  green: 0.09,  blue: 0.04)
+        case .physics:       return Color(red: 0.11,  green: 0.05,  blue: 0.10)
+        case .sport:         return Color(red: 0.04,  green: 0.12,  blue: 0.07)
         }
     }
 
@@ -37,6 +41,8 @@ extension GameMode {
         case .brainTraining: return String(localized: "mode_brain_training")
         case .science:       return String(localized: "mode_science")
         case .history:       return String(localized: "mode_history")
+        case .physics:       return String(localized: "mode_physics")
+        case .sport:         return String(localized: "mode_sport")
         }
     }
 }

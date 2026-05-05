@@ -11,6 +11,8 @@ struct UserProfile: Identifiable {
     var brainScore: Int = 0
     var scienceScore: Int = 0
     var historyScore: Int = 0
+    var physicsScore: Int = 0
+    var sportScore: Int = 0
     let piLevel: Int
     let mathLevel: Int
     var chemLevel: Int = 1
@@ -18,6 +20,8 @@ struct UserProfile: Identifiable {
     var brainLevel: Int = 1
     var scienceLevel: Int = 1
     var historyLevel: Int = 1
+    var physicsLevel: Int = 1
+    var sportLevel: Int = 1
     let roundsPlayed: Int
     let age: Int?
     let city: String?
@@ -29,7 +33,7 @@ struct UserProfile: Identifiable {
     /// Average answer time in seconds (#57). 0 = unknown / no data.
     var avgAnswerTime: Double = 0
 
-    var totalScore: Int { piScore + mathScore + chemScore + geoScore + brainScore + scienceScore + historyScore }
+    var totalScore: Int { piScore + mathScore + chemScore + geoScore + brainScore + scienceScore + historyScore + physicsScore + sportScore }
     var initials: String { String(username.prefix(2)).uppercased() }
 
     func score(for mode: GameMode) -> Int {
@@ -41,6 +45,8 @@ struct UserProfile: Identifiable {
         case .brainTraining: return brainScore
         case .science:       return scienceScore
         case .history:       return historyScore
+        case .physics:       return physicsScore
+        case .sport:         return sportScore
         }
     }
 
@@ -53,6 +59,8 @@ struct UserProfile: Identifiable {
         case .brainTraining: return brainLevel
         case .science:       return scienceLevel
         case .history:       return historyLevel
+        case .physics:       return physicsLevel
+        case .sport:         return sportLevel
         }
     }
 

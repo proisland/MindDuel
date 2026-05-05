@@ -17,6 +17,8 @@ struct MDModeCard: View {
         case .brainTraining: return .mdRed
         case .science:       return .mdAccentDeep
         case .history:       return .mdAmber
+        case .physics:       return .mdPinkDeep
+        case .sport:         return .mdGreen
         }
     }
 
@@ -29,6 +31,8 @@ struct MDModeCard: View {
         case .brainTraining: return .mdRed
         case .science:       return .mdAccent
         case .history:       return .mdAmber
+        case .physics:       return .mdPink
+        case .sport:         return .mdGreen
         }
     }
 
@@ -41,6 +45,8 @@ struct MDModeCard: View {
         case .brainTraining: return String(localized: "mode_brain_training")
         case .science:       return String(localized: "mode_science")
         case .history:       return String(localized: "mode_history")
+        case .physics:       return String(localized: "mode_physics")
+        case .sport:         return String(localized: "mode_sport")
         }
     }
 

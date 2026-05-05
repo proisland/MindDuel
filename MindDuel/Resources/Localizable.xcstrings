@@ -1513,6 +1513,23 @@
         }
       }
     },
+    "mode_physics" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Physics"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fysikk"
+          }
+        }
+      }
+    },
     "mode_pi" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1560,6 +1577,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Naturvitenskap"
+          }
+        }
+      }
+    },
+    "mode_sport" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sport"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sport"
           }
         }
       }
@@ -2414,6 +2448,23 @@
         }
       }
     },
+    "physics_level_problem" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Level %1$d · Problem %2$d"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nivå %1$d · Oppgave %2$d"
+          }
+        }
+      }
+    },
     "pi_digits_guessed" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3162,23 +3213,6 @@
         }
       }
     },
-    "scoreboard_share_location_action" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Share location"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Del posisjon"
-          }
-        }
-      }
-    },
     "scoreboard_local_tab" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3243,6 +3277,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "π Pi"
+          }
+        }
+      }
+    },
+    "scoreboard_share_location_action" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share location"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Del posisjon"
           }
         }
       }
@@ -3995,6 +4046,23 @@
         }
       }
     },
+    "sport_level_problem" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Level %1$d · Problem %2$d"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nivå %1$d · Oppgave %2$d"
+          }
+        }
+      }
+    },
     "stats_avg_answer_time_label" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4438,6 +4506,9 @@
       }
     },
     "π" : {
+
+    },
+    "Φ" : {
 
     }
   },

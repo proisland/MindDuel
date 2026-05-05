@@ -25,7 +25,7 @@ struct MultiplayerLobbyView: View {
                         if let room = store.currentRoom {
                             nameSection(room: room, editable: isHost(room))
                             modeSection(room: room, editable: isHost(room))
-                            if isHost(room) && (room.mode == .math || room.mode == .chemistry || room.mode == .geography || room.mode == .brainTraining || room.mode == .science || room.mode == .history) {
+                            if isHost(room) && (room.mode == .math || room.mode == .chemistry || room.mode == .geography || room.mode == .brainTraining || room.mode == .science || room.mode == .history || room.mode == .physics || room.mode == .sport) {
                                 startLevelSection(room: room)
                             }
                             if isHost(room) {
@@ -319,6 +319,8 @@ struct MultiplayerLobbyView: View {
         case .brainTraining: level = player.brainLevel; score = player.brainBestScore
         case .science:       level = player.scienceLevel; score = player.scienceBestScore
         case .history:       level = player.historyLevel; score = player.historyBestScore
+        case .physics:       level = player.physicsLevel; score = player.physicsBestScore
+        case .sport:         level = player.sportLevel;   score = player.sportBestScore
         }
         return HStack(spacing: MDSpacing.sm) {
             MDAvatar(username: player.username, size: .sm)

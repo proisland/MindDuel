@@ -41,6 +41,15 @@ struct ModeGlyph: View {
             Image(systemName: "scroll.fill")
                 .font(.system(size: size, weight: weight))
                 .foregroundStyle(color)
+        case .physics:
+            // Φ: magnetic flux symbol — visually distinct from science's atom.
+            Text("Φ")
+                .font(.system(size: size * 1.2, weight: weight))
+                .foregroundStyle(color)
+        case .sport:
+            Image(systemName: "figure.run")
+                .font(.system(size: size, weight: weight))
+                .foregroundStyle(color)
         }
     }
 }

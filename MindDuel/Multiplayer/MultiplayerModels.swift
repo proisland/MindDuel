@@ -56,6 +56,8 @@ struct MultiplayerPlayer: Identifiable, Equatable, Codable {
     var brainLevel: Int = 1
     var scienceLevel: Int = 1
     var historyLevel: Int = 1
+    var physicsLevel: Int = 1
+    var sportLevel: Int = 1
     var piBestScore: Int = 0
     var mathBestScore: Int = 0
     var chemBestScore: Int = 0
@@ -63,6 +65,8 @@ struct MultiplayerPlayer: Identifiable, Equatable, Codable {
     var brainBestScore: Int = 0
     var scienceBestScore: Int = 0
     var historyBestScore: Int = 0
+    var physicsBestScore: Int = 0
+    var sportBestScore: Int = 0
 }
 
 enum RoomStatus: String, Codable { case lobby, playing, finished }

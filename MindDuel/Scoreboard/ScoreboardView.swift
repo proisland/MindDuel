@@ -37,6 +37,8 @@ struct ScoreboardView: View {
             brainScore: progression.brainBestScore,
             scienceScore: progression.scienceBestScore,
             historyScore: progression.historyBestScore,
+            physicsScore: progression.physicsBestScore,
+            sportScore: progression.sportBestScore,
             piLevel: progression.piLevel,
             mathLevel: progression.mathLevel,
             chemLevel: progression.chemLevel,
@@ -44,6 +46,8 @@ struct ScoreboardView: View {
             brainLevel: progression.brainLevel,
             scienceLevel: progression.scienceLevel,
             historyLevel: progression.historyLevel,
+            physicsLevel: progression.physicsLevel,
+            sportLevel: progression.sportLevel,
             roundsPlayed: progression.totalRoundsPlayed,
             age: nil, city: nil,
             memberSince: "april 2025",
@@ -164,6 +168,8 @@ struct ScoreboardView: View {
         case .brainTraining: return String(localized: "mode_brain_training")
         case .science:       return String(localized: "mode_science")
         case .history:       return String(localized: "mode_history")
+        case .physics:       return String(localized: "mode_physics")
+        case .sport:         return String(localized: "mode_sport")
         }
     }
 
@@ -176,6 +182,8 @@ struct ScoreboardView: View {
         case .brainTraining: return profile.brainScore
         case .science:       return profile.scienceScore
         case .history:       return profile.historyScore
+        case .physics:       return profile.physicsScore
+        case .sport:         return profile.sportScore
         }
     }
 
