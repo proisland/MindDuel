@@ -399,7 +399,7 @@ import UserNotifications
         guard var room = currentRoom, room.isMyTurn else { return }
         ProgressionStore.shared.consumeQuestion()
         recordRoundAnswer(to: &room, playerIdx: room.players.firstIndex(where: { $0.isYou }) ?? 0,
-                          correct: correct, skipped: false)
+                          correct: correct, skipped: false, answerTime: answerTime)
         applyResult(to: &room, playerID: "me", correct: correct, answerTime: answerTime)
         advanceQuestionOrTurn(&room)
         currentRoom = room
@@ -411,7 +411,7 @@ import UserNotifications
         guard var room = currentRoom, room.isMyTurn else { return }
         ProgressionStore.shared.consumeQuestion()
         guard let idx = room.players.firstIndex(where: { $0.isYou }) else { return }
-        recordRoundAnswer(to: &room, playerIdx: idx, correct: false, skipped: true)
+        recordRoundAnswer(to: &room, playerIdx: idx, correct: false, skipped: true, answerTime: nil)
         room.players[idx].skips = max(0, room.players[idx].skips - 1)
         if room.players[idx].skips == 0 { room.players[idx].isEliminated = true }
         advanceQuestionOrTurn(&room)
@@ -468,7 +468,7 @@ import UserNotifications
         let correct = Double.random(in: 0...1) > 0.28
         let answerTime = Double.random(in: 0.8...3.5)
         let prevLives = room.players[idx].lives
-        recordRoundAnswer(to: &room, playerIdx: idx, correct: correct, skipped: false)
+        recordRoundAnswer(to: &room, playerIdx: idx, correct: correct, skipped: false, answerTime: answerTime)
         applyResult(to: &room, playerIdx: idx, correct: correct, answerTime: answerTime)
 
         if !correct && room.players[idx].lives < prevLives {
@@ -564,7 +564,7 @@ import UserNotifications
         }
     }
 
-    private func recordRoundAnswer(to room: inout MultiplayerRoom, playerIdx: Int, correct: Bool, skipped: Bool) {
+    private func recordRoundAnswer(to room: inout MultiplayerRoom, playerIdx: Int, correct: Bool, skipped: Bool, answerTime: Double?) {
         guard playerIdx >= 0, playerIdx < room.players.count else { return }
         let player = room.players[playerIdx]
         let qIndex = min(room.currentTurnQuestionsAnswered, max(0, room.questionsPerTurn - 1))
@@ -580,7 +580,8 @@ import UserNotifications
             questionInRound: qIndex,
             correct: correct,
             skipped: skipped,
-            problemPrompt: prompt
+            problemPrompt: prompt,
+            answerTime: answerTime
         ))
     }
 
@@ -613,7 +614,7 @@ import UserNotifications
                 }
                 let correct = Double.random(in: 0...1) > 0.28
                 let answerTime = Double.random(in: 0.8...3.5)
-                recordRoundAnswer(to: &updatedRoom, playerIdx: botIdx, correct: correct, skipped: false)
+                recordRoundAnswer(to: &updatedRoom, playerIdx: botIdx, correct: correct, skipped: false, answerTime: answerTime)
                 applyResult(to: &updatedRoom, playerIdx: botIdx, correct: correct, answerTime: answerTime)
                 // Background simulation has no foreground room to mirror,
                 // so the simpler advanceTurn is fine here — round summary

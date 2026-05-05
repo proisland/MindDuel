@@ -65,8 +65,8 @@ struct LevelBar: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(String(format: String(localized: "level_of_format"), level, maxLevel))
-                .font(.system(size: 8.5, weight: .regular))
-                .foregroundStyle(Color.mdText3)
+                .font(.system(size: 8.5, weight: .semibold))
+                .foregroundStyle(color)
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()

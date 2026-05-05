@@ -167,10 +167,6 @@ struct GeographyGameView: View {
                     .mdStyle(.caption)
                     .foregroundStyle(Color.mdText2)
                     .frame(maxWidth: .infinity, alignment: .center)
-                Text(GeographyProblemGenerator.curriculumLabel(forLevel: progression.geoLevel))
-                    .mdStyle(.micro)
-                    .foregroundStyle(Color.mdText3)
-                    .frame(maxWidth: .infinity, alignment: .center)
                 if let flag = problem.flag {
                     FlagView(emoji: flag, size: 72)
                         .frame(maxWidth: .infinity, alignment: .center)

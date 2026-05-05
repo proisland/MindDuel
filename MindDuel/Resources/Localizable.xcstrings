@@ -1559,7 +1559,7 @@
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Natur og vitenskap"
+            "value" : "Naturvitenskap"
           }
         }
       }
@@ -2869,6 +2869,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Personlig rekord!"
+          }
+        }
+      }
+    },
+    "round_summary_answer_time_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%.1fs"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%.1f s"
           }
         }
       }

@@ -96,6 +96,9 @@ struct RoundAnswer: Codable, Identifiable {
     /// Snapshot of the prompt so the summary remains readable even after
     /// `roundProblems` flips to the next batch.
     let problemPrompt: String
+    /// #123: seconds spent on the question. nil for skips and for older
+    /// persisted rooms saved before this field existed.
+    var answerTime: Double? = nil
 }
 
 struct MultiplayerRoom: Identifiable, Codable {
