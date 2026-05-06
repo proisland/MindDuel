@@ -111,6 +111,7 @@ struct HomeView: View {
             case .history:       HistoryGameView(username: username)
             case .physics:       PhysicsGameView(username: username)
             case .sport:         SportGameView(username: username)
+            case .grammar:       GrammarGameView(username: username)
             }
         }
         .onChange(of: activeMode) { mode in

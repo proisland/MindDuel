@@ -102,6 +102,16 @@ enum SharedProblemFactory {
                     correctIndex: p.correctIndex ?? 0,
                     curriculumLabel: SportProblemGenerator.curriculumLabel(forLevel: level)
                 )
+            case .grammar:
+                let p = GrammarProblemGenerator.generate(level: level)
+                return SharedProblem(
+                    mode: .grammar,
+                    prompt: p.prompt,
+                    flag: nil,
+                    options: p.options,
+                    correctIndex: p.correctIndex ?? 0,
+                    curriculumLabel: GrammarProblemGenerator.curriculumLabel(forLevel: level)
+                )
             }
         }
     }

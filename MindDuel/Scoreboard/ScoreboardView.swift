@@ -39,6 +39,7 @@ struct ScoreboardView: View {
             historyScore: progression.historyBestScore,
             physicsScore: progression.physicsBestScore,
             sportScore: progression.sportBestScore,
+            grammarScore: progression.grammarBestScore,
             piLevel: progression.piLevel,
             mathLevel: progression.mathLevel,
             chemLevel: progression.chemLevel,
@@ -48,6 +49,7 @@ struct ScoreboardView: View {
             historyLevel: progression.historyLevel,
             physicsLevel: progression.physicsLevel,
             sportLevel: progression.sportLevel,
+            grammarLevel: progression.grammarLevel,
             roundsPlayed: progression.totalRoundsPlayed,
             age: nil, city: nil,
             memberSince: "april 2025",
@@ -170,6 +172,7 @@ struct ScoreboardView: View {
         case .history:       return String(localized: "mode_history")
         case .physics:       return String(localized: "mode_physics")
         case .sport:         return String(localized: "mode_sport")
+        case .grammar:       return String(localized: "mode_grammar")
         }
     }
 
@@ -184,6 +187,7 @@ struct ScoreboardView: View {
         case .history:       return profile.historyScore
         case .physics:       return profile.physicsScore
         case .sport:         return profile.sportScore
+        case .grammar:       return profile.grammarScore
         }
     }
 

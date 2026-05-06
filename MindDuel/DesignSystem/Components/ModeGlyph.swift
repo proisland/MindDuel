@@ -50,6 +50,10 @@ struct ModeGlyph: View {
             Image(systemName: "figure.run")
                 .font(.system(size: size, weight: weight))
                 .foregroundStyle(color)
+        case .grammar:
+            Image(systemName: "text.book.closed.fill")
+                .font(.system(size: size, weight: weight))
+                .foregroundStyle(color)
         }
     }
 }

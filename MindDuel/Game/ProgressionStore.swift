@@ -43,6 +43,7 @@ import SwiftUI
     private var historyRecentWrongs: Int = 0
     private var physicsRecentWrongs: Int = 0
     private var sportRecentWrongs: Int = 0
+    private var grammarRecentWrongs: Int = 0
 
     private var mathLevelTimeSum: Double = 0; private var mathLevelAnswerCount: Int = 0
     private var chemLevelTimeSum: Double = 0; private var chemLevelAnswerCount: Int = 0
@@ -52,6 +53,7 @@ import SwiftUI
     private var historyLevelTimeSum: Double = 0; private var historyLevelAnswerCount: Int = 0
     private var physicsLevelTimeSum: Double = 0; private var physicsLevelAnswerCount: Int = 0
     private var sportLevelTimeSum:   Double = 0; private var sportLevelAnswerCount:   Int = 0
+    private var grammarLevelTimeSum: Double = 0; private var grammarLevelAnswerCount: Int = 0
 
     private var mathLevelAvgTime: Double {
         mathLevelAnswerCount > 0 ? mathLevelTimeSum / Double(mathLevelAnswerCount) : averageAnswerTime
@@ -76,6 +78,9 @@ import SwiftUI
     }
     private var sportLevelAvgTime: Double {
         sportLevelAnswerCount > 0 ? sportLevelTimeSum / Double(sportLevelAnswerCount) : averageAnswerTime
+    }
+    private var grammarLevelAvgTime: Double {
+        grammarLevelAnswerCount > 0 ? grammarLevelTimeSum / Double(grammarLevelAnswerCount) : averageAnswerTime
     }
 
     // MARK: – Published state (mirrors UserDefaults)
@@ -114,6 +119,10 @@ import SwiftUI
     @Published private(set) var sportLevel: Int
     @Published private(set) var sportLevelProgress: Int
     @Published private(set) var sportBestScore: Int
+
+    @Published private(set) var grammarLevel: Int
+    @Published private(set) var grammarLevelProgress: Int
+    @Published private(set) var grammarBestScore: Int
 
     @Published private(set) var dailyUsed: Int
     @Published private(set) var totalRoundsPlayed: Int
@@ -174,6 +183,10 @@ import SwiftUI
         sportLevel         = storedSportLvl < 1 ? 1 : storedSportLvl
         sportLevelProgress = d.integer(forKey: "sportLevelProgress")
         sportBestScore     = d.integer(forKey: "sportBestScore")
+        let storedGramLvl  = d.integer(forKey: "grammarLevel")
+        grammarLevel       = storedGramLvl < 1 ? 1 : storedGramLvl
+        grammarLevelProgress = d.integer(forKey: "grammarLevelProgress")
+        grammarBestScore   = d.integer(forKey: "grammarBestScore")
         dailyUsed         = d.integer(forKey: "dailyUsed")
         quotaResetEpoch   = d.double(forKey: "quotaResetEpoch")
         totalRoundsPlayed = d.integer(forKey: "totalRoundsPlayed")
@@ -208,6 +221,7 @@ import SwiftUI
         case .history:   historyLevelTimeSum += seconds; historyLevelAnswerCount += 1
         case .physics:   physicsLevelTimeSum += seconds; physicsLevelAnswerCount += 1
         case .sport:     sportLevelTimeSum   += seconds; sportLevelAnswerCount   += 1
+        case .grammar:   grammarLevelTimeSum += seconds; grammarLevelAnswerCount += 1
         case .pi:        break
         }
     }
@@ -258,6 +272,7 @@ import SwiftUI
         case .history:       return historyBestScore
         case .physics:       return physicsBestScore
         case .sport:         return sportBestScore
+        case .grammar:       return grammarBestScore
         }
     }
 
@@ -272,6 +287,7 @@ import SwiftUI
         case .history:       return historyLevel
         case .physics:       return physicsLevel
         case .sport:         return sportLevel
+        case .grammar:       return grammarLevel
         }
     }
 
@@ -363,6 +379,7 @@ import SwiftUI
         case .history:       historyRecentWrongs += 1
         case .physics:       physicsRecentWrongs += 1
         case .sport:         sportRecentWrongs   += 1
+        case .grammar:       grammarRecentWrongs += 1
         case .pi:            break  // Pi has its own digit-position progression
         }
     }
@@ -705,6 +722,58 @@ import SwiftUI
         UserDefaults.standard.set(val, forKey: "sportBestScore")
     }
 
+    // MARK: – Grammar (#39)
+
+    func grammarScore(correctCount: Int, level: Int, avgTime: Double) -> Int {
+        guard !isFlagged, correctCount > 0, avgTime > 0.2 else { return 0 }
+        let pts = Double(correctCount) * Self.levelMultiplier(level)
+        return max(0, Int(pts * (Self.K / avgTime)))
+    }
+
+    func advanceGrammarLevel() {
+        var prog = grammarLevelProgress + 1
+        var lvl  = grammarLevel
+        let threshold = Self.adaptiveThreshold(avgTime: grammarLevelAvgTime,
+                                               recentWrongs: grammarRecentWrongs)
+        if prog >= threshold {
+            prog = 0
+            lvl  = min(20, lvl + 1)
+            grammarRecentWrongs = 0
+            grammarLevelTimeSum = 0
+            grammarLevelAnswerCount = 0
+        }
+        set(grammarLevel: lvl, grammarLevelProgress: prog)
+    }
+
+    func applyGrammarRound(correctCount: Int, level: Int, avgTime: Double, won: Bool) -> RoundResult {
+        let score = grammarScore(correctCount: correctCount, level: level, avgTime: avgTime)
+        if !won && correctCount > 0 {
+            let rollback     = max(0, Int(Double(correctCount) * Self.rollbackRate))
+            var total        = (grammarLevel - 1) * Self.mathLevelUpThreshold + grammarLevelProgress
+            total            = max(0, total - rollback)
+            let newLevel     = min(20, max(1, total / Self.mathLevelUpThreshold + 1))
+            let newProgress  = total % Self.mathLevelUpThreshold
+            set(grammarLevel: newLevel, grammarLevelProgress: newProgress)
+        }
+        let pb = score > 0
+        if pb { set(grammarBestScore: grammarBestScore + score) }
+        incrementRounds()
+        checkAntiCheat(avgTime: avgTime, correctCount: correctCount)
+        return RoundResult(score: score, isPersonalBest: pb)
+    }
+
+    private func set(grammarLevel lvl: Int, grammarLevelProgress prog: Int) {
+        grammarLevel = lvl
+        grammarLevelProgress = prog
+        UserDefaults.standard.set(lvl,  forKey: "grammarLevel")
+        UserDefaults.standard.set(prog, forKey: "grammarLevelProgress")
+    }
+
+    private func set(grammarBestScore val: Int) {
+        grammarBestScore = val
+        UserDefaults.standard.set(val, forKey: "grammarBestScore")
+    }
+
     func applyMathRound(correctCount: Int, level: Int, avgTime: Double, won: Bool) -> RoundResult {
         let score = mathScore(correctCount: correctCount, level: level, avgTime: avgTime)
         if !won && correctCount > 0 {
@@ -823,6 +892,9 @@ import SwiftUI
         case .sport:
             if score > 0 { set(sportBestScore: sportBestScore + score) }
             for _ in 0..<correctCount { advanceSportLevel() }
+        case .grammar:
+            if score > 0 { set(grammarBestScore: grammarBestScore + score) }
+            for _ in 0..<correctCount { advanceGrammarLevel() }
         }
         incrementRounds()
     }

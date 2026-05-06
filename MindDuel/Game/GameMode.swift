@@ -17,6 +17,8 @@ enum GameMode: String, Identifiable, Codable, CaseIterable {
     case physics
     /// #67: sport questions (populære idretter, regler, kjente utøvere, OL).
     case sport
+    /// #39: grammar questions in the user's selected language.
+    case grammar
 
     var id: String { rawValue }
 
@@ -33,6 +35,7 @@ enum GameMode: String, Identifiable, Codable, CaseIterable {
         case .history:       return "mode_history"
         case .physics:       return "mode_physics"
         case .sport:         return "mode_sport"
+        case .grammar:       return "mode_grammar"
         }
     }
 }

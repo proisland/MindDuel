@@ -151,6 +151,7 @@ import UserNotifications
         player.historyLevel  = p.historyLevel
         player.physicsLevel  = p.physicsLevel
         player.sportLevel    = p.sportLevel
+        player.grammarLevel  = p.grammarLevel
         player.piBestScore   = p.piBestScore
         player.mathBestScore = p.mathBestScore
         player.chemBestScore = p.chemBestScore
@@ -160,6 +161,7 @@ import UserNotifications
         player.historyBestScore = p.historyBestScore
         player.physicsBestScore = p.physicsBestScore
         player.sportBestScore   = p.sportBestScore
+        player.grammarBestScore = p.grammarBestScore
     }
 
     private func simulatePlayerReady(playerID: String) {

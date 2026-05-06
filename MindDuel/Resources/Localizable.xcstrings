@@ -1513,6 +1513,23 @@
         }
       }
     },
+    "mode_grammar" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grammar"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grammatikk"
+          }
+        }
+      }
+    },
     "mode_physics" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2444,6 +2461,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Forespørsler"
+          }
+        }
+      }
+    },
+    "grammar_level_problem" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Level %1$d · Problem %2$d"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nivå %1$d · Oppgave %2$d"
           }
         }
       }
