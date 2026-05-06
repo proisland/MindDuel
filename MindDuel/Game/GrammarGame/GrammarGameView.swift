@@ -1,13 +1,14 @@
 import SwiftUI
 
-/// #67: solo sport round. Mirrors HistoryGameView/PhysicsGameView.
-struct SportGameView: View {
+/// #39: solo grammar round. Mirrors MathGameView for save/resume of
+/// standalone solo sessions to background rooms.
+struct GrammarGameView: View {
     let username: String
     var resumeRoomID: String? = nil
 
     @StateObject private var engine          = GameEngine()
     @ObservedObject private var progression  = ProgressionStore.shared
-    @State private var problem:               SportProblem
+    @State private var problem:               GrammarProblem
     @State private var problemCount         = 1
     @State private var elapsedSeconds:      Double = 0
     @State private var totalAnswerTime:     Double = 0
@@ -23,9 +24,9 @@ struct SportGameView: View {
     init(username: String, resumeRoomID: String? = nil) {
         self.username = username
         self.resumeRoomID = resumeRoomID
-        let lvl = ProgressionStore.shared.sportLevel
+        let lvl = ProgressionStore.shared.grammarLevel
         _startLevel = State(initialValue: lvl)
-        _problem    = State(initialValue: SportProblemGenerator.generate(level: lvl))
+        _problem    = State(initialValue: GrammarProblemGenerator.generate(level: lvl))
     }
 
     private var avgTime: Double {
@@ -70,20 +71,20 @@ struct SportGameView: View {
         }
     }
 
-    // MARK: – Session restore / save (#133)
+    // MARK: – Session restore / save
 
     private func restoreSavedSessionIfNeeded() {
         guard let id = resumeRoomID,
               let room = MultiplayerStore.shared.popStandaloneSolo(roomID: id),
               let me = room.players.first(where: { $0.isYou }) else { return }
         startLevel = max(1, room.startLevel)
-        problem    = SportProblemGenerator.generate(level: progression.sportLevel)
+        problem    = GrammarProblemGenerator.generate(level: progression.grammarLevel)
         problemCount = max(1, me.correctCount + 1)
         engine.restoreState(lives: me.lives, skips: me.skips, correctCount: me.correctCount)
     }
 
     private func saveSessionAndExit() {
-        _ = MultiplayerStore.shared.saveStandaloneSoloSport(
+        _ = MultiplayerStore.shared.saveStandaloneSoloGrammar(
             ownUsername: username,
             lives: engine.lives,
             skips: engine.skips,
@@ -99,7 +100,7 @@ struct SportGameView: View {
     private func autoSaveIfInProgress() {
         guard !engine.isRoundOver, roundResult == nil,
               engine.correctCount > 0 || engine.lives < 5 || engine.skips < 5 else { return }
-        _ = MultiplayerStore.shared.saveStandaloneSoloSport(
+        _ = MultiplayerStore.shared.saveStandaloneSoloGrammar(
             ownUsername: username,
             lives: engine.lives,
             skips: engine.skips,
@@ -111,7 +112,7 @@ struct SportGameView: View {
 
     private var gameContent: some View {
         VStack(spacing: 0) {
-            MDTopBar(title: String(localized: "mode_sport"),
+            MDTopBar(title: String(localized: "mode_grammar"),
                      leadingAction: { showQuitModal = true }) {
                 MDAvatar(username: username, size: .sm)
             }
@@ -137,8 +138,8 @@ struct SportGameView: View {
     private var problemCard: some View {
         MDPrimaryCard {
             VStack(spacing: MDSpacing.xs) {
-                Text(String(format: String(localized: "sport_level_problem"),
-                            progression.sportLevel, problemCount))
+                Text(String(format: String(localized: "grammar_level_problem"),
+                            progression.grammarLevel, problemCount))
                     .mdStyle(.caption)
                     .foregroundStyle(Color.mdText2)
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -206,11 +207,11 @@ struct SportGameView: View {
             try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
             if correct {
                 totalAnswerTime += elapsedSeconds
-                progression.recordCorrectAnswerTime(elapsedSeconds, mode: .sport)
+                progression.recordCorrectAnswerTime(elapsedSeconds, mode: .grammar)
                 engine.recordCorrect()
-                progression.advanceSportLevel()
+                progression.advanceGrammarLevel()
             } else {
-                progression.recordWrongAnswer(mode: .sport)
+                progression.recordWrongAnswer(mode: .grammar)
                 engine.recordWrong()
             }
             guard !engine.isRoundOver else {
@@ -235,14 +236,14 @@ struct SportGameView: View {
     }
 
     private func nextProblem() {
-        problem = SportProblemGenerator.generate(level: progression.sportLevel)
+        problem = GrammarProblemGenerator.generate(level: progression.grammarLevel)
         problemCount += 1
         elapsedSeconds = 0
     }
 
     private func finaliseRound(won: Bool) {
         guard roundResult == nil else { return }
-        roundResult = progression.applySportRound(
+        roundResult = progression.applyGrammarRound(
             correctCount: engine.correctCount,
             level: startLevel,
             avgTime: avgTime,
@@ -251,9 +252,9 @@ struct SportGameView: View {
     }
 
     private func resetRound() {
-        let lvl    = progression.sportLevel
+        let lvl    = progression.grammarLevel
         startLevel = lvl
-        problem    = SportProblemGenerator.generate(level: lvl)
+        problem    = GrammarProblemGenerator.generate(level: lvl)
         problemCount = 1; elapsedSeconds = 0; totalAnswerTime = 0
         feedbackIsCorrect = nil; selectedIndex = nil; roundResult = nil
         engine.restart()

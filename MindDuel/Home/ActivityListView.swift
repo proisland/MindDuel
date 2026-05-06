@@ -89,6 +89,7 @@ struct ActivityListView: View {
         case .history:       return String(localized: "mode_history")
         case .physics:       return String(localized: "mode_physics")
         case .sport:         return String(localized: "mode_sport")
+        case .grammar:       return String(localized: "mode_grammar")
         }
     }
 }

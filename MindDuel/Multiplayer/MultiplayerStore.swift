@@ -151,6 +151,7 @@ import UserNotifications
         player.historyLevel  = p.historyLevel
         player.physicsLevel  = p.physicsLevel
         player.sportLevel    = p.sportLevel
+        player.grammarLevel  = p.grammarLevel
         player.piBestScore   = p.piBestScore
         player.mathBestScore = p.mathBestScore
         player.chemBestScore = p.chemBestScore
@@ -160,6 +161,7 @@ import UserNotifications
         player.historyBestScore = p.historyBestScore
         player.physicsBestScore = p.physicsBestScore
         player.sportBestScore   = p.sportBestScore
+        player.grammarBestScore = p.grammarBestScore
     }
 
     private func simulatePlayerReady(playerID: String) {
@@ -363,6 +365,95 @@ import UserNotifications
         player.score = score
         player.correctCount = correctCount
         var room = MultiplayerRoom(id: id, mode: .chemistry, startLevel: startLevel,
+                                   players: [player], status: .playing)
+        room.isStandaloneSolo = true
+        room.lastActivityAt = Date()
+        backgroundRooms.append(room)
+        return id
+    }
+
+    /// #133: solo session save for the remaining feature modes
+    /// (brainTraining, science, history, physics, sport). Each takes the
+    /// same parameter shape as the math/chem/geo savers and tags the room
+    /// with the right mode so the resume routing in ActiveGamesView /
+    /// HomeView can dispatch back to the correct game view.
+    func saveStandaloneSoloBrainTraining(ownUsername: String,
+                                         lives: Int, skips: Int,
+                                         score: Int, correctCount: Int,
+                                         startLevel: Int) -> String {
+        saveStandaloneSoloFeature(mode: .brainTraining, ownUsername: ownUsername,
+                                  lives: lives, skips: skips, score: score,
+                                  correctCount: correctCount, startLevel: startLevel)
+    }
+
+    func saveStandaloneSoloScience(ownUsername: String,
+                                   lives: Int, skips: Int,
+                                   score: Int, correctCount: Int,
+                                   startLevel: Int) -> String {
+        saveStandaloneSoloFeature(mode: .science, ownUsername: ownUsername,
+                                  lives: lives, skips: skips, score: score,
+                                  correctCount: correctCount, startLevel: startLevel)
+    }
+
+    func saveStandaloneSoloHistory(ownUsername: String,
+                                   lives: Int, skips: Int,
+                                   score: Int, correctCount: Int,
+                                   startLevel: Int) -> String {
+        saveStandaloneSoloFeature(mode: .history, ownUsername: ownUsername,
+                                  lives: lives, skips: skips, score: score,
+                                  correctCount: correctCount, startLevel: startLevel)
+    }
+
+    func saveStandaloneSoloPhysics(ownUsername: String,
+                                   lives: Int, skips: Int,
+                                   score: Int, correctCount: Int,
+                                   startLevel: Int) -> String {
+        saveStandaloneSoloFeature(mode: .physics, ownUsername: ownUsername,
+                                  lives: lives, skips: skips, score: score,
+                                  correctCount: correctCount, startLevel: startLevel)
+    }
+
+    func saveStandaloneSoloSport(ownUsername: String,
+                                 lives: Int, skips: Int,
+                                 score: Int, correctCount: Int,
+                                 startLevel: Int) -> String {
+        saveStandaloneSoloFeature(mode: .sport, ownUsername: ownUsername,
+                                  lives: lives, skips: skips, score: score,
+                                  correctCount: correctCount, startLevel: startLevel)
+    }
+
+    private func saveStandaloneSoloFeature(mode: GameMode, ownUsername: String,
+                                           lives: Int, skips: Int,
+                                           score: Int, correctCount: Int,
+                                           startLevel: Int) -> String {
+        let id = "SOLO-" + String(UUID().uuidString.prefix(4).uppercased())
+        var player = MultiplayerPlayer(id: "me", username: ownUsername,
+                                       isHost: true, isReady: true, isYou: true)
+        player.lives = lives
+        player.skips = skips
+        player.score = score
+        player.correctCount = correctCount
+        var room = MultiplayerRoom(id: id, mode: mode, startLevel: startLevel,
+                                   players: [player], status: .playing)
+        room.isStandaloneSolo = true
+        room.lastActivityAt = Date()
+        backgroundRooms.append(room)
+        return id
+    }
+
+    /// Save a standalone solo Grammar session to backgroundRooms.
+    func saveStandaloneSoloGrammar(ownUsername: String,
+                                   lives: Int, skips: Int,
+                                   score: Int, correctCount: Int,
+                                   startLevel: Int) -> String {
+        let id = "SOLO-" + String(UUID().uuidString.prefix(4).uppercased())
+        var player = MultiplayerPlayer(id: "me", username: ownUsername,
+                                       isHost: true, isReady: true, isYou: true)
+        player.lives = lives
+        player.skips = skips
+        player.score = score
+        player.correctCount = correctCount
+        var room = MultiplayerRoom(id: id, mode: .grammar, startLevel: startLevel,
                                    players: [player], status: .playing)
         room.isStandaloneSolo = true
         room.lastActivityAt = Date()

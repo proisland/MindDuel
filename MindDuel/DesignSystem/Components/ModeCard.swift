@@ -19,6 +19,7 @@ struct MDModeCard: View {
         case .history:       return .mdAmber
         case .physics:       return .mdPinkDeep
         case .sport:         return .mdGreen
+        case .grammar:       return .mdAccentDeep
         }
     }
 
@@ -33,6 +34,7 @@ struct MDModeCard: View {
         case .history:       return .mdAmber
         case .physics:       return .mdPink
         case .sport:         return .mdGreen
+        case .grammar:       return .mdAccent
         }
     }
 
@@ -47,6 +49,7 @@ struct MDModeCard: View {
         case .history:       return String(localized: "mode_history")
         case .physics:       return String(localized: "mode_physics")
         case .sport:         return String(localized: "mode_sport")
+        case .grammar:       return String(localized: "mode_grammar")
         }
     }
 

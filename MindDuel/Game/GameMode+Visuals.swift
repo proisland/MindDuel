@@ -14,6 +14,7 @@ extension GameMode {
         case .history:       return .mdAmber
         case .physics:       return .mdPink
         case .sport:         return .mdGreen
+        case .grammar:       return .mdAccent
         }
     }
 
@@ -29,6 +30,7 @@ extension GameMode {
         case .history:       return Color(red: 0.14,  green: 0.09,  blue: 0.04)
         case .physics:       return Color(red: 0.11,  green: 0.05,  blue: 0.10)
         case .sport:         return Color(red: 0.04,  green: 0.12,  blue: 0.07)
+        case .grammar:       return Color(red: 0.05,  green: 0.10,  blue: 0.14)
         }
     }
 
@@ -43,6 +45,7 @@ extension GameMode {
         case .history:       return String(localized: "mode_history")
         case .physics:       return String(localized: "mode_physics")
         case .sport:         return String(localized: "mode_sport")
+        case .grammar:       return String(localized: "mode_grammar")
         }
     }
 }

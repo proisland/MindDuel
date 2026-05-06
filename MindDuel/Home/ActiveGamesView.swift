@@ -57,11 +57,12 @@ struct ActiveGamesView: View {
             case .math:          MathGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
             case .chemistry:     ChemistryGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
             case .geography:     GeographyGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
-            case .brainTraining: BrainTrainingGameView(username: ownUsername)
-            case .science:       ScienceGameView(username: ownUsername)
-            case .history:       HistoryGameView(username: ownUsername)
-            case .physics:       PhysicsGameView(username: ownUsername)
-            case .sport:         SportGameView(username: ownUsername)
+            case .brainTraining: BrainTrainingGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .science:       ScienceGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .history:       HistoryGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .physics:       PhysicsGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .sport:         SportGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .grammar:       GrammarGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
             }
         }
     }
@@ -79,6 +80,7 @@ struct ActiveGamesView: View {
         case .history:       modeColor = .mdAmber;  modeBgSoft = .mdAmberSoft
         case .physics:       modeColor = .mdPink;   modeBgSoft = .mdPinkSoft
         case .sport:         modeColor = .mdGreen;  modeBgSoft = .mdGreenSoft
+        case .grammar:       modeColor = .mdAccent; modeBgSoft = .mdAccentSoft
         }
         let isMyTurn = room.isMyTurn
 
@@ -220,7 +222,7 @@ struct ActiveGamesView: View {
     private func levelForRoom(_ room: MultiplayerRoom) -> Int {
         switch room.mode {
         case .pi: return ProgressionStore.piLevel(forPosition: room.myPiDigitIndex)
-        case .math, .chemistry, .geography, .brainTraining, .science, .history, .physics, .sport:
+        case .math, .chemistry, .geography, .brainTraining, .science, .history, .physics, .sport, .grammar:
             return max(1, room.startLevel)
         }
     }
