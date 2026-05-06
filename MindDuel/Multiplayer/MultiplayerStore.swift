@@ -372,6 +372,26 @@ import UserNotifications
         return id
     }
 
+    /// Save a standalone solo Grammar session to backgroundRooms.
+    func saveStandaloneSoloGrammar(ownUsername: String,
+                                   lives: Int, skips: Int,
+                                   score: Int, correctCount: Int,
+                                   startLevel: Int) -> String {
+        let id = "SOLO-" + String(UUID().uuidString.prefix(4).uppercased())
+        var player = MultiplayerPlayer(id: "me", username: ownUsername,
+                                       isHost: true, isReady: true, isYou: true)
+        player.lives = lives
+        player.skips = skips
+        player.score = score
+        player.correctCount = correctCount
+        var room = MultiplayerRoom(id: id, mode: .grammar, startLevel: startLevel,
+                                   players: [player], status: .playing)
+        room.isStandaloneSolo = true
+        room.lastActivityAt = Date()
+        backgroundRooms.append(room)
+        return id
+    }
+
     /// Save a standalone solo Math session to backgroundRooms. Returns the new room id.
     func saveStandaloneSoloMath(ownUsername: String,
                                 lives: Int, skips: Int,

@@ -62,7 +62,7 @@ struct ActiveGamesView: View {
             case .history:       HistoryGameView(username: ownUsername)
             case .physics:       PhysicsGameView(username: ownUsername)
             case .sport:         SportGameView(username: ownUsername)
-            case .grammar:       GrammarGameView(username: ownUsername)
+            case .grammar:       GrammarGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
             }
         }
     }

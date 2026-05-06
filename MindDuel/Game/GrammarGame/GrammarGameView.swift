@@ -1,8 +1,10 @@
 import SwiftUI
 
-/// #39: solo grammar round. Mirrors HistoryGameView/SportGameView.
+/// #39: solo grammar round. Mirrors MathGameView for save/resume of
+/// standalone solo sessions to background rooms.
 struct GrammarGameView: View {
     let username: String
+    var resumeRoomID: String? = nil
 
     @StateObject private var engine          = GameEngine()
     @ObservedObject private var progression  = ProgressionStore.shared
@@ -19,8 +21,9 @@ struct GrammarGameView: View {
     @Environment(\.dismiss) private var dismiss
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
-    init(username: String) {
+    init(username: String, resumeRoomID: String? = nil) {
         self.username = username
+        self.resumeRoomID = resumeRoomID
         let lvl = ProgressionStore.shared.grammarLevel
         _startLevel = State(initialValue: lvl)
         _problem    = State(initialValue: GrammarProblemGenerator.generate(level: lvl))
@@ -55,15 +58,56 @@ struct GrammarGameView: View {
                     onContinue: { showQuitModal = false },
                     onSave: {
                         showQuitModal = false
-                        dismiss()
+                        saveSessionAndExit()
                     }
                 )
             }
         }
+        .onAppear { restoreSavedSessionIfNeeded() }
+        .onDisappear { autoSaveIfInProgress() }
         .onReceive(timer) { _ in handleTimerTick() }
         .onChange(of: engine.isRoundOver) { over in
             if over && roundResult == nil { finaliseRound(won: false) }
         }
+    }
+
+    // MARK: – Session restore / save
+
+    private func restoreSavedSessionIfNeeded() {
+        guard let id = resumeRoomID,
+              let room = MultiplayerStore.shared.popStandaloneSolo(roomID: id),
+              let me = room.players.first(where: { $0.isYou }) else { return }
+        startLevel = max(1, room.startLevel)
+        problem    = GrammarProblemGenerator.generate(level: progression.grammarLevel)
+        problemCount = max(1, me.correctCount + 1)
+        engine.restoreState(lives: me.lives, skips: me.skips, correctCount: me.correctCount)
+    }
+
+    private func saveSessionAndExit() {
+        _ = MultiplayerStore.shared.saveStandaloneSoloGrammar(
+            ownUsername: username,
+            lives: engine.lives,
+            skips: engine.skips,
+            score: 0,
+            correctCount: engine.correctCount,
+            startLevel: startLevel
+        )
+        roundResult = ProgressionStore.RoundResult(score: 0, isPersonalBest: false)
+        engine.quit()
+        dismiss()
+    }
+
+    private func autoSaveIfInProgress() {
+        guard !engine.isRoundOver, roundResult == nil,
+              engine.correctCount > 0 || engine.lives < 5 || engine.skips < 5 else { return }
+        _ = MultiplayerStore.shared.saveStandaloneSoloGrammar(
+            ownUsername: username,
+            lives: engine.lives,
+            skips: engine.skips,
+            score: 0,
+            correctCount: engine.correctCount,
+            startLevel: startLevel
+        )
     }
 
     private var gameContent: some View {
