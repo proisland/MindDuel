@@ -11,9 +11,10 @@ Sosialt hjernetrim for iPhone – 10 spillmodi (Pi, Regning, Kjemi, Geografi, Hj
 | M3 – Progresjon og score | Scorelogikk, dagkvote, kontinuerlig progresjon | ✅ Ferdig |
 | M4 – Sosialt lag | Venner, scoreboard, profiler | ✅ Ferdig |
 | M5 – Flerspiller | Sanntids gruppespill, alle 10 modi | ✅ Ferdig |
-| M6 – Betaling | StoreKit 2, gratis/betalt-modell | 🔜 Neste |
-| M7 – Polering | Animasjoner, haptics, onboarding | ⏳ Planlagt |
-| M8 – App Store | Metadata, TestFlight, innlevering | ⏳ Planlagt |
+| M6 – Cloud Backend | Sentral datalagring, admin-grensesnitt, telemetri, spørsmålsbank, bildehosting | 🔜 Neste |
+| M7 – Betaling og abonnement | StoreKit 2, gratis/betalt-modell | ⏳ Planlagt |
+| M8 – Polering | Animasjoner, haptics, onboarding, treningsrunde | ⏳ Planlagt |
+| M9 – App Store-klargjøring | Metadata, skjermbilder, TestFlight, innlevering | ⏳ Planlagt |
 
 ## Dokumentasjon
 
@@ -21,7 +22,7 @@ All produkt- og designdokumentasjon ligger i [`docs/`](docs/):
 
 - [`docs/prd.md`](docs/prd.md) – Product Requirements Document
 - [`docs/Design.md`](docs/Design.md) – Designsystem og skjermspesifikasjon
-- [`docs/milestones.md`](docs/milestones.md) – Utviklingsplan, M1–M8
+- [`docs/milestones.md`](docs/milestones.md) – Utviklingsplan, M1–M9
 
 Disse er kilden til sannhet. README og [`CLAUDE.md`](CLAUDE.md) skal ikke duplisere innhold derfra – lenk i stedet.
 
@@ -35,8 +36,8 @@ Definert i `docs/prd.md` §11:
 | Språk / UI | Swift, SwiftUI |
 | Avhengigheter | Swift Package Manager |
 | Auth | Sign in with Apple (AuthenticationServices) |
-| Betaling | StoreKit 2 (M6) |
-| Backend | REST API + WebSocket, EU-region (planlagt M6+) |
+| Betaling | StoreKit 2 (M7) |
+| Backend | REST API + WebSocket, EU-region (M6) |
 | Lokalisering | String Catalogs, norsk + engelsk |
 
 ## Utvikling per milepæl
