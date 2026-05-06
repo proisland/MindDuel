@@ -3,6 +3,7 @@ import SwiftUI
 /// #16: solo physics round. Mirrors HistoryGameView/ScienceGameView.
 struct PhysicsGameView: View {
     let username: String
+    var resumeRoomID: String? = nil
 
     @StateObject private var engine          = GameEngine()
     @ObservedObject private var progression  = ProgressionStore.shared
@@ -19,8 +20,9 @@ struct PhysicsGameView: View {
     @Environment(\.dismiss) private var dismiss
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
-    init(username: String) {
+    init(username: String, resumeRoomID: String? = nil) {
         self.username = username
+        self.resumeRoomID = resumeRoomID
         let lvl = ProgressionStore.shared.physicsLevel
         _startLevel = State(initialValue: lvl)
         _problem    = State(initialValue: PhysicsProblemGenerator.generate(level: lvl))
@@ -55,15 +57,56 @@ struct PhysicsGameView: View {
                     onContinue: { showQuitModal = false },
                     onSave: {
                         showQuitModal = false
-                        dismiss()
+                        saveSessionAndExit()
                     }
                 )
             }
         }
+        .onAppear { restoreSavedSessionIfNeeded() }
+        .onDisappear { autoSaveIfInProgress() }
         .onReceive(timer) { _ in handleTimerTick() }
         .onChange(of: engine.isRoundOver) { over in
             if over && roundResult == nil { finaliseRound(won: false) }
         }
+    }
+
+    // MARK: – Session restore / save (#133)
+
+    private func restoreSavedSessionIfNeeded() {
+        guard let id = resumeRoomID,
+              let room = MultiplayerStore.shared.popStandaloneSolo(roomID: id),
+              let me = room.players.first(where: { $0.isYou }) else { return }
+        startLevel = max(1, room.startLevel)
+        problem    = PhysicsProblemGenerator.generate(level: progression.physicsLevel)
+        problemCount = max(1, me.correctCount + 1)
+        engine.restoreState(lives: me.lives, skips: me.skips, correctCount: me.correctCount)
+    }
+
+    private func saveSessionAndExit() {
+        _ = MultiplayerStore.shared.saveStandaloneSoloPhysics(
+            ownUsername: username,
+            lives: engine.lives,
+            skips: engine.skips,
+            score: 0,
+            correctCount: engine.correctCount,
+            startLevel: startLevel
+        )
+        roundResult = ProgressionStore.RoundResult(score: 0, isPersonalBest: false)
+        engine.quit()
+        dismiss()
+    }
+
+    private func autoSaveIfInProgress() {
+        guard !engine.isRoundOver, roundResult == nil,
+              engine.correctCount > 0 || engine.lives < 5 || engine.skips < 5 else { return }
+        _ = MultiplayerStore.shared.saveStandaloneSoloPhysics(
+            ownUsername: username,
+            lives: engine.lives,
+            skips: engine.skips,
+            score: 0,
+            correctCount: engine.correctCount,
+            startLevel: startLevel
+        )
     }
 
     private var gameContent: some View {

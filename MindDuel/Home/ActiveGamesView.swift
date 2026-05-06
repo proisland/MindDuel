@@ -57,11 +57,11 @@ struct ActiveGamesView: View {
             case .math:          MathGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
             case .chemistry:     ChemistryGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
             case .geography:     GeographyGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
-            case .brainTraining: BrainTrainingGameView(username: ownUsername)
-            case .science:       ScienceGameView(username: ownUsername)
-            case .history:       HistoryGameView(username: ownUsername)
-            case .physics:       PhysicsGameView(username: ownUsername)
-            case .sport:         SportGameView(username: ownUsername)
+            case .brainTraining: BrainTrainingGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .science:       ScienceGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .history:       HistoryGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .physics:       PhysicsGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .sport:         SportGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
             case .grammar:       GrammarGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
             }
         }
