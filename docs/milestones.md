@@ -1,8 +1,8 @@
 # Milepæler – MindDuel
 ## Utviklingsplan for iOS-app
 
-**Versjon:** 1.0
-**Dato:** 2026-04-29
+**Versjon:** 1.1
+**Dato:** 2026-05-06
 **Basert på:** PRD v0.1 + Design Document v1.0
 
 ---
@@ -16,11 +16,12 @@
 | M3 | Progresjon og score | Kontinuerlig progresjon, scorelogikk, dagkvote | 2 uker |
 | M4 | Sosialt lag | Venner, scoreboard, profiler | 2 uker |
 | M5 | Flerspiller | Sanntids gruppespill, invitasjoner, turlogikk | 3 uker |
-| M6 | Betaling og abonnement | StoreKit 2, gratis/betalt-modell | 1 uke |
-| M7 | Polering | Animasjoner, haptics, onboarding, treningsrunde | 2 uker |
-| M8 | App Store-klargjøring | Metadata, skjermbilder, testflight, innlevering | 1 uke |
+| M6 | Cloud Backend | Sentral datalagring, admin-grensesnitt, telemetri, spørsmålsbank, bildehosting | 5 uker |
+| M7 | Betaling og abonnement | StoreKit 2, gratis/betalt-modell | 1 uke |
+| M8 | Polering | Animasjoner, haptics, onboarding, treningsrunde | 2 uker |
+| M9 | App Store-klargjøring | Metadata, skjermbilder, testflight, innlevering | 1 uke |
 
-**Total estimert tid:** ~16 uker
+**Total estimert tid:** ~21 uker
 
 ---
 
@@ -209,7 +210,132 @@
 
 ---
 
-## M6 – Betaling og abonnement
+## M6 – Cloud Backend
+**Mål:** Fullstendig sky-backend etablert med sikker kommunikasjon, sentralisert datalagring, admin-grensesnitt og alle støttefunksjoner som kreves for produksjonssetting.
+
+### Infrastruktur og sikkerhet
+- Produksjonsmiljø satt opp (EU-region, GDPR-compliant) med staging-miljø for testing
+- HTTPS/TLS (REST) og WSS (WebSocket) for all kommunikasjon mellom app og backend
+- JWT-basert autentisering for alle API-kall fra appen; tokens roteres jevnlig
+- Admin-grensesnitt med separat autentisering og rollebasert tilgangskontroll (f.eks. admin / moderator)
+- Kryptert lagring av sensitiv brukerdata (fødselsdato, Apple-bruker-ID hashed)
+- API rate limiting og throttling på servernivå
+- Logging, error tracking og uptime monitoring
+
+### Brukerdata og spilløkter
+- All brukerprofil-data, progresjon og scores lagres sentralt – støtter flere enheter per bruker
+- Spilløkter og solo-sessions synkroniseres med backend; offline-spill bufres lokalt og synkroniseres ved reconnect
+- Session-tokens og serverside fasit-validering flyttes fra klient til backend (fullføring av M3/M5-plan)
+- Anti-juks-flagging flyttes serverside der timing-data valideres uavhengig av klienten
+
+### Spørsmålsbank
+- Spørsmål for alle kunnskapsbaserte modi lagres i backend-database (erstatter statiske bundlete spørsmålslister)
+- Versjonssystem: appen sjekker ved oppstart og jevnlig (f.eks. daglig i bakgrunnen) om det finnes en nyere versjon av spørsmålspakken for de aktive modiene
+- Appen laster ned og cacher oppdatert spørsmålspakke ved versjonsbump; gammel pakke beholdes til ny er fullstendig lastet ned
+- Spørsmål bundlet i appen beholdes som fallback ved første oppstart uten nettverkstilgang
+- Admin-grensesnitt for CRUD av spørsmål med støtte for modus, nivå og vanskelighetsgrad-tagging
+
+### Bildehosting
+- Bilder appen bruker (foreløpig flagg for geografi-modus) hostes sentralt (CDN eller object storage i EU)
+- Appen sjekker versjon/hash og laster ned oppdaterte bilder ved endring
+- Bilder caches lokalt på enheten; bilder bundlet i appen brukes som fallback ved offline
+
+### Spillmodus-styring
+- Admin kan aktivere, skjule og fjerne spillmodi uten app-oppdatering
+- Støtte for midlertidige/sesongbaserte modi (påske, VM, OL, jul osv.) med planlagte start- og sluttidspunkter
+- Appen henter aktiv moduskonfigurasjon ved oppstart med lokal fallback ved offline
+
+### Bruksstatistikk og telemetri
+- Appen sender anonym telemetri: skjermvisninger, funksjonsklikk, sesjonslengde, feilhendelser
+- Telemetri sendes i batches for å spare batteri og data; ingen PII inkluderes
+- Admin-dashboard viser nøkkelmetrikker: DAU/MAU, populære modi, gjennomsnittlig sesjonslengde, dagkvote-utnyttelse
+- Crash reporting integrert
+
+### Tilbakemeldingssystem
+- Brukere sender tilbakemelding via innstillingsskjermen i appen
+- Backend mottar og lagrer tilbakemeldinger (ticket-system med status: åpen / under behandling / lukket)
+- Admin kan se, kategorisere og svare på tilbakemeldinger i admin-grensesnittet
+- Svar pushes til brukeren via APNs-notifikasjon og/eller in-app melding
+
+### Admin-grensesnitt (web)
+- Brukeradministrasjon: søk, vis profil, fjern flagg, suspender konto
+- Spørsmålsadministrasjon: CRUD for alle spørsmål, versjonspublisering
+- Bildeadministrasjon: last opp, oppdater og arkiver bilder brukt i appen
+- Spillmodus-konfigurasjon: aktiver/skjul/sesongsett modi
+- Tilbakemeldingshåndtering: vis, svar og lukk tickets
+- Statistikk-dashboard med nøkkelmetrikker
+
+### iOS-app-endringer
+M6 krever betydelige endringer i appen for å gå fra lokal/mock-tilstand (M1–M5) til ekte backend-integrasjon.
+
+**Nettverkslag**
+- Robust API-klient bygget (URLSession + async/await); håndterer JWT-autentisering, token-rotasjon og automatisk retry ved kortvarige nettverksfeil
+- Offline-buffer: data som genereres uten nett (solo-scores, progresjon) køes lokalt og synkroniseres automatisk ved reconnect
+- Feilhåndtering og bruker-synlig nett-status der relevant (f.eks. flerspiller krever nett)
+
+**Spørsmålsbank**
+- Bundlet JSON for alle 8 kunnskapsbaserte modi erstattes med versjonert nedlasting + lokal disk-cache
+- Versjonsjekk kjøres ved appstart og jevnlig i bakgrunnen; ny pakke lastes ned og byttes ut atomisk
+- Bundlet innhold beholdes kun som fallback ved første oppstart uten nett
+
+**Bildenedlasting**
+- Bundlete flagg-bilder (og fremtidige bilder) erstattes med CDN-nedlasting og lokal disk-cache
+- Hash-basert sjekk avgjør om et bilde trenger oppdatering
+
+**Spillmodus-konfigurasjon**
+- Hardkodet moduskonfigurasjon erstattes med henting fra backend
+- Appen viser kun moduser som er aktive ifølge backend; skjuler/viser midlertidige modi automatisk
+- Siste kjente konfigurasjon caches lokalt for offline-fallback
+
+**Flerspiller**
+- Mock WebSocket-implementasjon (M5) erstattes med ekte WebSocket-tilkobling (WSS)
+- All turlogikk, session-tokens og fasit-validering håndteres serverside
+
+**Progresjon, scores og dagkvote**
+- `UserDefaults`-basert progresjon og scorelagring erstattes med serverside persistens
+- Dagkvote-sjekk flyttes fra lokal til serverside; lokal kopi brukes kun som optimistisk UI-indikator
+- Session-tokens for hvert spill mottas fra server ved rundestart og sendes med alle svar
+
+**Anti-juks**
+- Klientbasert flagg-logikk fjernes fra `UserDefaults`; flagg-status hentes fra backend ved innlogging og oppdateres i sanntid
+
+**Telemetri**
+- Event-tracking implementert for skjermvisninger, funksjonsklikk og sesjonslengde
+- Events batches og sendes i bakgrunnen uten å påvirke appytelse
+
+**Tilbakemeldingsskjema**
+- Tilbakemeldingsskjerm i innstillinger kobles til backend ticket-API
+- In-app-visning av svar på tilbakemeldinger
+
+**Push-notifikasjoner**
+- APNs device token registreres med backend ved innlogging
+- Mottak og visning av notifikasjoner: din tur, runden er over, invitasjon, svar på tilbakemelding
+
+### Leveransekrav
+**Backend**
+- [ ] Produksjonsmiljø live i EU-region med staging-miljø
+- [ ] All kommunikasjon mellom app og backend er kryptert (HTTPS/WSS)
+- [ ] Admin-grensesnitt live med rollebasert autentisering
+- [ ] Spørsmålsbanker versjonshåndteres og kan oppdateres uten app-release
+- [ ] Bilder hostes sentralt (CDN/object storage)
+- [ ] Admin kan aktivere/skjule/sesongsette spillmodi uten app-oppdatering
+- [ ] Tilbakemeldingssystem fungerer end-to-end (mottak, svar og lukking)
+- [ ] Anti-juks-flagging kjøres serverside
+
+**iOS-app**
+- [ ] All brukerprofil-data, progresjon og scores lagres sentralt og synkroniseres på tvers av enheter
+- [ ] Solo-spill fungerer offline; data synkroniseres ved reconnect
+- [ ] Appen laster ned og cacher spørsmålspakker og bilder; versjonsjekk kjøres ved oppstart
+- [ ] Flerspiller bruker ekte WebSocket-tilkobling (ikke mock)
+- [ ] Scoreboard (venner/lokalt/globalt) henter data fra reelle API-endepunkter
+- [ ] Dagkvote-sjekk er serverside
+- [ ] Session-tokens brukes for alle spillrunder
+- [ ] Anonym telemetri sendes fra appen og vises i admin-dashboard
+- [ ] Push-notifikasjoner (APNs) fungerer for tur, runde ferdig, invitasjon og tilbakemeldingssvar
+
+---
+
+## M7 – Betaling og abonnement
 **Mål:** Betalingsmodell er live og fungerer via Apple In-App Purchase.
 
 ### StoreKit 2
@@ -231,7 +357,7 @@
 
 ---
 
-## M7 – Polering
+## M8 – Polering
 **Mål:** Appen føles ferdig. Animasjoner, overganger, onboarding og treningsrunde er på plass.
 
 ### Animasjoner og overganger (seksjon 6 i Design)
@@ -277,7 +403,7 @@ Kun mørk modus støttes i v1. Color Assets implementeres uten light-variant. Ly
 
 ---
 
-## M8 – App Store-klargjøring
+## M9 – App Store-klargjøring
 **Mål:** Appen er klar for innlevering til App Store Review.
 
 ### TestFlight
@@ -309,7 +435,7 @@ Kun mørk modus støttes i v1. Color Assets implementeres uten light-variant. Ly
 
 ---
 
-## Åpne designspørsmål som må avklares før M7
+## Åpne designspørsmål som må avklares før M8
 
 Disse er hentet fra Design.md seksjon 11 og påvirker M7 direkte:
 

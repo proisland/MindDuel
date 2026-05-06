@@ -154,7 +154,7 @@ Runden avsluttes når enten liv eller hopp er brukt opp, eller spilleren velger 
 
 ### 5.5 Kunnskapsbaserte modi
 
-Åtte modi bruker samme mekanikk som Regning (4 svaralternativer, live/hopp, timeout), men med fagbaserte spørsmål i stedet for genererte regnestykker. Spørsmålsbanker er statiske og bundlet i appen.
+Åtte modi bruker samme mekanikk som Regning (4 svaralternativer, live/hopp, timeout), men med fagbaserte spørsmål i stedet for genererte regnestykker. Spørsmålsbanker lagres i backend og versjonshåndteres; appen sjekker jevnlig om det finnes en nyere versjon og cacher pakken lokalt. Spørsmål bundlet i appen brukes som fallback ved første oppstart uten nett.
 
 | Modus | Fagområde | Vanskelighetsgrad |
 |---|---|---|
@@ -281,12 +281,12 @@ Daglig kvote nullstilles ved midnatt (lokal tid). Spillere varsles med et banner
 |---|---|
 | Plattform | iOS 16+ |
 | Språk | Swift / SwiftUI |
-| Backend | REST API + WebSocket for sanntids flerspiller (planlagt M6+; per M5 er alt mock/lokal) |
+| Backend | REST API (HTTPS) + WebSocket (WSS) for sanntids flerspiller; implementeres i M6 |
 | Autentisering | Sign in with Apple (AuthenticationServices) |
 | Betaling | StoreKit 2 |
 | Databaser | Brukerdata GDPR-compliant, lagret i EU-region |
 | Lokasjon | CoreLocation kun for scoreboard-radius, ikke lagret på server |
-| Offline | Enkeltspiller kan spilles offline; poeng synkroniseres ved reconnect |
+| Offline | Enkeltspiller kan spilles offline; data bufres lokalt og synkroniseres ved reconnect. Flerspiller krever aktiv internettilkobling. |
 | Lokalisering | All tekst i appen, onboarding-illustrasjoner og App Store-materiell leveres på norsk og engelsk. Språk følger iPhone-systemspråket automatisk (NSLocalizedString / String Catalogs). |
 
 ---
@@ -392,9 +392,9 @@ Maks antall API-kall per bruker per sekund begrenses på servernivå. Automatise
 - Ingen automatisk utestengelse – kun manuell gjennomgang av administrator
 - Ved gjennomgang: flagg fjernes (uskyldig) eller konto suspenderes manuelt
 
-**Implementasjonsstatus:** Flagging er per M5 klientbasert (lagret i `UserDefaults`). Når backend er på plass (M6+) må flagging flyttes serverside der timing-data valideres uavhengig.
+**Implementasjonsstatus:** Flagging er per M5 klientbasert (lagret i `UserDefaults`). I M6 flyttes flagging serverside der timing-data valideres uavhengig av klienten.
 
-**Administrativ gjennomgang (backend M6+):**
+**Administrativ gjennomgang (M6+):**
 
 | Steg | Handling |
 |---|---|
@@ -472,7 +472,57 @@ Haptics kan ikke skrus av i appen, men følger systeminnstillingen "Haptisk tilb
 
 ---
 
-## 20. Backlog (fremtidige versjoner)
+## 20. Backend-arkitektur og admin (M6)
+
+### 20.1 Sentral datalagring
+All brukerdata, progresjon, scores og spilløkter lagres i backend-database (EU-region, GDPR-compliant). Dette muliggjør:
+- Bruk av samme konto på flere enheter
+- Sanntids flerspiller
+- Serverside validering og anti-juks-kontroll
+
+Solo-spill kan spilles uten internett; buffrede data synkroniseres ved reconnect. Flerspill krever aktiv tilkobling.
+
+### 20.2 Sikkerhet
+- All kommunikasjon skjer over HTTPS (REST) og WSS (WebSocket)
+- JWT-tokens autentiserer alle API-kall fra appen; tokens roteres jevnlig
+- Sensitiv brukerdata (fødselsdato, Apple-ID) lagres kryptert
+- API rate limiting og throttling beskytter mot automatiserte angrep
+- Admin-grensesnitt har eget autentiseringssystem med rollebasert tilgangskontroll
+
+### 20.3 Spørsmålsbank og bildehosting
+Spørsmål for alle kunnskapsbaserte modi og bilder appen bruker (f.eks. flagg) administreres sentralt:
+
+| Ressurs | Versjonering | Lokal cache | Fallback |
+|---|---|---|---|
+| Spørsmålspakker | Versjonsnummer per modus | Ja, lagres til ny pakke er lastet | Bundlet i appen |
+| Bilder | Hash-basert | Ja, etter første nedlasting | Bundlet i appen |
+
+Appen sjekker ved oppstart og jevnlig i bakgrunnen om det finnes oppdatert innhold.
+
+### 20.4 Spillmodus-konfigurasjon
+Admin kan aktivere, skjule og fjerne spillmodi uten app-oppdatering. Støtter midlertidige/sesongbaserte modi (påske, VM, OL, jul osv.) med planlagte start- og sluttidspunkter. Appen henter aktiv moduskonfigurasjon ved oppstart med lokal fallback ved offline.
+
+### 20.5 Bruksstatistikk og telemetri
+Appen sender anonym, batch-basert telemetri (ingen PII): skjermvisninger, funksjonsklikk, sesjonslengde, feilhendelser. Admin-dashboard viser nøkkelmetrikker: DAU/MAU, populære modi, gjennomsnittlig sesjonslengde og dagkvote-utnyttelse.
+
+### 20.6 Tilbakemeldingssystem
+Brukere sender tilbakemelding via innstillingsskjermen. Backend lagrer tickets med status (åpen / under behandling / lukket). Admin kan svare direkte; svar leveres via APNs-notifikasjon eller in-app melding.
+
+### 20.7 Admin-grensesnitt
+Web-basert grensesnitt med følgende moduler:
+
+| Modul | Funksjonalitet |
+|---|---|
+| Brukeradministrasjon | Søk, vis profil, fjern flagg, suspender konto |
+| Spørsmålsadministrasjon | CRUD, versjonspublisering, tagging (modus/nivå) |
+| Bildeadministrasjon | Last opp, oppdater og arkiver bilder |
+| Spillmodus-konfigurasjon | Aktiver/skjul/sesongsett modi |
+| Tilbakemeldinger | Vis, kategoriser, svar og lukk tickets |
+| Statistikk | DAU/MAU, populære modi, kvote-utnyttelse |
+
+---
+
+## 21. Backlog (fremtidige versjoner)
 
 | Funksjon | Prioritet |
 |---|---|
@@ -487,7 +537,7 @@ Haptics kan ikke skrus av i appen, men følger systeminnstillingen "Haptisk tilb
 
 ---
 
-## 21. Avklarte designspørsmål
+## 22. Avklarte designspørsmål
 
 ~~1. Skal hopp telles som "feil" i noen sammenheng, eller er de helt nøytrale?~~
 **Avklart:** Hopp er helt nøytrale – ingen straff, påvirker ikke score.

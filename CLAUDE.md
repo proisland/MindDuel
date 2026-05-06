@@ -29,7 +29,7 @@ GitHub Actions runs on `macos-15` for every push to `main` and `milestone/**` br
 | Platform | iOS 16+, Swift 5.9, SwiftUI |
 | Project config | XcodeGen (`project.yml` is source of truth; `.xcodeproj` is gitignored) |
 | Auth | Sign in with Apple (`AuthenticationServices`) |
-| Payment (M6) | StoreKit 2 |
+| Payment (M7) | StoreKit 2 |
 | Backend (M2+) | REST API + WebSocket, EU-region |
 | Localization | `Localizable.xcstrings` (String Catalogs), Norwegian (`no`) + English (`en`) |
 | Color scheme | Dark mode only (forced with `.preferredColorScheme(.dark)`); no light-mode variants needed |
@@ -87,13 +87,14 @@ Always use `String(localized: "key")` or `Text("key")` with keys defined in `Loc
 
 | Milepæl | Branch |
 |---|---|
-| M1 – Fundament | `milestone/m1-fundament` ← current |
+| M1 – Fundament | `milestone/m1-fundament` |
 | M2 – Spillbar prototype | `milestone/m2-prototype` |
 | M3 – Progresjon og score | `milestone/m3-progresjon` |
 | M4 – Sosialt lag | `milestone/m4-sosialt` |
 | M5 – Flerspiller | `milestone/m5-flerspiller` |
-| M6 – Betaling | `milestone/m6-betaling` |
-| M7 – Polering | `milestone/m7-polering` |
-| M8 – App Store | `milestone/m8-appstore` |
+| M6 – Cloud Backend | `milestone/m6-cloud-backend` ← current |
+| M7 – Betaling | `milestone/m7-betaling` |
+| M8 – Polering | `milestone/m8-polering` |
+| M9 – App Store | `milestone/m9-appstore` |
 
 Branch from `main` for each milestone. Open a draft PR early. Check off deliverables in `docs/milestones.md` in the same PR. Tag `m1`, `m2`, … after merge to `main`.
