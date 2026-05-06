@@ -1,15 +1,15 @@
 # Product Requirements Document
 ## MindDuel – Sosialt hjernetrim for iPhone
 
-**Versjon:** 0.1 (Draft)
-**Dato:** 2026-04-28
-**Status:** Til gjennomgang
+**Versjon:** 0.2
+**Dato:** 2026-05-06
+**Status:** Oppdatert – reflekterer implementert M1–M5
 
 ---
 
 ## 1. Produktoversikt
 
-MindDuel er en sosial iOS-app der spillere konkurrerer om å løse mentale utfordringer så raskt og nøyaktig som mulig. Appen tilbyr to spillmodi – Pi-gjetting og Regnestykker – og støtter både asynkron konkurranse mot venner og sanntids flerspillermodus. Poengsum beregnes ut fra en kombinasjon av nøyaktighet og hastighet.
+MindDuel er en sosial iOS-app der spillere konkurrerer om å løse mentale utfordringer så raskt og nøyaktig som mulig. Appen tilbyr ti spillmodi – Pi, Regning, Kjemi, Geografi, Hjernetrim, Naturvitenskap, Historie, Fysikk, Sport og Grammatikk – og støtter både solo-spill og sanntids flerspillermodus. Poengsum beregnes ut fra en kombinasjon av nøyaktighet og hastighet.
 
 ---
 
@@ -152,6 +152,23 @@ Gjelder begge modi:
 
 Runden avsluttes når enten liv eller hopp er brukt opp, eller spilleren velger å avslutte.
 
+### 5.5 Kunnskapsbaserte modi
+
+Åtte modi bruker samme mekanikk som Regning (4 svaralternativer, live/hopp, timeout), men med fagbaserte spørsmål i stedet for genererte regnestykker. Spørsmålsbanker er statiske og bundlet i appen.
+
+| Modus | Fagområde | Vanskelighetsgrad |
+|---|---|---|
+| Kjemi | Grunnstoff, reaksjoner, periodesystem | Nivå 1–20 |
+| Geografi | Land, flagg, hovedsteder, LK20-pensum | Nivå 1–20 |
+| Hjernetrim | Tallmønstre, aritmetiske snarveier, arbeidsminne | Nivå 1–20 |
+| Naturvitenskap | Biologi, fysikk, astronomi, geologi | Nivå 1–20 |
+| Historie | Norgeshistorie og verdenshistorie, forhistorie til nåtid | Nivå 1–20 |
+| Fysikk | Mekanikk, elektrisitet, termodynamikk | Nivå 1–20 |
+| Sport | Populære idretter, regler, utøvere, OL | Nivå 1–20 |
+| Grammatikk | Norsk grammatikk (nynorsk/bokmål) | Nivå 1–20 |
+
+Progresjon, scorelogikk og dagkvote er identisk med Regning-modus (se §5.2). Nivåoppgang styres av adaptiv terskel basert på svartid og antall feil innenfor gjeldende nivå.
+
 ---
 
 ## 7. Flerspiller – Sanntidsmodus
@@ -214,7 +231,7 @@ Scoreboard viser: Rang, brukernavn, alder, snittpoeng siste 30 dager.
 
 | Funksjon | Gratis | Betalt |
 |---|---|---|
-| Oppgaver per dag | 10 | Ubegrenset |
+| Oppgaver per dag | 20 | Ubegrenset |
 | Begge spillmodi | ✅ | ✅ |
 | Flerspiller | ✅ | ✅ |
 | Scoreboard | ✅ | ✅ |
@@ -226,7 +243,7 @@ Scoreboard viser: Rang, brukernavn, alder, snittpoeng siste 30 dager.
 
 Betaling håndteres via Apple In-App Purchase (StoreKit 2).
 
-Daglig kvote nullstilles ved midnatt (lokal tid). Spillere varsles med et banner når de nærmer seg grensen (8/10 oppgaver brukt).
+Daglig kvote nullstilles ved midnatt (lokal tid). Spillere varsles med et banner når de nærmer seg grensen (16/20 oppgaver brukt).
 
 ---
 
@@ -237,15 +254,24 @@ Daglig kvote nullstilles ved midnatt (lokal tid). Spillere varsles med et banner
 - **Tilstandsindikator:** Liv og hopp alltid synlig øverst under spilling
 - **Ingen distraksjoner:** Ingen bannere eller reklame av noe slag
 
-### 10.1 Skjermoversikt (MVP)
+### 10.1 Skjermoversikt
+
 1. **Velkomstskjerm** – Sign in with Apple-knapp
-2. **Brukernavnvalg** – Enkel tekstinnskriving
-3. **Hjemskjerm** – Velg modus (Pi / Regnestykke), knapp til Flerspiller, snarvei til Scoreboard
-4. **Spillskjerm** – Oppgave sentrert, liv/hopp øverst, svar-knapper nederst
-5. **Rundeslutt** – Poengoppsummering, sammenligning med venner, "Spill igjen"-knapp
-6. **Scoreboard** – Tab: Venner / Lokalt / Globalt
-7. **Profil** – Egne stats, venneforespørsler, abonnementsstatus
-8. **Flerspillerlobby** – Opprett rom / bli med i rom
+2. **Brukernavnvalg** – Enkel tekstinnskriving med live-validering
+3. **Onboarding** – 4 skjermbilder, kan hoppes over
+4. **Hjemskjerm** – Moduskort (Pi / Regning), snarvei til alle 10 modi, Flerspiller-seksjon, aktivitetsfeed
+5. **Se alle modi** – Sheet med alle 10 spillmodi
+6. **Spillskjerm** – Oppgave sentrert, liv/hopp øverst, svar-knapper nederst (felles layout, all-modi)
+7. **Rundeslutt** – Poengoppsummering, sammenligning med venner, "Spill igjen"-knapp
+8. **Scoreboard** – Tab: Venner / Lokalt / Globalt
+9. **Min profil** – Egne stats, fremgang per modus, venner, avatar-velger
+10. **Annens profil** – Stats + "Utfordre" og "+ Venn"-knapper
+11. **Innstillinger** – Konto, abonnement, personvern, tilbakemelding, logg ut
+12. **Flerspillerlobby** – Opprett rom / bli med i rom, spillerstatus
+13. **Flerspiller-spill** – Live turbasert spill med LIVE-indikator og spillerrekkefølge
+14. **Flerspiller-invitasjoner** – Liste over ventende invitasjoner
+15. **Flerspiller ferdig** – Vinner + resultater
+16. **Aktive spill** – Liste over pågående background-rooms (solo og flerspiller)
 
 ---
 
@@ -255,7 +281,7 @@ Daglig kvote nullstilles ved midnatt (lokal tid). Spillere varsles med et banner
 |---|---|
 | Plattform | iOS 16+ |
 | Språk | Swift / SwiftUI |
-| Backend | REST API + WebSocket for sanntids flerspiller |
+| Backend | REST API + WebSocket for sanntids flerspiller (planlagt M6+; per M5 er alt mock/lokal) |
 | Autentisering | Sign in with Apple (AuthenticationServices) |
 | Betaling | StoreKit 2 |
 | Databaser | Brukerdata GDPR-compliant, lagret i EU-region |
@@ -276,12 +302,15 @@ Daglig kvote nullstilles ved midnatt (lokal tid). Spillere varsles med et banner
 
 ## 13. Scope – MVP vs. fremtidige versjoner
 
-### MVP (v1.0)
-- Begge spillmodi (enkeltspiller)
+### Implementert per M5
+- 10 spillmodi (solo og flerspiller)
 - Sign in with Apple + brukernavn
+- Kontinuerlig progresjon med adaptiv vanskelighetsgrad
 - Venneliste og scoreboard (venner + lokalt + globalt)
-- Sanntids flerspiller (opptil 4 spillere)
-- Gratis/betalt-modell med daglig kvote
+- Sanntids flerspiller (opptil 8 spillere, alle 10 modi)
+- Dagkvote (20 oppgaver for gratisbrukere) – lokal, backend ikke implementert
+- Avatar-velger og tilbakemeldingsfunksjon
+- Solo-økt-persistens ("background rooms")
 
 ### Fremtidige versjoner
 - Push-varslinger ("Venn utfordrer deg")
@@ -356,12 +385,29 @@ Hver spillrunde tildeles et unikt server-generert token ved oppstart. Svar uten 
 Maks antall API-kall per bruker per sekund begrenses på servernivå. Automatiserte scripts som sender svar i bulk blokkeres.
 
 ### 17.5 Avviksdeteksjon og flagging
-- Brukere med konsekvent responstid under 400 ms over mange runder flagges automatisk for gjennomgang
-- **Flagget bruker** får et synlig varslingsikon i appen (f.eks. 🚩 ved brukernavnet)
+- Brukere med konsekvent responstid under 400 ms over 5 eller flere runder flagges automatisk
+- **Flagget bruker** får et synlig varslingsikon i appen (🚩 ved brukernavnet)
 - Brukeren kan trykke på ikonet for å lese en forklaring: "Kontoen din er flagget for gjennomgang av mulig uvanlig aktivitet. Dette påvirker ikke spilling, men scoren din er midlertidig skjult fra globalt scoreboard."
 - Flagget vises også for andre spillere på profilkortet og i scoreboard
 - Ingen automatisk utestengelse – kun manuell gjennomgang av administrator
 - Ved gjennomgang: flagg fjernes (uskyldig) eller konto suspenderes manuelt
+
+**Implementasjonsstatus:** Flagging er per M5 klientbasert (lagret i `UserDefaults`). Når backend er på plass (M6+) må flagging flyttes serverside der timing-data valideres uavhengig.
+
+**Administrativ gjennomgang (backend M6+):**
+
+| Steg | Handling |
+|---|---|
+| Hent rundehistorikk | `SELECT * FROM rounds WHERE user_id = ? ORDER BY created_at DESC LIMIT 50` |
+| Sjekk snittid | `AVG(answer_time_ms)` – under 400 ms konsekvent er mistenkelig |
+| Sjekk streak | Ubrutt riktig-rekke over 20+ spørsmål på høy vanskelighetsgrad |
+| Krysskjekk enhet | Flere kontoer fra samme enhet-fingeravtrykk |
+
+| Utfall | Handling |
+|---|---|
+| Falsk positiv | Fjern flagg: `PATCH /admin/users/:id { "flagged": false }` |
+| Bekreftet juks | Suspender: `PATCH /admin/users/:id { "suspended": true }` |
+| Uklart | La flagg stå, overvåk 7 dager til |
 
 ---
 
@@ -414,7 +460,7 @@ Skjermbilder og grafikk leveres i to sett – ett per språk – der all synlig 
 ## 19. Visuelt design og UX
 
 ### 19.1 Mørk modus
-Appen følger systeminnstillingen på iPhone (Light/Dark Mode). Det finnes ingen eget valg i appen. Alle UI-komponenter skal ha korrekte fargeverdier for begge modi.
+Appen bruker utelukkende mørk modus, tvunget via `.preferredColorScheme(.dark)` uavhengig av systeminnstillingen. Det finnes ingen valg i appen. Color Assets har ikke light-varianter. Lys modus er backlog for v2.
 
 ### 19.2 Haptics
 Subtil haptisk tilbakemelding ved:
@@ -441,7 +487,7 @@ Haptics kan ikke skrus av i appen, men følger systeminnstillingen "Haptisk tilb
 
 ---
 
-## 14. Åpne spørsmål
+## 21. Avklarte designspørsmål
 
 ~~1. Skal hopp telles som "feil" i noen sammenheng, eller er de helt nøytrale?~~
 **Avklart:** Hopp er helt nøytrale – ingen straff, påvirker ikke score.
@@ -453,7 +499,13 @@ Haptics kan ikke skrus av i appen, men følger systeminnstillingen "Haptisk tilb
 **Avklart:** Alle spillere i et rom bruker alltid samme modus.
 
 ~~4. Nøyaktig vekting mellom tid og antall i scoreformelen~~
-**Avklart:** Formelen bruker en kalibreringskonstant K (se seksjon 5). K fastsettes basert på data fra playtesting, og kan justeres i backend uten app-oppdatering.
+**Avklart:** Formelen bruker en kalibreringskonstant K (se §5). K fastsettes basert på data fra playtesting, og kan justeres i backend uten app-oppdatering.
 
 ~~5. Skal aldersbasert vanskelighetsgrad kunne overstyres manuelt av brukeren?~~
 **Avklart:** Ja – brukeren kan manuelt velge et høyere eller lavere vanskelighetsintervall fra profilsiden. Alderen som vises for andre spillere forblir uendret (faktisk alder fra Apple-profil).
+
+~~6. Daglig kvote – antall?~~
+**Avklart:** 20 oppgaver per dag for gratisbrukere (`ProgressionStore.dailyQuota = 20`). Treningsrunder ekskluderes.
+
+~~7. Lys modus i v1?~~
+**Avklart:** Nei. Kun mørk modus, tvunget via `.preferredColorScheme(.dark)`. Lys modus er backlog for v2.

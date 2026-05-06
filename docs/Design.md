@@ -1,10 +1,10 @@
 # Design Document
 ## MindDuel – Sosialt hjernetrim for iPhone
 
-**Versjon:** 1.1
-**Dato:** 2026-04-29 (oppdatert med UI-bilder)
-**Status:** Klar for utvikling
-**Basert på PRD:** v0.1
+**Versjon:** 1.2
+**Dato:** 2026-05-06
+**Status:** Oppdatert – reflekterer implementert M1–M5
+**Basert på PRD:** v0.2
 
 ---
 
@@ -12,7 +12,7 @@
 
 MindDuels visuelle design bygger på fem kjerneverdier:
 
-- **Minimalistisk og mørkt** – Mørk lilla bakgrunn som primærflate, inspirert av Apples spilldesign. Ren komposisjon uten visuell støy.
+- **Minimalistisk og mørkt** – Mørk lilla bakgrunn som primærflate, inspirert av Apples spilldesign. Ren komposisjon uten visuell støy. Kun mørk modus støttes (tvunget via `.preferredColorScheme(.dark)`; ingen lys modus-variant).
 - **Ikonbasert** – Egendefinerte SVG-ikoner i konsistent linjær stil (2px stroke). Emojis brukes ikke i UI-elementer.
 - **Fokus** – Aldri mer enn én primærhandling synlig om gangen under spilling.
 - **Transparent tilstand** – Liv og hopp alltid synlig som piller; treningsrunder alltid tydelig merket.
@@ -24,7 +24,7 @@ MindDuels visuelle design bygger på fem kjerneverdier:
 
 ### 2.1 Fargepalett
 
-Mørk modus er primærtilstanden. Lys modus støttes via systeminnstilling, men dokumenteres separat ved behov.
+Kun mørk modus. Appen tvinger mørk modus uavhengig av systeminnstilling og har ingen light-varianter i Color Assets.
 
 #### Bakgrunner og overflater
 
@@ -267,18 +267,23 @@ Innlogging
     └── Velg brukernavn
         └── Onboarding (4 skjermbilder, kan hoppes over)
             └── Hjemskjerm ──────────────────────────────┐
-                ├── Pi-modus                             │
-                │   └── Spillskjerm                      │
+                ├── Moduskort (Pi / Regning – snarveier) │
+                ├── Se alle modi (AllModesSheet)          │
+                │   └── Spillskjerm (alle 10 modi)        │
                 │       └── Rundeslutt                   │
-                ├── Regning                          │
-                │   └── Spillskjerm                      │
-                │       └── Rundeslutt                   │
-                ├── Gruppespill                          │
-                │   ├── Lobby                            │
+                ├── Aktive spill                         │
+                ├── Aktivitetsliste                      │
+                ├── Flerspiller                          │
+                │   ├── Invitasjonsliste                 │
+                │   ├── Lobby (opprett/bli med)          │
                 │   └── Live spill (med spillerrekkefølge)
-                │       └── Rundeslutt                   │
+                │       ├── Rundesammendrag              │
+                │       └── Flerspiller ferdig           │
                 ├── Min profil ──────────────────────────┤
+                │   ├── Avatar-velger                    │
                 │   └── Innstillinger                    │
+                │       ├── Tilbakemeldinger             │
+                │       ├── Vilkår og personvern         │
                 │       └── Logg ut                      │
                 ├── Annens profil (fra scoreboard)       │
                 └── Scoreboard ──────────────────────────┘
@@ -311,6 +316,9 @@ Alle designskisser er dokumentert som mockup-bilder i `docs/ui-refs/`:
 | 12 | Gruppespill (group game) | `group-game.png` |
 | 13 | Forlat spill-modal | `quit-modal.png` |
 | 14 | Innstillinger | `settings.png` |
+| 15 | Se alle modi (AllModesSheet) | *(ikke dokumentert ennå)* |
+| 16 | Flerspiller – invitasjoner | *(ikke dokumentert ennå)* |
+| 17 | Flerspiller – rundesammendrag | *(ikke dokumentert ennå)* |
 
 ---
 
@@ -649,7 +657,7 @@ Følgende valg er tatt eksplisitt basert på iterasjon med stakeholder:
 
 | # | Spørsmål | Status | Beslutning |
 |---|---|---|---|
-| 1 | Skal lys modus støttes i v1, eller kun mørk? | ✅ Avklart | Kun mørk modus i v1. Lys modus er backlog for v2. |
+| 1 | Skal lys modus støttes i v1, eller kun mørk? | ✅ Implementert | Kun mørk modus. Tvunget via `.preferredColorScheme(.dark)`. Ingen light-varianter i Color Assets. |
 | 2 | Endelig logo og ordmerke – skal det lages? | ✅ Avklart | Ja. Minimalistisk SVG-stil, konsistent med designsystemet. Ferdig til M8. |
 | 3 | Lyddesign for riktig/feil-svar | Backlog (v2) | – |
 | 4 | Onboarding-illustrasjonsstil | ✅ Avklart | Minimalistisk SVG – konsistent med resten av designsystemet. |
