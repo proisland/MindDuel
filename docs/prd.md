@@ -238,7 +238,8 @@ Scoreboard viser: Rang, brukernavn, alder, snittpoeng siste 30 dager.
 | Venneliste | ✅ | ✅ |
 
 ### 9.1 Betalingsalternativer
-- **Abonnement:** 19 kr/mnd (månedlig fornyelse, kan avsluttes når som helst)
+- **Månedlig abonnement:** 19 kr/mnd (månedlig fornyelse, kan avsluttes når som helst)
+- **Årlig abonnement:** 99 kr/år (årlig fornyelse, kan avsluttes når som helst)
 - **Engangskjøp:** 199 kr (livsvarig tilgang, ingen gjentakende belastning)
 
 Betaling håndteres via Apple In-App Purchase (StoreKit 2).

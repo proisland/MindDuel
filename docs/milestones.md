@@ -340,6 +340,7 @@ M6 krever betydelige endringer i appen for å gå fra lokal/mock-tilstand (M1–
 
 ### StoreKit 2
 - Månedlig abonnement: 19 kr/mnd konfigurert i App Store Connect
+- Årlig abonnement: 99 kr/år konfigurert i App Store Connect
 - Engangskjøp: 199 kr konfigurert i App Store Connect
 - Kjøpsflyten implementert fra innstillinger og fra kvote-banner
 - Receipt-validering serverside
