@@ -283,6 +283,9 @@ Daglig kvote nullstilles ved midnatt (lokal tid). Spillere varsles med et banner
 | Plattform | iOS 16+ |
 | Språk | Swift / SwiftUI |
 | Backend | REST API (HTTPS) + WebSocket (WSS) for sanntids flerspiller; implementeres i M6 |
+| Lokal utvikling | Docker Compose: API + PostgreSQL + MinIO (S3-kompatibel lokal lagring) |
+| Produksjonshosting | Railway (EU/Frankfurt): API-server + Admin-webapp + Managed PostgreSQL |
+| Objektlagring (prod) | Cloudflare R2 (EU, ingen egress-kostnader, erstatter MinIO fra lokal utvikling) |
 | Autentisering | Sign in with Apple (AuthenticationServices) |
 | Betaling | StoreKit 2 |
 | Databaser | Brukerdata GDPR-compliant, lagret i EU-region |

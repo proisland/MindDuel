@@ -30,7 +30,9 @@ GitHub Actions runs on `macos-15` for every push to `main` and `milestone/**` br
 | Project config | XcodeGen (`project.yml` is source of truth; `.xcodeproj` is gitignored) |
 | Auth | Sign in with Apple (`AuthenticationServices`) |
 | Payment (M7) | StoreKit 2 |
-| Backend (M2+) | REST API + WebSocket, EU-region |
+| Backend (M6) | REST API + WebSocket; Docker Compose lokalt, Railway (EU/Frankfurt) i produksjon |
+| Object storage | MinIO lokalt (S3-kompatibel), Cloudflare R2 i produksjon |
+| Admin-grensesnitt | Web-app (samme Railway-prosjekt som API) |
 | Localization | `Localizable.xcstrings` (String Catalogs), Norwegian (`no`) + English (`en`) |
 | Color scheme | Dark mode only (forced with `.preferredColorScheme(.dark)`); no light-mode variants needed |
 

@@ -213,8 +213,23 @@
 ## M6 – Cloud Backend
 **Mål:** Fullstendig sky-backend etablert med sikker kommunikasjon, sentralisert datalagring, admin-grensesnitt og alle støttefunksjoner som kreves for produksjonssetting.
 
+### Infrastrukturstrategi
+Backenden utvikles og kjøres først lokalt med Docker Desktop, deretter flyttes den uendret til Railway i produksjon.
+
+**Lokal utvikling (Docker Compose):**
+- API-server (valgt backend-rammeverk)
+- PostgreSQL (database)
+- MinIO (lokal S3-kompatibel objektlagring, erstatter Cloudflare R2 lokalt)
+- Admin-webappen
+
+**Produksjon (Railway, EU/Frankfurt):**
+- Samme Docker-image som lokalt
+- Railway Managed PostgreSQL
+- Cloudflare R2 for objektlagring (erstatter MinIO)
+- API og admin kjøres som separate Railway-tjenester i samme prosjekt
+
 ### Infrastruktur og sikkerhet
-- Produksjonsmiljø satt opp (EU-region, GDPR-compliant) med staging-miljø for testing
+- Produksjonsmiljø satt opp på Railway (EU/Frankfurt, GDPR-compliant) med staging-miljø for testing
 - HTTPS/TLS (REST) og WSS (WebSocket) for all kommunikasjon mellom app og backend
 - JWT-basert autentisering for alle API-kall fra appen; tokens roteres jevnlig
 - Admin-grensesnitt med separat autentisering og rollebasert tilgangskontroll (f.eks. admin / moderator)
