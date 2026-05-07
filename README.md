@@ -14,7 +14,8 @@ Sosialt hjernetrim for iPhone – 10 spillmodi (Pi, Regning, Kjemi, Geografi, Hj
 | M6 – Cloud Backend | Sentral datalagring, admin-grensesnitt, telemetri, spørsmålsbank, bildehosting | 🔜 Neste |
 | M7 – Betaling og abonnement | StoreKit 2, gratis/betalt-modell | ⏳ Planlagt |
 | M8 – Polering | Animasjoner, haptics, onboarding, treningsrunde | ⏳ Planlagt |
-| M9 – App Store-klargjøring | Metadata, skjermbilder, TestFlight, innlevering | ⏳ Planlagt |
+| M9 – Skymigrering | Backend fra lokal Docker til Railway i produksjon | ⏳ Planlagt |
+| M10 – App Store-klargjøring | Metadata, skjermbilder, TestFlight, innlevering | ⏳ Planlagt |
 
 ## Dokumentasjon
 
@@ -22,7 +23,7 @@ All produkt- og designdokumentasjon ligger i [`docs/`](docs/):
 
 - [`docs/prd.md`](docs/prd.md) – Product Requirements Document
 - [`docs/Design.md`](docs/Design.md) – Designsystem og skjermspesifikasjon
-- [`docs/milestones.md`](docs/milestones.md) – Utviklingsplan, M1–M9
+- [`docs/milestones.md`](docs/milestones.md) – Utviklingsplan, M1–M10
 
 Disse er kilden til sannhet. README og [`CLAUDE.md`](CLAUDE.md) skal ikke duplisere innhold derfra – lenk i stedet.
 
@@ -37,7 +38,7 @@ Definert i `docs/prd.md` §11:
 | Avhengigheter | Swift Package Manager |
 | Auth | Sign in with Apple (AuthenticationServices) |
 | Betaling | StoreKit 2 (M7) |
-| Backend | REST API + WebSocket, EU-region (M6) |
+| Backend | REST API + WebSocket; Docker lokalt (M6), Railway EU/Frankfurt i prod (M9) |
 | Lokalisering | String Catalogs, norsk + engelsk |
 
 ## Utvikling per milepæl
