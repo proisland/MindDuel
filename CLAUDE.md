@@ -97,6 +97,7 @@ Always use `String(localized: "key")` or `Text("key")` with keys defined in `Loc
 | M6 – Cloud Backend | `milestone/m6-cloud-backend` ← current |
 | M7 – Betaling | `milestone/m7-betaling` |
 | M8 – Polering | `milestone/m8-polering` |
-| M9 – App Store | `milestone/m9-appstore` |
+| M9 – Skymigrering | `milestone/m9-skymigrering` |
+| M10 – App Store | `milestone/m10-appstore` |
 
 Branch from `main` for each milestone. Open a draft PR early. Check off deliverables in `docs/milestones.md` in the same PR. Tag `m1`, `m2`, … after merge to `main`.

@@ -19,9 +19,10 @@
 | M6 | Cloud Backend | Sentral datalagring, admin-grensesnitt, telemetri, spørsmålsbank, bildehosting | 5 uker |
 | M7 | Betaling og abonnement | StoreKit 2, gratis/betalt-modell | 1 uke |
 | M8 | Polering | Animasjoner, haptics, onboarding, treningsrunde | 2 uker |
-| M9 | App Store-klargjøring | Metadata, skjermbilder, testflight, innlevering | 1 uke |
+| M9 | Skymigrering | Flytte backend fra lokal Docker til Railway i produksjon | 1 uke |
+| M10 | App Store-klargjøring | Metadata, skjermbilder, testflight, innlevering | 1 uke |
 
-**Total estimert tid:** ~21 uker
+**Total estimert tid:** ~22 uker
 
 ---
 
@@ -419,7 +420,43 @@ Kun mørk modus støttes i v1. Color Assets implementeres uten light-variant. Ly
 
 ---
 
-## M9 – App Store-klargjøring
+## M9 – Skymigrering
+**Mål:** Backend flyttes fra lokal Docker-utvikling til Railway i produksjon. iOS-appen peker på ekte produksjons-API.
+
+### Railway-oppsett
+- Railway-prosjekt opprettet med to tjenester: `api` og `admin`
+- Railway Managed PostgreSQL provisjonert i EU/Frankfurt
+- Miljøvariabler separert for lokalt og produksjon (`.env.local` vs. Railway environment variables)
+
+### Objektlagring
+- Cloudflare R2-bucket opprettet (EU-region)
+- MinIO i Docker erstattes av R2 i produksjonskonfigurasjonen
+- Bilder og spørsmålspakker migrert til R2
+
+### Domener og tilkobling
+- Subdomener konfigurert (f.eks. `api.mindduel.no` og `admin.mindduel.no`)
+- HTTPS/WSS bekreftet i produksjon
+- APNs push-sertifikat registrert i produksjonsmiljøet
+
+### iOS-app
+- API-base-URL byttet fra `localhost` til produksjons-URL
+- Appen bygget og verifisert mot ekte produksjons-backend
+- WebSocket-tilkobling (WSS) verifisert i produksjon
+
+### Verifisering
+- Alle M6-leveransekrav verifisert i produksjon (ikke bare lokalt)
+- Staging-miljø på Railway satt opp for fremtidig testing
+
+### Leveransekrav
+- [ ] API og admin kjøres på Railway i EU-region
+- [ ] PostgreSQL og Cloudflare R2 er i bruk i produksjon
+- [ ] iOS-appen kommuniserer med produksjons-API over HTTPS/WSS
+- [ ] Push-notifikasjoner fungerer via APNs i produksjon
+- [ ] Staging-miljø er tilgjengelig
+
+---
+
+## M10 – App Store-klargjøring
 **Mål:** Appen er klar for innlevering til App Store Review.
 
 ### TestFlight
@@ -451,7 +488,7 @@ Kun mørk modus støttes i v1. Color Assets implementeres uten light-variant. Ly
 
 ---
 
-## Åpne designspørsmål som må avklares før M8
+## Åpne designspørsmål som må avklares før M9
 
 Disse er hentet fra Design.md seksjon 11 og påvirker M7 direkte:
 
