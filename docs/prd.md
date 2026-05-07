@@ -486,6 +486,8 @@ All brukerdata, progresjon, scores og spilløkter lagres i backend-database (EU-
 
 Solo-spill kan spilles uten internett; buffrede data synkroniseres ved reconnect. Flerspill krever aktiv tilkobling.
 
+Dagkvoten håndheves på to nivåer: lokalt i appen (forhindrer spill over grensen ved offline-bruk) og serverside ved tilkobling (autoritativ kilde, overstyrer lokal teller og korrigerer eventuelle avvik ved reconnect). Dette sikrer at offline-spill ikke kan brukes til å omgå dagsgrensen.
+
 ### 20.2 Sikkerhet
 - All kommunikasjon skjer over HTTPS (REST) og WSS (WebSocket)
 - JWT-tokens autentiserer alle API-kall fra appen; tokens roteres jevnlig

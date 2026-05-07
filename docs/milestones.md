@@ -309,7 +309,7 @@ M6 krever betydelige endringer i appen for å gå fra lokal/mock-tilstand (M1–
 
 **Progresjon, scores og dagkvote**
 - `UserDefaults`-basert progresjon og scorelagring erstattes med serverside persistens
-- Dagkvote-sjekk flyttes fra lokal til serverside; lokal kopi brukes kun som optimistisk UI-indikator
+- Dagkvote håndheves på to nivåer: lokalt ved offline-spill (forhindrer spill over grensen uten nett), serverside ved tilkobling (autoritativ, overstyrer lokal teller og korrigerer avvik ved reconnect)
 - Session-tokens for hvert spill mottas fra server ved rundestart og sendes med alle svar
 
 **Anti-juks**
@@ -344,7 +344,7 @@ M6 krever betydelige endringer i appen for å gå fra lokal/mock-tilstand (M1–
 - [ ] Appen laster ned og cacher spørsmålspakker og bilder; versjonsjekk kjøres ved oppstart
 - [ ] Flerspiller bruker ekte WebSocket-tilkobling (ikke mock)
 - [ ] Scoreboard (venner/lokalt/globalt) henter data fra reelle API-endepunkter
-- [ ] Dagkvote-sjekk er serverside
+- [ ] Dagkvote håndheves lokalt ved offline-spill og serverside ved tilkobling
 - [ ] Session-tokens brukes for alle spillrunder
 - [ ] Anonym telemetri sendes fra appen og vises i admin-dashboard
 - [ ] Push-notifikasjoner (APNs) fungerer for tur, runde ferdig, invitasjon og tilbakemeldingssvar
