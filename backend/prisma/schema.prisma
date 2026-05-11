@@ -1,0 +1,283 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Users ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id                      String    @id @default(cuid())
+  appleUserId             String    @unique
+  username                String?   @unique
+  birthDate               DateTime?
+  avatarEmoji             String    @default("🧠")
+  isPremium               Boolean   @default(false)
+  isFlagged               Boolean   @default(false)
+  isSuspended             Boolean   @default(false)
+  flagReason              String?
+  fastRoundCount          Int       @default(0)
+  totalRoundsPlayed       Int       @default(0)
+  totalCorrectAnswers     Int       @default(0)
+  totalCorrectAnswerTimeMs BigInt   @default(0)
+  lastActiveAt            DateTime?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  progressions            Progression[]
+  scores                  Score[]
+  dailyQuota              DailyQuota?
+  friendshipsSent         Friendship[]     @relation("FriendshipSender")
+  friendshipsReceived     Friendship[]     @relation("FriendshipReceiver")
+  friendRequestsSent      FriendRequest[]  @relation("FriendRequestSender")
+  friendRequestsReceived  FriendRequest[]  @relation("FriendRequestReceiver")
+  gameSessions            GameSession[]
+  pushTokens              PushToken[]
+  feedbacks               Feedback[]
+  multiplayerParticipants MultiplayerParticipant[]
+  hostedRooms             MultiplayerRoom[]
+}
+
+// ── Progression ───────────────────────────────────────────────────────────────
+
+model Progression {
+  id        String   @id @default(cuid())
+  userId    String
+  mode      String   // "pi" | "math" | "chem" | "geo" | "grammar" | "history" | "physics" | "science" | "sport" | "brain"
+  position  Int      @default(0)   // Pi: decimal index; knowledge: level (1–20)
+  progress  Float    @default(0)   // Knowledge: progress toward next level (0–1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mode])
+  @@index([userId, mode])
+}
+
+// ── Scores ────────────────────────────────────────────────────────────────────
+
+model Score {
+  id        String   @id @default(cuid())
+  userId    String
+  mode      String
+  value     Float
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, mode])
+  @@index([mode, value(sort: Desc)])
+  @@index([userId, mode, createdAt(sort: Desc)])
+}
+
+// ── Daily quota ───────────────────────────────────────────────────────────────
+
+model DailyQuota {
+  userId    String   @id
+  date      String   // YYYY-MM-DD in user's local timezone
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ── Friends ───────────────────────────────────────────────────────────────────
+
+model Friendship {
+  senderId   String
+  receiverId String
+  createdAt  DateTime @default(now())
+
+  sender     User     @relation("FriendshipSender",   fields: [senderId],   references: [id], onDelete: Cascade)
+  receiver   User     @relation("FriendshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@id([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model FriendRequest {
+  id         String   @id @default(cuid())
+  fromUserId String
+  toUserId   String
+  createdAt  DateTime @default(now())
+
+  from       User     @relation("FriendRequestSender",   fields: [fromUserId], references: [id], onDelete: Cascade)
+  to         User     @relation("FriendRequestReceiver", fields: [toUserId],   references: [id], onDelete: Cascade)
+
+  @@unique([fromUserId, toUserId])
+  @@index([toUserId])
+}
+
+// ── Game sessions ─────────────────────────────────────────────────────────────
+
+model GameSession {
+  id            String    @id @default(cuid())
+  userId        String
+  mode          String
+  sessionToken  String    @unique @default(cuid())
+  isTraining    Boolean   @default(false)
+  isMultiplayer Boolean   @default(false)
+  roomId        String?
+  score         Float?
+  correctCount  Int       @default(0)
+  totalCount    Int       @default(0)
+  startedAt     DateTime  @default(now())
+  endedAt       DateTime?
+
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers       GameAnswer[]
+
+  @@index([userId, mode, startedAt(sort: Desc)])
+  @@index([sessionToken])
+}
+
+model GameAnswer {
+  id            String   @id @default(cuid())
+  sessionId     String
+  questionRef   String   // Pi: decimal index as string; knowledge: question ID
+  userAnswer    String
+  isCorrect     Boolean
+  answerTimeMs  Int
+  waitTimeMs    Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  session       GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+// ── Question packs ────────────────────────────────────────────────────────────
+
+model QuestionPack {
+  id        String   @id @default(cuid())
+  mode      String
+  version   Int
+  data      Json
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([mode, version])
+  @@index([mode, isActive])
+}
+
+// ── Game modes ────────────────────────────────────────────────────────────────
+
+model GameMode {
+  id        String    @id @default(cuid())
+  slug      String    @unique  // "pi" | "math" | "chem" | etc.
+  name      String
+  isActive  Boolean   @default(true)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// ── Multiplayer ───────────────────────────────────────────────────────────────
+
+model MultiplayerRoom {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  hostUserId  String
+  mode        String
+  startLevel  Int       @default(0)
+  status      String    @default("waiting") // waiting | active | finished
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  host         User                     @relation(fields: [hostUserId], references: [id])
+  participants MultiplayerParticipant[]
+
+  @@index([code])
+  @@index([status, createdAt(sort: Desc)])
+}
+
+model MultiplayerParticipant {
+  roomId   String
+  userId   String
+  lives    Int      @default(5)
+  skips    Int      @default(5)
+  isActive Boolean  @default(true)
+  score    Float    @default(0)
+  joinedAt DateTime @default(now())
+
+  room     MultiplayerRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user     User            @relation(fields: [userId],  references: [id], onDelete: Cascade)
+
+  @@id([roomId, userId])
+  @@index([roomId])
+}
+
+// ── Push tokens ───────────────────────────────────────────────────────────────
+
+model PushToken {
+  id          String   @id @default(cuid())
+  userId      String
+  deviceToken String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ── Feedback ──────────────────────────────────────────────────────────────────
+
+model Feedback {
+  id            String    @id @default(cuid())
+  userId        String
+  message       String
+  status        String    @default("open") // open | in_progress | closed
+  adminResponse String?
+  respondedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt(sort: Desc)])
+}
+
+// ── Telemetry ─────────────────────────────────────────────────────────────────
+
+model TelemetryEvent {
+  id         String   @id @default(cuid())
+  userId     String?
+  eventType  String
+  properties Json     @default("{}")
+  createdAt  DateTime @default(now())
+
+  @@index([eventType, createdAt(sort: Desc)])
+  @@index([createdAt])
+}
+
+// ── Images ────────────────────────────────────────────────────────────────────
+
+model AppImage {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  objectKey String
+  contentHash String
+  mimeType  String   @default("image/png")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  role         String   @default("admin") // admin | moderator
+  totpSecret   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
