@@ -283,9 +283,10 @@ Daglig kvote nullstilles ved midnatt (lokal tid). Spillere varsles med et banner
 | Plattform | iOS 16+ |
 | Språk | Swift / SwiftUI |
 | Backend | REST API (HTTPS) + WebSocket (WSS) for sanntids flerspiller; implementeres i M6 |
-| Lokal utvikling | Docker Compose: API + PostgreSQL + MinIO (S3-kompatibel lokal lagring) |
-| Produksjonshosting | Railway (EU/Frankfurt): API-server + Admin-webapp + Managed PostgreSQL |
+| Lokal utvikling | Docker Compose: API + PostgreSQL + Redis + MinIO (S3-kompatibel lokal lagring) |
+| Produksjonshosting | Railway (EU/Frankfurt): API-server + Admin-webapp + Managed PostgreSQL + Managed Redis |
 | Objektlagring (prod) | Cloudflare R2 (EU, ingen egress-kostnader, erstatter MinIO fra lokal utvikling) |
+| CI/CD | GitHub Actions: automatisk bygg + test ved push; automatisk deploy til staging, manuell godkjenning til produksjon |
 | Autentisering | Sign in with Apple (AuthenticationServices) |
 | Betaling | StoreKit 2 |
 | Databaser | Brukerdata GDPR-compliant, lagret i EU-region |
@@ -491,6 +492,8 @@ Dagkvoten håndheves på to nivåer: lokalt i appen (forhindrer spill over grens
 ### 20.2 Sikkerhet
 - All kommunikasjon skjer over HTTPS (REST) og WSS (WebSocket)
 - JWT-tokens autentiserer alle API-kall fra appen; tokens roteres jevnlig
+- `id_token` fra Sign in with Apple verifiseres kryptografisk serverside mot Apples JWKS-endepunkt; backend aksepterer aldri et Apple-token uten uavhengig validering
+- Alle API-endepunkter har `/v1/`-prefiks fra dag én; eldre klientversjoner støttes til en eksplisitt deprecation-dato
 - Sensitiv brukerdata (fødselsdato, Apple-ID) lagres kryptert
 - API rate limiting og throttling beskytter mot automatiserte angrep
 - Admin-grensesnitt har eget autentiseringssystem med rollebasert tilgangskontroll
@@ -514,7 +517,13 @@ Appen sender anonym, batch-basert telemetri (ingen PII): skjermvisninger, funksj
 ### 20.6 Tilbakemeldingssystem
 Brukere sender tilbakemelding via innstillingsskjermen. Backend lagrer tickets med status (åpen / under behandling / lukket). Admin kan svare direkte; svar leveres via APNs-notifikasjon eller in-app melding.
 
-### 20.7 Admin-grensesnitt
+### 20.7 WebSocket-arkitektur
+Redis brukes som pub/sub message broker mellom WebSocket-instanser slik at spillmeldinger rutes korrekt selv om klienter er koblet til ulike servere. Romtilstand (aktive spillere, tur, liv/hopp) lagres i Redis med TTL. Én Railway-instans dekker MVP-behovet, men arkitekturen er designet for horisontal skalering uten sticky sessions som krav. Serveren håndterer graceful shutdown ved deploy: pågående runder venter i maks 60 sekunder før prosessen stoppes.
+
+### 20.8 Databasemigrering
+Alle skjemaendringer gjøres via migrasjonsverktøy (Flyway, Liquibase eller Alembic) — ingen manuelle SQL-endringer direkte i produksjon. Migrasjonsstrategi er «additive first»: nye kolonner og tabeller legges til og backfylles før gamle fjernes, slik at eldre og nye app-versjoner kan kjøre mot samme database simultant (zero-downtime deploy). Ytelseskritiske spørringer (scoreboard, progresjon, rundehistorikk) har eksplisitte PostgreSQL-indekser definert i migrasjonsfiler.
+
+### 20.9 Admin-grensesnitt
 Web-basert grensesnitt med følgende moduler:
 
 | Modul | Funksjonalitet |

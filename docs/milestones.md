@@ -220,14 +220,22 @@ Backenden utvikles og kjøres først lokalt med Docker Desktop, deretter flyttes
 **Lokal utvikling (Docker Compose):**
 - API-server (valgt backend-rammeverk)
 - PostgreSQL (database)
+- Redis (pub/sub for WebSocket-skalering og session-state)
 - MinIO (lokal S3-kompatibel objektlagring, erstatter Cloudflare R2 lokalt)
 - Admin-webappen
 
 **Produksjon (Railway, EU/Frankfurt):**
 - Samme Docker-image som lokalt
 - Railway Managed PostgreSQL
+- Railway Managed Redis (eller Upstash Redis)
 - Cloudflare R2 for objektlagring (erstatter MinIO)
 - API og admin kjøres som separate Railway-tjenester i samme prosjekt
+
+**CI/CD (GitHub Actions):**
+- Workflow kjøres ved push til `main` og `milestone/**`: bygg Docker-image, kjør tester
+- Automatisk deploy til Railway staging ved merge til `main`
+- Manuell deploy til produksjon (godkjenningssteg i GitHub Actions)
+- Migrasjonsfiler kjøres automatisk som del av deploy-prosessen (staging før produksjon)
 
 ### Infrastruktur og sikkerhet
 - Produksjonsmiljø satt opp på Railway (EU/Frankfurt, GDPR-compliant) med staging-miljø for testing
@@ -237,6 +245,21 @@ Backenden utvikles og kjøres først lokalt med Docker Desktop, deretter flyttes
 - Kryptert lagring av sensitiv brukerdata (fødselsdato, Apple-bruker-ID hashed)
 - API rate limiting og throttling på servernivå
 - Logging, error tracking og uptime monitoring
+- **Apple Sign In-tokenvalidering:** `id_token` fra Sign in with Apple verifiseres kryptografisk serverside mot Apples JWKS-endepunkt (`appleid.apple.com/auth/keys`); backend aksepterer aldri et Apple-token uten uavhengig kryptografisk validering
+- **API-versjonering:** Alle endepunkter har `/v1/`-prefiks fra dag én. Eldre app-versjoner som ikke kan tvinges til oppdatering støttes til en eksplisitt deprecation-dato. Versjon og deprecation-status eksponeres via et `/health`-endepunkt slik at appen kan varsle brukeren om å oppdatere.
+
+### Databasemigrering og ytelse
+- Migrasjonsverktøy (f.eks. Flyway, Liquibase eller Alembic avhengig av backend-språk) brukes for alle skjemaendringer; ingen manuelle SQL-endringer direkte i produksjon
+- Migrasjonsstrategi er «additive first»: nye kolonner og tabeller legges til og backfylles før gamle fjernes, slik at eldre app-versjoner og nye kan kjøre mot samme database simultant (zero-downtime deploy)
+- Migrasjonsfiler versjonskontrolleres i samme repo som backend-koden og kjøres automatisk ved deploy
+- **Ytelsesindekser** defineres og legges til via migrasjonsverktøyet (aldri manuelt): `(user_id, mode)` på progresjonstabell, `(score DESC, mode)` for scoreboard, `(user_id, created_at DESC)` for rundehistorikk; partiell indeks vurderes for globalt scoreboard (kun ikke-flaggede brukere)
+- Slow query logging aktiveres i produksjon (`log_min_duration_statement = 200 ms`) for å fange regresjoner; kritiske spørringer verifiseres med `EXPLAIN ANALYZE` i staging
+
+### WebSocket-arkitektur og skalering
+- Redis brukes som pub/sub message broker mellom WebSocket-instanser: alle spillmeldinger publiseres til en Redis-kanal; alle instanser lytter og videresender til tilkoblede klienter i riktig rom
+- Romtilstand (aktive spillere, tur, liv/hopp) lagres i Redis med TTL slik at orphaned state ikke akkumuleres
+- Én Railway-instans er tilstrekkelig for MVP, men arkitekturen er designet for horisontal skalering uten sticky sessions som krav
+- Graceful shutdown: ved deploy venter serveren på at pågående WebSocket-runder avsluttes (maks 60 sek) før prosessen stoppes
 
 ### Brukerdata og spilløkter
 - All brukerprofil-data, progresjon og scores lagres sentralt – støtter flere enheter per bruker
@@ -337,6 +360,14 @@ M6 krever betydelige endringer i appen for å gå fra lokal/mock-tilstand (M1–
 - [ ] Admin kan aktivere/skjule/sesongsette spillmodi uten app-oppdatering
 - [ ] Tilbakemeldingssystem fungerer end-to-end (mottak, svar og lukking)
 - [ ] Anti-juks-flagging kjøres serverside
+- [ ] Apple Sign In-tokens verifiseres kryptografisk serverside mot Apples JWKS-endepunkt
+- [ ] Alle API-endepunkter har `/v1/`-prefiks; versjon eksponeres via `/health`-endepunkt
+- [ ] Databasemigrering håndteres med migrasjonsverktøy; ingen manuelle skjemaendringer i produksjon
+- [ ] Zero-downtime migrasjonsstrategi verifisert i staging
+- [ ] Ytelsesindekser er lagt til via migrasjoner og verifisert med `EXPLAIN ANALYZE` i staging
+- [ ] Redis er i bruk lokalt og i produksjon; WebSocket-meldinger rutes via Redis pub/sub
+- [ ] Graceful shutdown verifisert: pågående WebSocket-runder avbrytes ikke ved deploy
+- [ ] GitHub Actions-workflow bygger, tester og deployer til staging automatisk ved merge til `main`
 
 **iOS-app**
 - [ ] All brukerprofil-data, progresjon og scores lagres sentralt og synkroniseres på tvers av enheter

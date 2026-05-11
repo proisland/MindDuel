@@ -38,7 +38,7 @@ Definert i `docs/prd.md` §11:
 | Avhengigheter | Swift Package Manager |
 | Auth | Sign in with Apple (AuthenticationServices) |
 | Betaling | StoreKit 2 (M7) |
-| Backend | REST API + WebSocket; Docker lokalt (M6), Railway EU/Frankfurt i prod (M9) |
+| Backend | REST API + WebSocket + Redis (pub/sub); Docker lokalt (M6), Railway EU/Frankfurt i prod (M9) |
 | Lokalisering | String Catalogs, norsk + engelsk |
 
 ## Utvikling per milepæl
