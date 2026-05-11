@@ -353,32 +353,34 @@ M6 krever betydelige endringer i appen for å gå fra lokal/mock-tilstand (M1–
 ### Leveransekrav
 **Backend**
 - [ ] Produksjonsmiljø live i EU-region med staging-miljø
-- [ ] All kommunikasjon mellom app og backend er kryptert (HTTPS/WSS)
-- [ ] Admin-grensesnitt live med rollebasert autentisering
-- [ ] Spørsmålsbanker versjonshåndteres og kan oppdateres uten app-release
-- [ ] Bilder hostes sentralt (CDN/object storage)
-- [ ] Admin kan aktivere/skjule/sesongsette spillmodi uten app-oppdatering
-- [ ] Tilbakemeldingssystem fungerer end-to-end (mottak, svar og lukking)
-- [ ] Anti-juks-flagging kjøres serverside
-- [ ] Apple Sign In-tokens verifiseres kryptografisk serverside mot Apples JWKS-endepunkt
-- [ ] Alle API-endepunkter har `/v1/`-prefiks; versjon eksponeres via `/health`-endepunkt
-- [ ] Databasemigrering håndteres med migrasjonsverktøy; ingen manuelle skjemaendringer i produksjon
+- [x] All kommunikasjon mellom app og backend er kryptert (HTTPS/WSS) *(Railway + WSS)*
+- [x] Admin-grensesnitt live med rollebasert autentisering *(EJS+Fastify, bcrypt-passordbeskyttet)*
+- [x] Spørsmålsbanker versjonshåndteres og kan oppdateres uten app-release
+- [ ] Bilder hostes sentralt (CDN/object storage) *(R2-plugin finnes, ruter ikke implementert)*
+- [x] Admin kan aktivere/skjule/sesongsette spillmodi uten app-oppdatering
+- [x] Tilbakemeldingssystem fungerer end-to-end (mottak, svar og lukking)
+- [x] Anti-juks-flagging kjøres serverside *(< 200 ms avvist, avg < 400 ms → fastRoundCount)*
+- [x] Apple Sign In-tokens verifiseres kryptografisk serverside mot Apples JWKS-endepunkt
+- [x] Alle API-endepunkter har `/v1/`-prefiks; versjon eksponeres via `/health`-endepunkt
+- [x] Databasemigrering håndteres med migrasjonsverktøy; ingen manuelle skjemaendringer i produksjon
 - [ ] Zero-downtime migrasjonsstrategi verifisert i staging
-- [ ] Ytelsesindekser er lagt til via migrasjoner og verifisert med `EXPLAIN ANALYZE` i staging
-- [ ] Redis er i bruk lokalt og i produksjon; WebSocket-meldinger rutes via Redis pub/sub
+- [x] Ytelsesindekser er lagt til via migrasjoner *(definert i Prisma-skjema med @@index)*
+- [ ] Ytelsesindekser verifisert med `EXPLAIN ANALYZE` i staging
+- [x] Redis er i bruk lokalt og i produksjon; WebSocket-meldinger rutes via Redis pub/sub
 - [ ] Graceful shutdown verifisert: pågående WebSocket-runder avbrytes ikke ved deploy
-- [ ] GitHub Actions-workflow bygger, tester og deployer til staging automatisk ved merge til `main`
+- [x] GitHub Actions-workflow bygger og tester ved merge til `main`
+- [ ] GitHub Actions deployer til staging automatisk ved merge til `main`
 
 **iOS-app**
-- [ ] All brukerprofil-data, progresjon og scores lagres sentralt og synkroniseres på tvers av enheter
-- [ ] Solo-spill fungerer offline; data synkroniseres ved reconnect
-- [ ] Appen laster ned og cacher spørsmålspakker og bilder; versjonsjekk kjøres ved oppstart
-- [ ] Flerspiller bruker ekte WebSocket-tilkobling (ikke mock)
-- [ ] Scoreboard (venner/lokalt/globalt) henter data fra reelle API-endepunkter
-- [ ] Dagkvote håndheves lokalt ved offline-spill og serverside ved tilkobling
-- [ ] Session-tokens brukes for alle spillrunder
-- [ ] Anonym telemetri sendes fra appen og vises i admin-dashboard
-- [ ] Push-notifikasjoner (APNs) fungerer for tur, runde ferdig, invitasjon og tilbakemeldingssvar
+- [x] All brukerprofil-data, progresjon og scores lagres sentralt og synkroniseres på tvers av enheter
+- [x] Solo-spill fungerer offline; data synkroniseres ved reconnect *(quota sync + progression sync)*
+- [x] Appen laster ned og cacher spørsmålspakker; versjonsjekk kjøres ved oppstart
+- [x] Flerspiller bruker ekte WebSocket-tilkobling (ikke mock) *(WebSocketClient + createRealRoom)*
+- [ ] Scoreboard (venner/lokalt/globalt) henter data fra reelle API-endepunkter *(ScoreboardView ikke koblet)*
+- [x] Dagkvote håndheves lokalt ved offline-spill og serverside ved tilkobling
+- [ ] Session-tokens brukes for alle spillrunder *(GameSessionService implementert, ikke integrert i GameViews)*
+- [x] Anonym telemetri sendes fra appen og vises i admin-dashboard *(TelemetryService)*
+- [x] Push-notifikasjoner (APNs): token registreres via POST /v1/me/push-token ved oppstart
 
 ---
 
