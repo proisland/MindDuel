@@ -7,6 +7,7 @@ import fastifyView from '@fastify/view'
 import fastifyStatic from '@fastify/static'
 import fastifyFormbody from '@fastify/formbody'
 import fastifyCookie from '@fastify/cookie'
+import fastifyWebsocket from '@fastify/websocket'
 import ejs from 'ejs'
 import path from 'path'
 
@@ -45,6 +46,7 @@ export async function buildApp() {
   })
 
   // ── Infrastructure plugins ──────────────────────────────────────────────────
+  await app.register(fastifyWebsocket)
   await app.register(dbPlugin)
   await app.register(redisPlugin)
   await app.register(s3Plugin)
