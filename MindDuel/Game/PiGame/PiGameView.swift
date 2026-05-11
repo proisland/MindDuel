@@ -284,12 +284,10 @@ struct PiGameView: View {
         let questionId = "pi-\(startIndex + currentIndex)"
         let answeredAt = ISO8601DateFormatter.ms.string(from: Date())
 
+        // Fire-and-forget: don't block UI feedback on network latency.
+        Task { try? await sessionService.submitAnswer(answeredAt: answeredAt, questionId: questionId, answer: String(digit)) }
+
         Task {
-            // Submit answer to backend (fire-and-forget; local state is authoritative)
-            try? await sessionService.submitAnswer(
-                questionId: questionId,
-                answer: String(digit)
-            )
             try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
             if correct {
                 totalAnswerTime += elapsedSeconds
@@ -304,7 +302,6 @@ struct PiGameView: View {
             selectedDigit     = nil
             feedbackIsCorrect = nil
         }
-        _ = answeredAt // captured for tracing if needed
     }
 
     private func handleSkip() {

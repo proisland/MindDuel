@@ -202,6 +202,8 @@ struct HistoryGameView: View {
         selectedIndex     = index
         let correct       = problem.options[index] == problem.correctAnswer
         feedbackIsCorrect = correct
+        let answeredAt = ISO8601DateFormatter.ms.string(from: Date())
+        Task { try? await sessionService.submitAnswer(answeredAt: answeredAt, questionId: "history-\(problemCount)", answer: problem.options[index]) }
 
         Task {
             try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)

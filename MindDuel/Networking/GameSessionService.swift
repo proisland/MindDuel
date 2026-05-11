@@ -20,13 +20,9 @@ actor GameSessionService {
         return response.token
     }
 
-    func submitAnswer(questionId: String, answer: String) async throws -> AnswerResponse {
+    func submitAnswer(answeredAt: String, questionId: String, answer: String) async throws -> AnswerResponse {
         guard let token = sessionToken else { throw SessionError.noActiveSession }
-        let body = AnswerRequest(
-            answeredAt: ISO8601DateFormatter.ms.string(from: Date()),
-            answer: answer,
-            questionId: questionId
-        )
+        let body = AnswerRequest(answeredAt: answeredAt, answer: answer, questionId: questionId)
         return try await APIClient.shared.post("games/sessions/\(token)/answers", body: body)
     }
 
