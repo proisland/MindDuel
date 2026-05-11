@@ -1,0 +1,56 @@
+<a href="/admin/users" class="text-sm text-gray-500 hover:text-white mb-4 inline-block">← Back to users</a>
+<h1 class="text-2xl font-bold mb-6"><%= user.avatarEmoji %> @<%= user.username ?? '(no username)' %></h1>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-2 text-sm">
+    <div class="flex justify-between"><span class="text-gray-400">ID</span><span class="font-mono text-xs"><%= user.id %></span></div>
+    <div class="flex justify-between"><span class="text-gray-400">Premium</span><span><%= user.isPremium ? '✅' : '–' %></span></div>
+    <div class="flex justify-between"><span class="text-gray-400">Flagged</span>
+      <span class="<%= user.isFlagged ? 'text-amber-400' : 'text-gray-500' %>">
+        <%= user.isFlagged ? '🚩 Yes' : 'No' %></span></div>
+    <div class="flex justify-between"><span class="text-gray-400">Suspended</span>
+      <span class="<%= user.isSuspended ? 'text-red-400' : 'text-gray-500' %>">
+        <%= user.isSuspended ? '🚫 Yes' : 'No' %></span></div>
+    <div class="flex justify-between"><span class="text-gray-400">Fast rounds</span><span><%= user.fastRoundCount %></span></div>
+    <div class="flex justify-between"><span class="text-gray-400">Total rounds</span><span><%= user.totalRoundsPlayed %></span></div>
+    <div class="flex justify-between"><span class="text-gray-400">Last active</span>
+      <span><%= user.lastActiveAt ? new Date(user.lastActiveAt).toLocaleString() : '–' %></span></div>
+    <div class="flex justify-between"><span class="text-gray-400">Joined</span>
+      <span><%= new Date(user.createdAt).toLocaleDateString() %></span></div>
+  </div>
+
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+    <h2 class="font-semibold mb-3">Actions</h2>
+    <div class="flex flex-wrap gap-2">
+      <button onclick="patch({isFlagged: <%= !user.isFlagged %>})"
+        class="text-sm px-3 py-1.5 bg-gray-700 hover:bg-amber-800 rounded">
+        <%= user.isFlagged ? 'Remove flag' : 'Flag account' %>
+      </button>
+      <button onclick="patch({isSuspended: <%= !user.isSuspended %>})"
+        class="text-sm px-3 py-1.5 bg-gray-700 hover:bg-red-800 rounded">
+        <%= user.isSuspended ? 'Unsuspend' : 'Suspend account' %>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
+  <% user.progressions.forEach(function(p) { %>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-3 text-sm">
+      <div class="text-gray-400 text-xs mb-1"><%= p.mode %></div>
+      <div class="font-bold text-lg">Lv <%= p.position %></div>
+      <div class="text-gray-500 text-xs"><%= Math.round(p.progress*100) %>% to next</div>
+    </div>
+  <% }) %>
+</div>
+
+<script>
+async function patch(data) {
+  await fetch('/admin/users/<%= user.id %>', {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(data)
+  })
+  location.reload()
+}
+</script>

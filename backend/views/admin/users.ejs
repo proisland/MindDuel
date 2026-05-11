@@ -1,0 +1,92 @@
+<h1 class="text-2xl font-bold mb-6">Users <span class="text-gray-500 text-lg font-normal">(<%= total %>)</span></h1>
+
+<form method="GET" class="flex gap-3 mb-6">
+  <input name="q" value="<%= q %>" placeholder="Search username…"
+    class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white w-56 focus:outline-none focus:border-indigo-500">
+  <label class="flex items-center gap-1.5 text-sm text-gray-400">
+    <input type="checkbox" name="flagged" value="true" <%= flagged ? 'checked' : '' %>> Flagged
+  </label>
+  <label class="flex items-center gap-1.5 text-sm text-gray-400">
+    <input type="checkbox" name="suspended" value="true" <%= suspended ? 'checked' : '' %>> Suspended
+  </label>
+  <button class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-1.5 rounded">Filter</button>
+</form>
+
+<div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-800 text-gray-400">
+      <tr>
+        <th class="text-left px-4 py-3">User</th>
+        <th class="text-left px-4 py-3">Rounds</th>
+        <th class="text-left px-4 py-3">Status</th>
+        <th class="text-left px-4 py-3">Last active</th>
+        <th class="text-left px-4 py-3">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-800">
+      <% users.forEach(function(u) { %>
+        <tr class="hover:bg-gray-800/50" id="user-<%= u.id %>">
+          <td class="px-4 py-3">
+            <a href="/admin/users/<%= u.id %>" class="font-medium hover:text-indigo-400">
+              <%= u.avatarEmoji %> @<%= u.username ?? '(no username)' %>
+            </a>
+            <% if (u.isPremium) { %><span class="ml-1 text-xs text-amber-400">★ Premium</span><% } %>
+          </td>
+          <td class="px-4 py-3 text-gray-400"><%= u.totalRoundsPlayed %></td>
+          <td class="px-4 py-3">
+            <% if (u.isSuspended) { %>
+              <span class="px-2 py-0.5 bg-red-900 text-red-300 rounded text-xs">Suspended</span>
+            <% } else if (u.isFlagged) { %>
+              <span class="px-2 py-0.5 bg-amber-900 text-amber-300 rounded text-xs">Flagged (<%= u.fastRoundCount %>)</span>
+            <% } else { %>
+              <span class="text-gray-500 text-xs">OK</span>
+            <% } %>
+          </td>
+          <td class="px-4 py-3 text-gray-500 text-xs">
+            <%= u.lastActiveAt ? new Date(u.lastActiveAt).toLocaleDateString() : '–' %>
+          </td>
+          <td class="px-4 py-3 flex gap-2">
+            <button onclick="toggleFlag('<%= u.id %>', <%= u.isFlagged %>)"
+              class="text-xs px-2 py-1 bg-gray-700 hover:bg-amber-800 rounded">
+              <%= u.isFlagged ? 'Unflag' : 'Flag' %>
+            </button>
+            <button onclick="toggleSuspend('<%= u.id %>', <%= u.isSuspended %>)"
+              class="text-xs px-2 py-1 bg-gray-700 hover:bg-red-800 rounded">
+              <%= u.isSuspended ? 'Unsuspend' : 'Suspend' %>
+            </button>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<div class="mt-4 flex gap-2 text-sm">
+  <% if (page > 1) { %>
+    <a href="?page=<%= page-1 %>&q=<%= q %><%= flagged?'&flagged=true':'' %><%= suspended?'&suspended=true':'' %>"
+      class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">← Prev</a>
+  <% } %>
+  <% if (users.length === take) { %>
+    <a href="?page=<%= page+1 %>&q=<%= q %><%= flagged?'&flagged=true':'' %><%= suspended?'&suspended=true':'' %>"
+      class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">Next →</a>
+  <% } %>
+</div>
+
+<script>
+async function toggleFlag(id, isFlagged) {
+  const res = await fetch('/admin/users/' + id, {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ isFlagged: !isFlagged })
+  })
+  if (res.ok) location.reload()
+}
+async function toggleSuspend(id, isSuspended) {
+  const res = await fetch('/admin/users/' + id, {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ isSuspended: !isSuspended })
+  })
+  if (res.ok) location.reload()
+}
+</script>

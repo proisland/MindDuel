@@ -1,0 +1,46 @@
+<h1 class="text-2xl font-bold mb-6">Game Modes</h1>
+
+<div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-800 text-gray-400">
+      <tr>
+        <th class="text-left px-4 py-3">Mode</th>
+        <th class="text-left px-4 py-3">Status</th>
+        <th class="text-left px-4 py-3">Starts at</th>
+        <th class="text-left px-4 py-3">Ends at</th>
+        <th class="text-left px-4 py-3">Toggle</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-800">
+      <% modes.forEach(function(m) { %>
+        <tr id="mode-<%= m.id %>">
+          <td class="px-4 py-3 font-medium"><%= m.name %> <span class="text-gray-500 text-xs">(<%= m.slug %>)</span></td>
+          <td class="px-4 py-3">
+            <span class="<%= m.isActive ? 'text-green-400' : 'text-gray-500' %> text-xs font-medium">
+              <%= m.isActive ? '● Active' : '○ Hidden' %>
+            </span>
+          </td>
+          <td class="px-4 py-3 text-gray-500 text-xs"><%= m.startsAt ? new Date(m.startsAt).toLocaleString() : '–' %></td>
+          <td class="px-4 py-3 text-gray-500 text-xs"><%= m.endsAt ? new Date(m.endsAt).toLocaleString() : '–' %></td>
+          <td class="px-4 py-3">
+            <button onclick="toggleMode('<%= m.id %>', <%= m.isActive %>)"
+              class="text-xs px-3 py-1 rounded <%= m.isActive ? 'bg-gray-700 hover:bg-red-800' : 'bg-gray-700 hover:bg-green-800' %>">
+              <%= m.isActive ? 'Hide' : 'Show' %>
+            </button>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<script>
+async function toggleMode(id, isActive) {
+  await fetch('/admin/modes/' + id, {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ isActive: !isActive })
+  })
+  location.reload()
+}
+</script>

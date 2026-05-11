@@ -1,80 +1,83 @@
 import type { FastifyInstance } from 'fastify'
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 import { z } from 'zod'
+import adminUsersRoutes from './users'
+import adminQuestionsRoutes from './questions'
+import adminModesRoutes from './modes'
+import adminFeedbackRoutes from './feedback'
+import adminStatsRoutes from './stats'
 
 const SESSION_KEY = 'admin_session'
-const SESSION_TTL = 60 * 60 * 8 // 8 hours
+const SESSION_TTL = 60 * 60 * 8
 
 const loginBody = z.object({
   username: z.string().min(1),
   password: z.string().min(1),
 })
 
-function requireAdmin(app: FastifyInstance) {
+export function requireAdmin(app: FastifyInstance) {
   return async (request: any, reply: any) => {
     const token = request.cookies?.[SESSION_KEY]
     if (!token) return reply.redirect('/admin/login')
-    const userId = await app.redis.get(`admin_session:${token}`)
-    if (!userId) return reply.redirect('/admin/login')
-    request.adminUserId = userId
+    const adminId = await app.redis.get(`admin_session:${token}`)
+    if (!adminId) return reply.redirect('/admin/login')
+    request.adminId = adminId
   }
 }
 
 export default async function adminRoutes(app: FastifyInstance) {
   const guard = { onRequest: [requireAdmin(app)] }
 
-  // Login page
-  app.get('/login', async (_request, reply) => {
-    return reply.view('admin/login.ejs', {})
-  })
+  // ── Auth ───────────────────────────────────────────────────────────────────
+  app.get('/login', async (_req, reply) => reply.view('admin/login.ejs', {}))
 
-  // Login submit
   app.post('/login', async (request, reply) => {
     const body = loginBody.safeParse(request.body)
-    if (!body.success) {
-      return reply.view('admin/login.ejs', { error: 'Invalid form' })
-    }
+    if (!body.success) return reply.view('admin/login.ejs', { error: 'Invalid form' })
 
-    const admin = await app.prisma.adminUser.findUnique({
-      where: { username: body.data.username },
-    })
-
+    const admin = await app.prisma.adminUser.findUnique({ where: { username: body.data.username } })
     const valid = admin && await bcrypt.compare(body.data.password, admin.passwordHash)
-    if (!valid) {
-      return reply.view('admin/login.ejs', { error: 'Invalid credentials' })
-    }
+    if (!valid) return reply.view('admin/login.ejs', { error: 'Invalid credentials' })
 
-    const token = require('crypto').randomBytes(32).toString('hex')
+    const token = crypto.randomBytes(32).toString('hex')
     await app.redis.set(`admin_session:${token}`, admin.id, 'EX', SESSION_TTL)
-    reply.setCookie(SESSION_KEY, token, { httpOnly: true, path: '/', maxAge: SESSION_TTL })
+    reply.setCookie(SESSION_KEY, token, { httpOnly: true, path: '/admin', maxAge: SESSION_TTL })
     return reply.redirect('/admin')
   })
 
-  // Logout
   app.get('/logout', async (request: any, reply) => {
     const token = request.cookies?.[SESSION_KEY]
     if (token) await app.redis.del(`admin_session:${token}`)
-    reply.clearCookie(SESSION_KEY)
+    reply.clearCookie(SESSION_KEY, { path: '/admin' })
     return reply.redirect('/admin/login')
   })
 
-  // Dashboard
+  // ── Dashboard ──────────────────────────────────────────────────────────────
   app.get('/', guard, async (_request, reply) => {
+    const day1 = new Date(Date.now() - 86_400_000)
     const [totalUsers, activeToday, flaggedUsers, totalRounds, openFeedback, modes] = await Promise.all([
       app.prisma.user.count(),
-      app.prisma.user.count({
-        where: { lastActiveAt: { gte: new Date(Date.now() - 86_400_000) } },
-      }),
+      app.prisma.user.count({ where: { lastActiveAt: { gte: day1 } } }),
       app.prisma.user.count({ where: { isFlagged: true } }),
       app.prisma.gameSession.count(),
       app.prisma.feedback.count({ where: { status: 'open' } }),
       app.prisma.gameMode.findMany({ orderBy: { sortOrder: 'asc' } }),
     ])
-
     return reply.view('admin/dashboard.ejs', {
       title: 'Dashboard',
       stats: { totalUsers, activeToday, flaggedUsers, totalRounds, openFeedback },
       modes,
     })
+  })
+
+  // ── Sub-sections ───────────────────────────────────────────────────────────
+  app.register(async (sub) => {
+    sub.addHook('onRequest', requireAdmin(app))
+    sub.register(adminUsersRoutes,     { prefix: '/users' })
+    sub.register(adminQuestionsRoutes, { prefix: '/questions' })
+    sub.register(adminModesRoutes,     { prefix: '/modes' })
+    sub.register(adminFeedbackRoutes,  { prefix: '/feedback' })
+    sub.register(adminStatsRoutes,     { prefix: '/stats' })
   })
 }
