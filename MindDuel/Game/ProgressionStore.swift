@@ -297,6 +297,65 @@ import SwiftUI
         UserDefaults.standard.set(quotaResetEpoch, forKey: "quotaResetEpoch")
     }
 
+    // MARK: – Backend sync
+
+    /// Syncs quota (takes max of local vs server) and pulls progression data.
+    /// Safe to call on launch or after returning from offline.
+    func syncWithBackend() {
+        Task { @MainActor in
+            do {
+                let body = QuotaSyncRequest(localUsed: dailyUsed)
+                let quota: QuotaInfo = try await APIClient.shared.post("games/quota/sync", body: body)
+                set(dailyUsed: max(dailyUsed, quota.used))
+                // Pull full profile to sync server-side progressions
+                let user: APIUser = try await APIClient.shared.get("me")
+                applyServerProgressions(user.progressions ?? [])
+            } catch {
+                // Non-fatal; local state remains authoritative offline
+            }
+        }
+    }
+
+    private func applyServerProgressions(_ progressions: [APIProgression]) {
+        for p in progressions {
+            // Server `position` is Pi decimal index for pi, level number for all other modes.
+            // We take the max to avoid rolling back local progress on sync.
+            switch p.mode {
+            case "pi":
+                let serverPos = Int(p.position)
+                if serverPos > piPosition { set(piPosition: serverPos) }
+            case "math":
+                let lvl = max(1, Int(p.position))
+                if lvl > mathLevel { set(mathLevel: lvl, mathLevelProgress: 0) }
+            case "chem":
+                let lvl = max(1, Int(p.position))
+                if lvl > chemLevel { set(chemLevel: lvl, chemLevelProgress: 0) }
+            case "geo":
+                let lvl = max(1, Int(p.position))
+                if lvl > geoLevel { set(geoLevel: lvl, geoLevelProgress: 0) }
+            case "brain":
+                let lvl = max(1, Int(p.position))
+                if lvl > brainLevel { set(brainLevel: lvl, brainLevelProgress: 0) }
+            case "science":
+                let lvl = max(1, Int(p.position))
+                if lvl > scienceLevel { set(scienceLevel: lvl, scienceLevelProgress: 0) }
+            case "history":
+                let lvl = max(1, Int(p.position))
+                if lvl > historyLevel { set(historyLevel: lvl, historyLevelProgress: 0) }
+            case "physics":
+                let lvl = max(1, Int(p.position))
+                if lvl > physicsLevel { set(physicsLevel: lvl, physicsLevelProgress: 0) }
+            case "sport":
+                let lvl = max(1, Int(p.position))
+                if lvl > sportLevel { set(sportLevel: lvl, sportLevelProgress: 0) }
+            case "grammar":
+                let lvl = max(1, Int(p.position))
+                if lvl > grammarLevel { set(grammarLevel: lvl, grammarLevelProgress: 0) }
+            default: break
+            }
+        }
+    }
+
     // MARK: – Score calculation
 
     func piScore(correctCount: Int, avgTime: Double) -> Int {

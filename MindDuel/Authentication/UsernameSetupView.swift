@@ -4,6 +4,7 @@ struct UsernameSetupView: View {
     let userID: String
     @EnvironmentObject private var authState: AuthState
     @State private var username = ""
+    @State private var isSubmitting = false
 
     private var hasValidLength: Bool {
         (3...20).contains(username.count)
@@ -62,9 +63,13 @@ struct UsernameSetupView: View {
                         inputField
                         validationRules
                         MDButton(.primary, title: String(localized: "continue_action")) {
-                            authState.setUsername(username, userID: userID)
+                            isSubmitting = true
+                            Task {
+                                await authState.setUsername(username, userID: userID)
+                                isSubmitting = false
+                            }
                         }
-                        .disabled(!isValid)
+                        .disabled(!isValid || isSubmitting)
                         .padding(.top, MDSpacing.xs)
                     }
                 }

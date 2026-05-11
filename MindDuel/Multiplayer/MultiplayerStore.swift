@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import UserNotifications
 
@@ -9,28 +10,103 @@ import UserNotifications
     /// Pending multiplayer invites (#56). The home-screen badge counts these
     /// and the "Bli med" entry surfaces them as a list. Seeded with mock
     /// data on first launch so the feature is testable.
-    @Published var pendingInvites: [MultiplayerInvite] = MultiplayerStore.mockInvites()
-    var pendingInviteCount: Int { pendingInvites.count }
+    @Published var pendingInvites: [MultiplayerInvite] = []
 
-    private static func mockInvites() -> [MultiplayerInvite] {
-        [
-            MultiplayerInvite(roomCode: "9F2A", mode: .math,
-                              hostUsername: "magnus",
-                              invitedAt: Date().addingTimeInterval(-180)),
-            MultiplayerInvite(roomCode: "B3C1", mode: .pi,
-                              hostUsername: "sara",
-                              invitedAt: Date().addingTimeInterval(-1200)),
-            MultiplayerInvite(roomCode: "K7D9", mode: .chemistry,
-                              hostUsername: "alex",
-                              invitedAt: Date().addingTimeInterval(-3600))
-        ]
+    /// Live WebSocket connection for the current room.
+    let wsClient = WebSocketClient()
+    /// Backend UUID for the current room (separate from the display code).
+    private(set) var backendRoomId: String?
+
+    // MARK: – API room creation / join
+
+    /// Creates a real room via the backend. Falls back to local mock on failure.
+    func createRealRoom(mode: GameMode, ownUsername: String) async {
+        do {
+            struct Body: Encodable { let mode: String; let maxPlayers: Int }
+            let room: RoomResponse = try await APIClient.shared.post(
+                "ws/rooms",
+                body: Body(mode: mode.slug, maxPlayers: 4)
+            )
+            createRoom(mode: mode, ownUsername: ownUsername)
+            backendRoomId = room.id
+            wsClient.connect(roomId: room.id)
+            observeWS()
+        } catch {
+            createRoom(mode: mode, ownUsername: ownUsername)
+        }
     }
 
-    /// Accept a pending invite and drop the user into the corresponding lobby.
-    /// Mock implementation just calls joinMockRoom with the invite's mode.
+    /// Joins an existing room by code.
+    func joinRealRoom(code: String, ownUsername: String) async throws {
+        let info: RoomInfo = try await APIClient.shared.get("ws/rooms/\(code)")
+        let mode = GameMode(slug: info.mode) ?? .pi
+        joinMockRoom(ownUsername: ownUsername, mode: mode)
+        backendRoomId = info.id
+        wsClient.connect(roomId: info.id)
+        observeWS()
+    }
+
+    private func observeWS() {
+        Task {
+            for await msg in wsMessages() {
+                handle(wsMessage: msg)
+            }
+        }
+    }
+
+    private func wsMessages() -> AsyncStream<WSMessage> {
+        AsyncStream { continuation in
+            let cancellable = wsClient.$lastMessage
+                .compactMap { $0 }
+                .sink { continuation.yield($0) }
+            continuation.onTermination = { _ in cancellable.cancel() }
+        }
+    }
+
+    private func handle(wsMessage msg: WSMessage) {
+        switch msg {
+        case .joined(_, let players):
+            for p in players {
+                if !(currentRoom?.players.contains(where: { $0.id == p.userId }) ?? false) {
+                    let player = MultiplayerPlayer(id: p.userId, username: p.username, isHost: false, isReady: false)
+                    currentRoom?.players.append(player)
+                }
+            }
+        case .playerLeft(let userId):
+            currentRoom?.players.removeAll { $0.id == userId }
+        case .roundStarted(let idx, _):
+            currentRoom?.status = .playing
+            _ = idx
+        case .answerResult(let userId, let correct, _):
+            if let idx = currentRoom?.players.firstIndex(where: { $0.id == userId }) {
+                if !correct { currentRoom?.players[idx].lives = max(0, (currentRoom?.players[idx].lives ?? 0) - 1) }
+            }
+        case .roundEnded(let scores):
+            currentRoom?.status = .lobby
+            for s in scores {
+                if let idx = currentRoom?.players.firstIndex(where: { $0.id == s.userId }) {
+                    currentRoom?.players[idx].piBestScore = Int(s.score)
+                }
+            }
+        case .gameEnded:
+            currentRoom?.status = .finished
+            wsClient.disconnect()
+        case .error:
+            break
+        }
+    }
+    var pendingInviteCount: Int { pendingInvites.count }
+
+    /// Accept a pending invite and join the room via the backend.
     func acceptInvite(_ invite: MultiplayerInvite, ownUsername: String) {
         pendingInvites.removeAll { $0.id == invite.id }
-        joinMockRoom(ownUsername: ownUsername, mode: invite.mode)
+        Task {
+            do {
+                try await joinRealRoom(code: invite.roomCode, ownUsername: ownUsername)
+            } catch {
+                joinMockRoom(ownUsername: ownUsername, mode: invite.mode)
+            }
+        }
     }
 
     func declineInvite(_ invite: MultiplayerInvite) {

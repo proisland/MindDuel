@@ -4539,6 +4539,46 @@
         }
       }
     },
+    "error_unauthorized" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : { "state" : "translated", "value" : "You are not logged in. Please sign in again." }
+        },
+        "nb" : {
+          "stringUnit" : { "state" : "translated", "value" : "Du er ikke innlogget. Logg inn på nytt." }
+        }
+      }
+    },
+    "error_forbidden" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : { "state" : "translated", "value" : "You do not have permission to do this." }
+        },
+        "nb" : {
+          "stringUnit" : { "state" : "translated", "value" : "Du har ikke tilgang til dette." }
+        }
+      }
+    },
+    "error_not_found" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : { "state" : "translated", "value" : "The resource was not found." }
+        },
+        "nb" : {
+          "stringUnit" : { "state" : "translated", "value" : "Fant ikke det du leter etter." }
+        }
+      }
+    },
+    "error_decoding" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : { "state" : "translated", "value" : "Unexpected server response. Please try again." }
+        },
+        "nb" : {
+          "stringUnit" : { "state" : "translated", "value" : "Uventet svar fra server. Prøv igjen." }
+        }
+      }
+    },
     "π" : {
 
     },

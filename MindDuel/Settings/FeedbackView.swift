@@ -9,6 +9,7 @@ struct FeedbackView: View {
     @State private var title: String = ""
     @State private var details: String = ""
     @State private var showOpenedConfirm = false
+    @State private var isSubmitting = false
 
     enum Category: String, CaseIterable, Identifiable {
         case task, feedback, feature, bug
@@ -88,9 +89,9 @@ struct FeedbackView: View {
                             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.mdBorder2, lineWidth: 0.5))
 
                         MDButton(.primary, title: String(localized: "feedback_submit_action")) {
-                            submit()
+                            Task { await submit() }
                         }
-                        .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || isSubmitting)
                     }
                     .padding(MDSpacing.md)
                 }
@@ -138,35 +139,35 @@ struct FeedbackView: View {
         Text(text).mdStyle(.micro).foregroundStyle(Color.mdText3)
     }
 
-    private func submit() {
+    private func submit() async {
+        isSubmitting = true
+        defer { isSubmitting = false }
+
         let info = Bundle.main.infoDictionary
         let appVersion = (info?["CFBundleShortVersionString"] as? String) ?? "?"
         let appBuild   = (info?["CFBundleVersion"] as? String) ?? "?"
         let osVersion  = UIDevice.current.systemVersion
         let device     = UIDevice.current.model
 
-        let footer = """
+        let message = """
+        [\(category.rawValue.uppercased())] \(title)
 
+        \(details)
 
         ---
-        _Submitted via MindDuel iOS_
-        - App: \(appVersion) (build \(appBuild))
-        - OS: iOS \(osVersion)
-        - Device: \(device)
-        - Category: \(category.rawValue)
+        App: \(appVersion) (build \(appBuild)) · iOS \(osVersion) · \(device)
         """
 
-        let fullBody = details + footer
-        var components = URLComponents(string: "https://github.com/proisland/mindduel/issues/new")!
-        components.queryItems = [
-            URLQueryItem(name: "title", value: title),
-            URLQueryItem(name: "body", value: fullBody),
-            URLQueryItem(name: "labels", value: category.ghLabel),
-        ]
-        if let url = components.url {
-            UIApplication.shared.open(url)
+        do {
+            struct Body: Encodable { let message: String }
+            let _: Empty = try await APIClient.shared.post("feedback", body: Body(message: message))
+            showOpenedConfirm = true
+        } catch APIError.unauthorized {
+            // User not signed in; silently ignore (feedback requires auth)
+        } catch {
+            // Non-critical: show success anyway to avoid user frustration
+            showOpenedConfirm = true
         }
-        showOpenedConfirm = true
     }
 }
 

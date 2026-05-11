@@ -22,6 +22,39 @@ enum GameMode: String, Identifiable, Codable, CaseIterable {
 
     var id: String { rawValue }
 
+    /// Backend slug for this mode (matches the `slug` column in the database).
+    var slug: String {
+        switch self {
+        case .pi:            return "pi"
+        case .math:          return "math"
+        case .chemistry:     return "chem"
+        case .geography:     return "geo"
+        case .brainTraining: return "brain"
+        case .science:       return "science"
+        case .history:       return "history"
+        case .physics:       return "physics"
+        case .sport:         return "sport"
+        case .grammar:       return "grammar"
+        }
+    }
+
+    /// Reverse-lookup from backend slug.
+    init?(slug: String) {
+        switch slug {
+        case "pi":      self = .pi
+        case "math":    self = .math
+        case "chem":    self = .chemistry
+        case "geo":     self = .geography
+        case "brain":   self = .brainTraining
+        case "science": self = .science
+        case "history": self = .history
+        case "physics": self = .physics
+        case "sport":   self = .sport
+        case "grammar": self = .grammar
+        default:        return nil
+        }
+    }
+
     /// Localization key for the human-readable mode name. Used by every view
     /// that lists modes so adding a new case auto-propagates everywhere (#52).
     var titleKey: String {
