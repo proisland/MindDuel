@@ -72,6 +72,22 @@ jobs:
           DATABASE_URL: postgresql://mindduel:mindduel@localhost:5432/mindduel_test
         run: npx prisma migrate deploy
 
+  deploy-staging:
+    name: Deploy to staging
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Railway (staging)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          npm install -g @railway/cli
+          railway up --service mindduel-api --environment staging --detach
+
     env:
       DATABASE_URL: postgresql://mindduel:mindduel@localhost:5432/mindduel_test
       REDIS_URL: redis://localhost:6379

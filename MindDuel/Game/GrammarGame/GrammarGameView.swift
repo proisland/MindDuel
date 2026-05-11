@@ -19,6 +19,7 @@ struct GrammarGameView: View {
     @State private var startLevel:          Int
 
     @Environment(\.dismiss) private var dismiss
+    private let sessionService = GameSessionService()
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
     init(username: String, resumeRoomID: String? = nil) {
@@ -63,7 +64,7 @@ struct GrammarGameView: View {
                 )
             }
         }
-        .onAppear { restoreSavedSessionIfNeeded() }
+        .onAppear { restoreSavedSessionIfNeeded(); Task { try? await sessionService.startSession(mode: "grammar") } }
         .onDisappear { autoSaveIfInProgress() }
         .onReceive(timer) { _ in handleTimerTick() }
         .onChange(of: engine.isRoundOver) { over in
@@ -243,6 +244,7 @@ struct GrammarGameView: View {
 
     private func finaliseRound(won: Bool) {
         guard roundResult == nil else { return }
+        Task { try? await sessionService.endSession() }
         roundResult = progression.applyGrammarRound(
             correctCount: engine.correctCount,
             level: startLevel,

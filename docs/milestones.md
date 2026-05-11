@@ -376,9 +376,9 @@ M6 krever betydelige endringer i appen for å gå fra lokal/mock-tilstand (M1–
 - [x] Solo-spill fungerer offline; data synkroniseres ved reconnect *(quota sync + progression sync)*
 - [x] Appen laster ned og cacher spørsmålspakker; versjonsjekk kjøres ved oppstart
 - [x] Flerspiller bruker ekte WebSocket-tilkobling (ikke mock) *(WebSocketClient + createRealRoom)*
-- [ ] Scoreboard (venner/lokalt/globalt) henter data fra reelle API-endepunkter *(ScoreboardView ikke koblet)*
+- [x] Scoreboard (venner/lokalt/globalt) henter data fra reelle API-endepunkter
 - [x] Dagkvote håndheves lokalt ved offline-spill og serverside ved tilkobling
-- [ ] Session-tokens brukes for alle spillrunder *(GameSessionService implementert, ikke integrert i GameViews)*
+- [x] Session-tokens brukes for alle spillrunder *(pi: fullt integrert; øvrige: startSession/endSession)*
 - [x] Anonym telemetri sendes fra appen og vises i admin-dashboard *(TelemetryService)*
 - [x] Push-notifikasjoner (APNs): token registreres via POST /v1/me/push-token ved oppstart
 

@@ -21,6 +21,7 @@ struct GeographyGameView: View {
 
     @Environment(\.dismiss) private var dismiss
 
+    private let sessionService = GameSessionService()
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
     init(username: String, resumeRoomID: String? = nil) {
@@ -74,7 +75,7 @@ struct GeographyGameView: View {
                 )
             }
         }
-        .onAppear { restoreSavedSessionIfNeeded() }
+        .onAppear { restoreSavedSessionIfNeeded(); Task { try? await sessionService.startSession(mode: "geo") } }
         .onDisappear { autoSaveIfInProgress() }
         .onReceive(timer) { _ in handleTimerTick() }
         .animation(.easeInOut(duration: 0.2), value: showQuitModal)
@@ -297,6 +298,7 @@ struct GeographyGameView: View {
 
     private func finaliseRound(won: Bool) {
         guard roundResult == nil else { return }
+        Task { try? await sessionService.endSession() }
         roundResult = progression.applyGeoRound(
             correctCount: engine.correctCount,
             level: startLevel,

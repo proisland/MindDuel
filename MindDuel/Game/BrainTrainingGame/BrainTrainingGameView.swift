@@ -21,6 +21,7 @@ struct BrainTrainingGameView: View {
     @State private var startLevel:          Int
 
     @Environment(\.dismiss) private var dismiss
+    private let sessionService = GameSessionService()
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
     init(username: String, resumeRoomID: String? = nil) {
@@ -69,7 +70,7 @@ struct BrainTrainingGameView: View {
                 )
             }
         }
-        .onAppear { restoreSavedSessionIfNeeded() }
+        .onAppear { restoreSavedSessionIfNeeded(); Task { try? await sessionService.startSession(mode: "brain") } }
         .onDisappear { autoSaveIfInProgress() }
         .onReceive(timer) { _ in handleTimerTick() }
         .onChange(of: engine.isRoundOver) { over in
@@ -267,6 +268,7 @@ struct BrainTrainingGameView: View {
 
     private func finaliseRound(won: Bool) {
         guard roundResult == nil else { return }
+        Task { try? await sessionService.endSession() }
         roundResult = progression.applyBrainRound(
             correctCount: engine.correctCount,
             level: startLevel,
