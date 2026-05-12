@@ -64,18 +64,19 @@ export default async function authRoutes(app: FastifyInstance) {
       user = await app.prisma.user.create({
         data: {
           appleUserId: applePayload.appleUserId,
-          locale:       body.data.locale ?? null,
           lastActiveAt: new Date(),
         },
       })
     } else {
       await app.prisma.user.update({
         where: { id: user.id },
-        data: {
-          lastActiveAt: new Date(),
-          ...(body.data.locale && { locale: body.data.locale }),
-        },
+        data: { lastActiveAt: new Date() },
       })
+    }
+
+    // locale is not in the stale Prisma client — update via raw SQL
+    if (body.data.locale) {
+      await app.prisma.$executeRaw`UPDATE "User" SET locale = ${body.data.locale} WHERE id = ${user.id}`
     }
 
     if (user.isSuspended) {

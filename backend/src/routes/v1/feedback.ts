@@ -6,7 +6,7 @@ import { config } from '../../config'
 
 const createBody = z.object({
   message:  z.string().min(1).max(2000),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z.string().url().nullish(),
 })
 
 export default async function feedbackRoutes(app: FastifyInstance) {
@@ -19,11 +19,16 @@ export default async function feedbackRoutes(app: FastifyInstance) {
 
     const ticket = await app.prisma.feedback.create({
       data: {
-        userId:   request.userId,
-        message:  body.data.message,
-        imageUrl: body.data.imageUrl ?? null,
+        userId:  request.userId,
+        message: body.data.message,
       },
     })
+
+    if (body.data.imageUrl) {
+      await app.prisma.$executeRaw`
+        UPDATE "Feedback" SET "imageUrl" = ${body.data.imageUrl} WHERE id = ${ticket.id}
+      `
+    }
 
     return reply.status(201).send({ id: ticket.id, status: ticket.status })
   })

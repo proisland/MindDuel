@@ -304,9 +304,13 @@ import SwiftUI
     func syncWithBackend() {
         Task { @MainActor in
             do {
-                let body = QuotaSyncRequest(localUsed: dailyUsed)
+                let body = QuotaSyncRequest(localDate: DateFormatter.localDate.string(from: Date()), localCount: dailyUsed)
                 let quota: QuotaInfo = try await APIClient.shared.post("games/quota/sync", body: body)
                 set(dailyUsed: max(dailyUsed, quota.used))
+                // Patch locale so stats stay accurate
+                let locale = Locale.current.language.languageCode?.identifier ?? Locale.current.identifier.components(separatedBy: "_").first ?? "en"
+                struct LocalePatch: Encodable { let locale: String }
+                let _: Empty = try await APIClient.shared.patch("me", body: LocalePatch(locale: locale))
                 // Pull full profile to sync server-side progressions
                 let user: APIUser = try await APIClient.shared.get("me")
                 applyServerProgressions(user.progressions ?? [])

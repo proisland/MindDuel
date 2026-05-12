@@ -16,7 +16,7 @@
       <div class="flex items-start justify-between mb-3">
         <div>
           <span class="font-medium"><%= t.user.avatarEmoji %> @<%= t.user.username %></span>
-          <span class="ml-3 text-xs text-gray-500"><%= new Date(t.createdAt).toLocaleString() %></span>
+          <span class="ml-3 text-xs text-gray-500"><%= fmtDateTime(t.createdAt) %></span>
         </div>
         <div class="flex items-center gap-2">
           <span class="text-xs px-2 py-0.5 rounded
@@ -34,15 +34,12 @@
       <!-- User message -->
       <p class="text-sm text-gray-300 mb-3 whitespace-pre-wrap"><%= t.message %></p>
 
+      <!-- Attached image -->
       <% if (t.imageUrl) { %>
-        <a href="<%= t.imageUrl %>" target="_blank" class="text-xs text-indigo-400 hover:underline mb-3 inline-block">
-          📎 Vedlagt bilde
+        <a href="<%= t.imageUrl %>" target="_blank" class="inline-block mb-3">
+          <img src="<%= t.imageUrl %>" alt="Vedlagt bilde"
+            class="max-h-40 max-w-xs rounded-lg border border-gray-700 object-cover hover:opacity-90 transition-opacity">
         </a>
-      <% } %>
-
-      <!-- Admin response (latest) -->
-      <% if (t.adminResponse) { %>
-        <p class="text-sm text-indigo-300 border-l-2 border-indigo-600 pl-3 mb-3"><%= t.adminResponse %></p>
       <% } %>
 
       <!-- Thread comments -->
@@ -52,7 +49,7 @@
             <div>
               <p class="text-sm text-gray-300 whitespace-pre-wrap"><%= c.body %></p>
               <span class="text-xs text-gray-600">
-                <%= new Date(c.createdAt).toLocaleString() %>
+                <%= fmtDateTime(c.createdAt) %>
                 <%= c.notified ? '· 🔔 varslet' : '' %>
               </span>
             </div>
@@ -60,30 +57,34 @@
         </div>
       <% } %>
 
-      <!-- Actions -->
-      <% if (t.status !== 'closed') { %>
-        <!-- Respond & update status -->
-        <form onsubmit="respond(event, '<%= t.id %>')" class="flex flex-wrap gap-2 mt-2 mb-2">
-          <input name="response" placeholder="Skriv svar…"
-            class="flex-1 min-w-0 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500">
-          <label class="flex items-center gap-1 text-xs text-gray-400 cursor-pointer">
-            <input type="checkbox" name="notify" class="accent-indigo-500"> Varsle bruker
-          </label>
-          <button name="status" value="in_progress" type="submit"
-            class="text-xs px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded">Svar (behold åpen)</button>
-          <button name="status" value="closed" type="submit"
-            class="text-xs px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded">Svar & lukk</button>
-        </form>
+      <!-- Status buttons -->
+      <div class="flex gap-2 mb-3 mt-2">
+        <% if (t.status !== 'open') { %>
+          <button onclick="setStatus('<%= t.id %>', 'open')"
+            class="text-xs px-2 py-0.5 rounded bg-gray-800 hover:bg-red-900 text-gray-400 hover:text-red-300">Åpne</button>
+        <% } %>
+        <% if (t.status !== 'in_progress') { %>
+          <button onclick="setStatus('<%= t.id %>', 'in_progress')"
+            class="text-xs px-2 py-0.5 rounded bg-gray-800 hover:bg-amber-900 text-gray-400 hover:text-amber-300">Behandles</button>
+        <% } %>
+        <% if (t.status !== 'closed') { %>
+          <button onclick="setStatus('<%= t.id %>', 'closed')"
+            class="text-xs px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-400">Lukk</button>
+        <% } %>
+      </div>
 
-        <!-- Add comment without changing status -->
-        <form onsubmit="addComment(event, '<%= t.id %>')" class="flex flex-wrap gap-2">
-          <input name="commentBody" placeholder="Intern kommentar…"
-            class="flex-1 min-w-0 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-gray-600">
-          <label class="flex items-center gap-1 text-xs text-gray-400 cursor-pointer">
-            <input type="checkbox" name="notifyComment" class="accent-indigo-500"> Varsle bruker
-          </label>
-          <button type="submit"
-            class="text-xs px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded">Legg til kommentar</button>
+      <!-- Comment form -->
+      <% if (t.status !== 'closed') { %>
+        <form onsubmit="addComment(event, '<%= t.id %>')" class="flex flex-col gap-2">
+          <textarea name="commentBody" placeholder="Kommenter…" rows="2"
+            class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+          <div class="flex items-center justify-between">
+            <label class="flex items-center gap-1 text-xs text-gray-400 cursor-pointer">
+              <input type="checkbox" name="notify" class="accent-indigo-500"> Varsle bruker
+            </label>
+            <button type="submit"
+              class="text-xs px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded">Send</button>
+          </div>
         </form>
       <% } %>
     </div>
@@ -91,17 +92,11 @@
 </div>
 
 <script>
-async function respond(e, id) {
-  e.preventDefault()
-  const form = e.target
-  const response = form.response.value.trim()
-  if (!response) return
-  const status = e.submitter?.value ?? 'in_progress'
-  const notify = form.notify.checked
+async function setStatus(id, status) {
   await fetch('/admin/feedback/' + id, {
     method: 'PATCH',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ response, status, notify })
+    body: JSON.stringify({ status })
   })
   location.reload()
 }
@@ -111,7 +106,7 @@ async function addComment(e, id) {
   const form = e.target
   const body = form.commentBody.value.trim()
   if (!body) return
-  const notify = form.notifyComment.checked
+  const notify = form.notify.checked
   await fetch('/admin/feedback/' + id + '/comments', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},

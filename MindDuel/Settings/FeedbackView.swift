@@ -84,8 +84,17 @@ struct FeedbackView: View {
                                      matching: .images,
                                      photoLibrary: .shared()) {
                             HStack(spacing: MDSpacing.sm) {
-                                Image(systemName: selectedImageData != nil ? "photo.fill" : "photo.badge.plus")
-                                    .foregroundStyle(Color.mdAccent)
+                                if let data = selectedImageData,
+                                   let uiImage = UIImage(data: data) {
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 48, height: 48)
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                } else {
+                                    Image(systemName: "photo.badge.plus")
+                                        .foregroundStyle(Color.mdAccent)
+                                }
                                 Text(selectedImageData != nil
                                      ? String(localized: "feedback_image_selected")
                                      : String(localized: "feedback_image_add"))
@@ -108,7 +117,7 @@ struct FeedbackView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.mdBorder2, lineWidth: 0.5))
                         }
-                        .onChange(of: selectedPhotoItem) { _, newItem in
+                        .onChange(of: selectedPhotoItem) { newItem in
                             Task {
                                 selectedImageData = try? await newItem?.loadTransferable(type: Data.self)
                             }
@@ -185,16 +194,20 @@ struct FeedbackView: View {
         """
 
         do {
-            // Upload image if selected
+            // Upload image if selected — failure is non-fatal; submit without image
             var imageUrl: String? = nil
             if let imageData = selectedImageData {
-                struct UploadUrlResponse: Decodable { let uploadUrl: String; let publicUrl: String }
-                let urls: UploadUrlResponse = try await APIClient.shared.post("feedback/upload-url", body: Empty())
-                var request = URLRequest(url: URL(string: urls.uploadUrl)!)
-                request.httpMethod = "PUT"
-                request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
-                _ = try await URLSession.shared.upload(for: request, from: imageData)
-                imageUrl = urls.publicUrl
+                do {
+                    struct UploadUrlResponse: Decodable { let uploadUrl: String; let publicUrl: String }
+                    let urls: UploadUrlResponse = try await APIClient.shared.post("feedback/upload-url", body: Empty())
+                    var request = URLRequest(url: URL(string: urls.uploadUrl)!)
+                    request.httpMethod = "PUT"
+                    request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
+                    _ = try await URLSession.shared.upload(for: request, from: imageData)
+                    imageUrl = urls.publicUrl
+                } catch {
+                    // Proceed without image
+                }
             }
 
             struct Body: Encodable { let message: String; let imageUrl: String? }

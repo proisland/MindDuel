@@ -5,35 +5,34 @@ import Foundation
 final class ModeConfigCache: ObservableObject {
     static let shared = ModeConfigCache()
 
-    @Published private(set) var modes: [ModeResponse] = []
+    @Published private(set) var activeSlugs: Set<String> = []
 
-    private let cacheKey = "cachedModes"
+    private let cacheKey = "cachedActiveSlugs"
     private init() { loadFromDisk() }
 
     func refresh() async {
         do {
-            let fetched: [ModeResponse] = try await APIClient.shared.get("modes")
-            modes = fetched
-            saveToDisk(fetched)
+            struct SlimMode: Decodable { let slug: String }
+            struct Envelope: Decodable { let modes: [SlimMode] }
+            let envelope: Envelope = try await APIClient.shared.get("modes")
+            activeSlugs = Set(envelope.modes.map(\.slug))
+            saveToDisk(Array(activeSlugs))
         } catch {
-            // Keep existing cached modes on network failure
+            // Keep existing cached slugs on network failure
         }
     }
 
     func isActive(slug: String) -> Bool {
-        guard let mode = modes.first(where: { $0.slug == slug }) else { return true }
-        return mode.isActive
+        guard !activeSlugs.isEmpty else { return true }
+        return activeSlugs.contains(slug)
     }
 
-    private func saveToDisk(_ modes: [ModeResponse]) {
-        guard let data = try? JSONEncoder().encode(modes) else { return }
-        UserDefaults.standard.set(data, forKey: cacheKey)
+    private func saveToDisk(_ slugs: [String]) {
+        UserDefaults.standard.set(slugs, forKey: cacheKey)
     }
 
     private func loadFromDisk() {
-        guard let data = UserDefaults.standard.data(forKey: cacheKey),
-              let decoded = try? JSONDecoder.api.decode([ModeResponse].self, from: data)
-        else { return }
-        modes = decoded
+        guard let stored = UserDefaults.standard.array(forKey: cacheKey) as? [String] else { return }
+        activeSlugs = Set(stored)
     }
 }

@@ -19,6 +19,16 @@
       <input name="sortOrder" type="number" value="99"
         class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 w-24">
     </div>
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">Starts at (UTC)</label>
+      <input name="startsAt" type="datetime-local"
+        class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 w-44">
+    </div>
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">Ends at (UTC)</label>
+      <input name="endsAt" type="datetime-local"
+        class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 w-44">
+    </div>
     <button type="submit"
       class="text-sm px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded">
       Create
@@ -52,8 +62,18 @@
               <%= m.isActive ? '● Active' : '○ Hidden' %>
             </span>
           </td>
-          <td class="px-4 py-3 text-gray-500 text-xs"><%= m.startsAt ? new Date(m.startsAt).toLocaleString() : '–' %></td>
-          <td class="px-4 py-3 text-gray-500 text-xs"><%= m.endsAt ? new Date(m.endsAt).toLocaleString() : '–' %></td>
+          <td class="px-4 py-3 text-gray-500 text-xs">
+            <span id="startsAt-display-<%= m.id %>"><%= fmtDateTime(m.startsAt) %></span>
+            <input id="startsAt-input-<%= m.id %>" type="datetime-local"
+              value="<%= m.startsAt ? new Date(m.startsAt).toISOString().slice(0, 16) : '' %>"
+              class="hidden bg-gray-800 border border-gray-600 rounded px-2 py-0.5 text-sm text-white w-44 focus:outline-none focus:border-indigo-500">
+          </td>
+          <td class="px-4 py-3 text-gray-500 text-xs">
+            <span id="endsAt-display-<%= m.id %>"><%= fmtDateTime(m.endsAt) %></span>
+            <input id="endsAt-input-<%= m.id %>" type="datetime-local"
+              value="<%= m.endsAt ? new Date(m.endsAt).toISOString().slice(0, 16) : '' %>"
+              class="hidden bg-gray-800 border border-gray-600 rounded px-2 py-0.5 text-sm text-white w-44 focus:outline-none focus:border-indigo-500">
+          </td>
           <td class="px-4 py-3 text-gray-500 text-xs"><%= m.sortOrder %></td>
           <td class="px-4 py-3 flex gap-2">
             <button onclick="toggleMode('<%= m.id %>', <%= m.isActive %>)"
@@ -80,12 +100,20 @@
 </div>
 
 <script>
+function toISO(v) {
+  if (!v) return null
+  if (v.length === 16) return v + ':00.000Z'
+  if (v.length >= 19)  return v.slice(0, 19) + '.000Z'
+  return null
+}
+
 async function toggleMode(id, isActive) {
-  await fetch('/admin/modes/' + id, {
+  const res = await fetch('/admin/modes/' + id, {
     method: 'PATCH',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({ isActive: !isActive })
   })
+  if (!res.ok) { const e = await res.json().catch(()=>({})); alert('Feil: ' + (e.error || res.status)); return }
   location.reload()
 }
 
@@ -93,9 +121,11 @@ async function createMode(e) {
   e.preventDefault()
   const form = e.target
   const data = {
-    slug: form.slug.value.trim(),
-    name: form.name.value.trim(),
+    slug:      form.slug.value.trim(),
+    name:      form.name.value.trim(),
     sortOrder: parseInt(form.sortOrder.value, 10) || 99,
+    startsAt:  toISO(form.startsAt.value),
+    endsAt:    toISO(form.endsAt.value),
   }
   const res = await fetch('/admin/modes', {
     method: 'POST',
@@ -105,14 +135,18 @@ async function createMode(e) {
   if (res.ok) {
     location.reload()
   } else {
-    const err = await res.json()
-    alert('Error: ' + JSON.stringify(err.error))
+    const err = await res.json().catch(()=>({}))
+    alert('Feil: ' + JSON.stringify(err.error || res.status))
   }
 }
 
 function startEdit(id) {
   document.getElementById('name-display-' + id).classList.add('hidden')
   document.getElementById('name-input-' + id).classList.remove('hidden')
+  document.getElementById('startsAt-display-' + id).classList.add('hidden')
+  document.getElementById('startsAt-input-' + id).classList.remove('hidden')
+  document.getElementById('endsAt-display-' + id).classList.add('hidden')
+  document.getElementById('endsAt-input-' + id).classList.remove('hidden')
   document.getElementById('edit-btn-' + id).classList.add('hidden')
   document.getElementById('save-btn-' + id).classList.remove('hidden')
 }
@@ -120,17 +154,23 @@ function startEdit(id) {
 async function saveEdit(id) {
   const name = document.getElementById('name-input-' + id).value.trim()
   if (!name) return
-  await fetch('/admin/modes/' + id, {
+  const res = await fetch('/admin/modes/' + id, {
     method: 'PATCH',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ name })
+    body: JSON.stringify({
+      name,
+      startsAt: toISO(document.getElementById('startsAt-input-' + id).value),
+      endsAt:   toISO(document.getElementById('endsAt-input-' + id).value),
+    })
   })
+  if (!res.ok) { const e = await res.json().catch(()=>({})); alert('Feil: ' + (e.error || res.status)); return }
   location.reload()
 }
 
 async function deleteMode(id, name) {
-  if (!confirm('Delete mode "' + name + '"? This cannot be undone.')) return
-  await fetch('/admin/modes/' + id, { method: 'DELETE' })
+  if (!confirm('Slett modus "' + name + '"? Dette kan ikke angres.')) return
+  const res = await fetch('/admin/modes/' + id, { method: 'DELETE' })
+  if (!res.ok) { const e = await res.json().catch(()=>({})); alert('Feil: ' + (e.error || res.status)); return }
   location.reload()
 }
 </script>

@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
+import { revokeAllRefreshTokens } from '../../lib/tokens'
 
 const patchBody = z.object({
   isFlagged:   z.boolean().optional(),
@@ -29,7 +30,8 @@ export default async function adminUsersRoutes(app: FastifyInstance) {
         select: {
           id: true, username: true, avatarEmoji: true, isPremium: true,
           isFlagged: true, isSuspended: true, fastRoundCount: true,
-          totalRoundsPlayed: true, lastActiveAt: true, createdAt: true,
+          lastActiveAt: true, createdAt: true,
+          _count: { select: { gameSessions: true } },
         },
       }),
       app.prisma.user.count({ where }),
@@ -45,7 +47,7 @@ export default async function adminUsersRoutes(app: FastifyInstance) {
   // GET /admin/users/:id
   app.get('/:id', async (request, reply) => {
     const { id } = request.params as { id: string }
-    const [user, modeStats] = await Promise.all([
+    const [user, modeStats, levelStats] = await Promise.all([
       app.prisma.user.findUnique({
         where: { id },
         include: {
@@ -62,6 +64,19 @@ export default async function adminUsersRoutes(app: FastifyInstance) {
         _sum:   { correctCount: true, totalCount: true },
         orderBy: { mode: 'asc' },
       }),
+      app.prisma.$queryRaw<Array<{ mode: string; start_position: number; correct: bigint; total: bigint }>>`
+        SELECT
+          gs.mode,
+          gs."startPosition" AS start_position,
+          SUM(gs."correctCount") AS correct,
+          SUM(gs."totalCount")   AS total
+        FROM "GameSession" gs
+        WHERE gs."userId" = ${id}
+          AND gs.mode <> 'pi'
+          AND gs."totalCount" > 0
+        GROUP BY gs.mode, gs."startPosition"
+        ORDER BY gs.mode, gs."startPosition"
+      `,
     ])
     if (!user) return reply.status(404).send('Not found')
 
@@ -73,7 +88,23 @@ export default async function adminUsersRoutes(app: FastifyInstance) {
       pctCorrect:   s._sum.totalCount ? Math.round((s._sum.correctCount ?? 0) / s._sum.totalCount * 100) : null,
     }))
 
-    return reply.view('admin/user-detail.ejs', { title: `@${user.username}`, user, modeStats: modeStatsFormatted })
+    const totalRounds = modeStatsFormatted.reduce((sum, s) => sum + s.rounds, 0)
+
+    const levelStatsFormatted = levelStats.map(r => ({
+      mode:    r.mode,
+      level:   r.start_position === 0 ? 'Ukjent' : `Lv ${r.start_position}`,
+      correct: Number(r.correct),
+      total:   Number(r.total),
+      pct:     Number(r.total) > 0 ? Math.round(Number(r.correct) / Number(r.total) * 100) : null,
+    }))
+
+    return reply.view('admin/user-detail.ejs', {
+      title: `@${user.username}`,
+      user,
+      modeStats: modeStatsFormatted,
+      totalRounds,
+      levelStats: levelStatsFormatted,
+    })
   })
 
   // PATCH /admin/users/:id (JSON API for HTMX)
@@ -86,6 +117,9 @@ export default async function adminUsersRoutes(app: FastifyInstance) {
       where: { id },
       data: body.data,
     })
+    if (body.data.isSuspended === true) {
+      await revokeAllRefreshTokens(app.redis, id)
+    }
     return reply.send({ ok: true, isFlagged: user.isFlagged, isSuspended: user.isSuspended })
   })
 }

@@ -34,4 +34,10 @@ export async function runStartupMigrations(prisma: PrismaClient) {
     CREATE INDEX IF NOT EXISTS "FeedbackComment_feedbackId_createdAt_idx"
       ON "FeedbackComment"("feedbackId", "createdAt" DESC)
   `)
+
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "GameSession"
+      ADD COLUMN IF NOT EXISTS "startPosition" INTEGER NOT NULL DEFAULT 0
+  `)
+
 }

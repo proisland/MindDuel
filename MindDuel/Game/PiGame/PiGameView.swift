@@ -15,7 +15,7 @@ struct PiGameView: View {
     @State private var roundResult:      ProgressionStore.RoundResult? = nil
     @State private var sessionStartIndex: Int = 0
 
-    private let sessionService = GameSessionService()
+    @StateObject private var sessionService = GameSessionService()
 
     @Environment(\.dismiss) private var dismiss
 
@@ -87,7 +87,7 @@ struct PiGameView: View {
             restoreOrStartFresh()
             Task { try? await sessionService.startSession(mode: "pi") }
         }
-        .onDisappear { autoSaveIfInProgress() }
+        .onDisappear { autoSaveIfInProgress(); Task { try? await sessionService.endSession() } }
         .onReceive(timer) { _ in handleTimerTick() }
         .animation(.easeInOut(duration: 0.2), value: showQuitModal)
         .onChange(of: engine.isRoundOver, perform: { over in
@@ -285,7 +285,7 @@ struct PiGameView: View {
         let answeredAt = ISO8601DateFormatter.ms.string(from: Date())
 
         // Fire-and-forget: don't block UI feedback on network latency.
-        Task { try? await sessionService.submitAnswer(answeredAt: answeredAt, questionId: questionId, answer: String(digit)) }
+        Task { try? await sessionService.submitAnswer(answeredAt: answeredAt, questionId: questionId, answer: String(digit), isCorrect: correct) }
 
         Task {
             try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)

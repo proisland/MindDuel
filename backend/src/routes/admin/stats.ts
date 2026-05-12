@@ -10,6 +10,7 @@ export default async function adminStatsRoutes(app: FastifyInstance) {
       totalUsers, dau, mau, premiumUsers, flaggedUsers, suspendedUsers,
       totalSessions, sessionsToday, openFeedback,
       modePopularity, modeAccuracy, localeDistribution, sessionTimeSeries, ageDistribution,
+      levelAccuracy, ageAccuracy,
     ] = await Promise.all([
       app.prisma.user.count(),
       app.prisma.user.count({ where: { lastActiveAt: { gte: day1 } } }),
@@ -33,13 +34,14 @@ export default async function adminStatsRoutes(app: FastifyInstance) {
         having: { totalCount: { _sum: { gt: 0 } } },
         orderBy: { mode: 'asc' },
       }),
-      app.prisma.user.groupBy({
-        by: ['locale'],
-        _count: { id: true },
-        where: { locale: { not: null } },
-        orderBy: { _count: { id: 'desc' } },
-        take: 15,
-      }),
+      app.prisma.$queryRaw<Array<{ locale: string; count: bigint }>>`
+        SELECT locale, COUNT(*) AS count
+        FROM "User"
+        WHERE locale IS NOT NULL
+        GROUP BY locale
+        ORDER BY count DESC
+        LIMIT 15
+      `,
       app.prisma.$queryRaw<Array<{ date: string; single: bigint; multiplayer: bigint }>>`
         SELECT
           TO_CHAR(DATE("startedAt"), 'YYYY-MM-DD') AS date,
@@ -66,6 +68,52 @@ export default async function adminStatsRoutes(app: FastifyInstance) {
         GROUP BY age_group
         ORDER BY count DESC
       `,
+      app.prisma.$queryRaw<Array<{ mode: string; start_position: number; correct: bigint; total: bigint }>>`
+        SELECT
+          gs.mode,
+          gs."startPosition" AS start_position,
+          SUM(gs."correctCount") AS correct,
+          SUM(gs."totalCount")   AS total
+        FROM "GameSession" gs
+        WHERE gs.mode <> 'pi'
+          AND gs."totalCount" > 0
+        GROUP BY gs.mode, gs."startPosition"
+        ORDER BY gs.mode, gs."startPosition"
+      `,
+      app.prisma.$queryRaw<Array<{
+        mode: string; start_position: number; age_group: string; age_sort: number;
+        correct: bigint; total: bigint
+      }>>`
+        SELECT
+          gs.mode,
+          gs."startPosition" AS start_position,
+          CASE
+            WHEN u."birthDate" IS NULL                            THEN 'Ukjent'
+            WHEN EXTRACT(YEAR FROM AGE(u."birthDate")) < 13       THEN 'Under 13'
+            WHEN EXTRACT(YEAR FROM AGE(u."birthDate")) < 18       THEN '13–17'
+            WHEN EXTRACT(YEAR FROM AGE(u."birthDate")) < 25       THEN '18–24'
+            WHEN EXTRACT(YEAR FROM AGE(u."birthDate")) < 35       THEN '25–34'
+            WHEN EXTRACT(YEAR FROM AGE(u."birthDate")) < 50       THEN '35–49'
+            ELSE '50+'
+          END AS age_group,
+          CASE
+            WHEN u."birthDate" IS NULL                            THEN 99
+            WHEN EXTRACT(YEAR FROM AGE(u."birthDate")) < 13       THEN 0
+            WHEN EXTRACT(YEAR FROM AGE(u."birthDate")) < 18       THEN 1
+            WHEN EXTRACT(YEAR FROM AGE(u."birthDate")) < 25       THEN 2
+            WHEN EXTRACT(YEAR FROM AGE(u."birthDate")) < 35       THEN 3
+            WHEN EXTRACT(YEAR FROM AGE(u."birthDate")) < 50       THEN 4
+            ELSE 5
+          END AS age_sort,
+          SUM(gs."correctCount") AS correct,
+          SUM(gs."totalCount")   AS total
+        FROM "GameSession" gs
+        JOIN "User" u ON u.id = gs."userId"
+        WHERE gs.mode <> 'pi'
+          AND gs."totalCount" > 0
+        GROUP BY gs.mode, gs."startPosition", age_group, age_sort
+        ORDER BY gs.mode, gs."startPosition", age_sort
+      `,
     ])
 
     return reply.view('admin/stats.ejs', {
@@ -81,7 +129,7 @@ export default async function adminStatsRoutes(app: FastifyInstance) {
         total:      Number(m._sum.totalCount ?? 0),
         pct:        m._sum.totalCount ? Math.round(Number(m._sum.correctCount ?? 0) / Number(m._sum.totalCount) * 100) : null,
       })),
-      localeDistribution: localeDistribution.map(l => ({ locale: l.locale, count: l._count.id })),
+      localeDistribution: localeDistribution.map(l => ({ locale: l.locale, count: Number(l.count) })),
       sessionTimeSeries:  sessionTimeSeries.map(r => ({
         date:        r.date,
         single:      Number(r.single),
@@ -90,6 +138,21 @@ export default async function adminStatsRoutes(app: FastifyInstance) {
       ageDistribution: ageDistribution.map(r => ({
         group: r.age_group,
         count: Number(r.count),
+      })),
+      levelAccuracy: levelAccuracy.map(r => ({
+        mode:     r.mode,
+        level:    r.start_position === 0 ? 'Ukjent' : `Lv ${r.start_position}`,
+        correct:  Number(r.correct),
+        total:    Number(r.total),
+        pct:      Number(r.total) > 0 ? Math.round(Number(r.correct) / Number(r.total) * 100) : null,
+      })),
+      ageAccuracy: ageAccuracy.map(r => ({
+        mode:     r.mode,
+        level:    r.start_position === 0 ? 'Ukjent' : `Lv ${r.start_position}`,
+        ageGroup: r.age_group,
+        correct:  Number(r.correct),
+        total:    Number(r.total),
+        pct:      Number(r.total) > 0 ? Math.round(Number(r.correct) / Number(r.total) * 100) : null,
       })),
     })
   })

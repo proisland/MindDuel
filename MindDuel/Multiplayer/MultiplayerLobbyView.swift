@@ -149,7 +149,7 @@ struct MultiplayerLobbyView: View {
         // without crowding the lobby (per Claude Design iteration).
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(modePrefs.order) { mode in
+                ForEach(modePrefs.activeOrder) { mode in
                     modeButton(mode, room: room, editable: editable)
                 }
             }

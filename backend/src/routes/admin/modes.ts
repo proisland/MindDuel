@@ -6,6 +6,8 @@ const createBody = z.object({
   name:      z.string().min(1),
   isActive:  z.boolean().default(false),
   sortOrder: z.number().int().default(0),
+  startsAt:  z.string().datetime().nullable().optional(),
+  endsAt:    z.string().datetime().nullable().optional(),
 })
 
 const patchBody = z.object({
@@ -31,7 +33,14 @@ export default async function adminModesRoutes(app: FastifyInstance) {
     const existing = await app.prisma.gameMode.findUnique({ where: { slug: body.data.slug } })
     if (existing) return reply.status(409).send({ error: 'Slug already exists' })
 
-    const mode = await app.prisma.gameMode.create({ data: body.data })
+    const { startsAt, endsAt, ...rest } = body.data
+    const mode = await app.prisma.gameMode.create({
+      data: {
+        ...rest,
+        ...(startsAt != null && { startsAt: new Date(startsAt) }),
+        ...(endsAt != null && { endsAt: new Date(endsAt) }),
+      },
+    })
     await app.redis.del('modes:active')
     return reply.status(201).send(mode)
   })

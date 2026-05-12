@@ -62,11 +62,23 @@ export async function buildApp() {
   })
 
   // ── Views (admin) ───────────────────────────────────────────────────────────
+  const fmtDate = (d: Date | string | null | undefined) => {
+    if (!d) return '–'
+    const dt = new Date(d)
+    return `${String(dt.getDate()).padStart(2, '0')}.${String(dt.getMonth() + 1).padStart(2, '0')}.${dt.getFullYear()}`
+  }
+  const fmtDateTime = (d: Date | string | null | undefined) => {
+    if (!d) return '–'
+    const dt = new Date(d)
+    return `${String(dt.getDate()).padStart(2, '0')}.${String(dt.getMonth() + 1).padStart(2, '0')}.${dt.getFullYear()} ${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`
+  }
+
   await app.register(fastifyView, {
     engine: { ejs },
     root: path.join(__dirname, '..', 'views'),
     layout: 'layout.ejs',
     viewExt: 'ejs',
+    defaultContext: { fmtDate, fmtDateTime },
   })
 
   await app.register(fastifyStatic, {
