@@ -40,4 +40,27 @@ export async function runStartupMigrations(prisma: PrismaClient) {
       ADD COLUMN IF NOT EXISTS "startPosition" INTEGER NOT NULL DEFAULT 0
   `)
 
+  // Seed the 10 built-in game modes as active if they don't already exist.
+  // Uses ON CONFLICT DO NOTHING so re-runs are safe and admin edits are preserved.
+  const defaultModes = [
+    { slug: 'pi',      name: 'Pi',            sortOrder: 1 },
+    { slug: 'math',    name: 'Matte',         sortOrder: 2 },
+    { slug: 'chem',    name: 'Kjemi',         sortOrder: 3 },
+    { slug: 'geo',     name: 'Geografi',      sortOrder: 4 },
+    { slug: 'brain',   name: 'Hjerne',        sortOrder: 5 },
+    { slug: 'science', name: 'Vitenskap',     sortOrder: 6 },
+    { slug: 'history', name: 'Historie',      sortOrder: 7 },
+    { slug: 'physics', name: 'Fysikk',        sortOrder: 8 },
+    { slug: 'sport',   name: 'Sport',         sortOrder: 9 },
+    { slug: 'grammar', name: 'Grammatikk',    sortOrder: 10 },
+  ]
+  for (const m of defaultModes) {
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "GameMode" (id, slug, name, "isActive", "sortOrder", "createdAt")
+       VALUES (gen_random_uuid(), $1, $2, true, $3, NOW())
+       ON CONFLICT (slug) DO NOTHING`,
+      m.slug, m.name, m.sortOrder,
+    )
+  }
+
 }
