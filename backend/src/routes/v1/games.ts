@@ -193,11 +193,11 @@ export default async function gamesRoutes(app: FastifyInstance) {
         // - same day → increment
         // - new day  → reset to 1 (don't carry over yesterday's count)
         await app.prisma.$executeRaw`
-          INSERT INTO "DailyQuota" ("userId", date, count, "updatedAt")
+          INSERT INTO "DailyQuota" ("userId", "date", "count", "updatedAt")
           VALUES (${request.userId}, ${today}, 1, NOW())
           ON CONFLICT ("userId") DO UPDATE
-            SET count       = CASE WHEN "DailyQuota".date = ${today} THEN "DailyQuota".count + 1 ELSE 1 END,
-                date        = ${today},
+            SET "count"     = CASE WHEN "DailyQuota"."date" = ${today} THEN "DailyQuota"."count" + 1 ELSE 1 END,
+                "date"      = ${today},
                 "updatedAt" = NOW()
         `
         const quota = await app.prisma.dailyQuota.findUniqueOrThrow({ where: { userId: request.userId } })
@@ -344,11 +344,11 @@ export default async function gamesRoutes(app: FastifyInstance) {
       : localCount
 
     await app.prisma.$executeRaw`
-      INSERT INTO "DailyQuota" ("userId", date, count, "updatedAt")
+      INSERT INTO "DailyQuota" ("userId", "date", "count", "updatedAt")
       VALUES (${request.userId}, ${localDate}, ${syncedCount}, NOW())
       ON CONFLICT ("userId") DO UPDATE
-        SET count       = ${syncedCount},
-            date        = ${localDate},
+        SET "count"     = ${syncedCount},
+            "date"      = ${localDate},
             "updatedAt" = NOW()
     `
 
