@@ -1,6 +1,7 @@
 import fp from 'fastify-plugin'
 import { PrismaClient } from '@prisma/client'
 import type { FastifyInstance } from 'fastify'
+import { runStartupMigrations } from '../lib/migrate'
 
 export default fp(async (app: FastifyInstance) => {
   const prisma = new PrismaClient({
@@ -8,6 +9,7 @@ export default fp(async (app: FastifyInstance) => {
   })
 
   await prisma.$connect()
+  await runStartupMigrations(prisma)
 
   app.decorate('prisma', prisma)
 
