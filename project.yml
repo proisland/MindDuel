@@ -39,7 +39,8 @@ targets:
             /usr/libexec/PlistBuddy -c "Set :GitBranch $BRANCH" "$INFO_PLIST" 2>/dev/null || \
             /usr/libexec/PlistBuddy -c "Add :GitBranch string $BRANCH" "$INFO_PLIST"
           fi
-    # entitlements: Sign in with Apple added in later milestone (requires paid Apple Developer account)
+    entitlements:
+      path: MindDuel/MindDuel.entitlements
     settings:
       base:
         SWIFT_VERSION: "5.9"

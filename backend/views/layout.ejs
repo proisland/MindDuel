@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= locals.title || 'Admin' %> – MindDuel Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+  <nav class="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center justify-between">
+    <span class="font-bold text-indigo-400">MindDuel Admin</span>
+    <div class="flex gap-6 text-sm text-gray-400">
+      <a href="/admin/users"     class="hover:text-white">Users</a>
+      <a href="/admin/questions" class="hover:text-white">Questions</a>
+      <a href="/admin/modes"     class="hover:text-white">Modes</a>
+      <a href="/admin/feedback"  class="hover:text-white">Feedback</a>
+      <a href="/admin/stats"     class="hover:text-white">Stats</a>
+      <a href="/admin/logout"    class="hover:text-red-400">Logout</a>
+    </div>
+  </nav>
+  <main class="max-w-6xl mx-auto px-6 py-8">
+    <%- body %>
+  </main>
+</body>
+</html>

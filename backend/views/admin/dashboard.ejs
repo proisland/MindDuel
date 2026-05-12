@@ -1,0 +1,54 @@
+<h1 class="text-2xl font-bold mb-8">Dashboard</h1>
+
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+    <div class="text-3xl font-bold text-indigo-400"><%= stats.totalUsers %></div>
+    <div class="text-sm text-gray-400 mt-1">Total users</div>
+  </div>
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+    <div class="text-3xl font-bold text-green-400"><%= stats.activeToday %></div>
+    <div class="text-sm text-gray-400 mt-1">Active today</div>
+  </div>
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+    <div class="text-3xl font-bold text-pink-400"><%= stats.totalRounds %></div>
+    <div class="text-sm text-gray-400 mt-1">Total rounds</div>
+  </div>
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+    <div class="text-3xl font-bold text-amber-400"><%= stats.openFeedback %></div>
+    <div class="text-sm text-gray-400 mt-1">Open feedback</div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+    <h2 class="font-semibold mb-4">Quick actions</h2>
+    <div class="space-y-2">
+      <a href="/admin/users?flagged=true"
+        class="block px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm transition">
+        🚩 Review flagged users (<%= stats.flaggedUsers %>)
+      </a>
+      <a href="/admin/feedback?status=open"
+        class="block px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm transition">
+        💬 Open feedback tickets (<%= stats.openFeedback %>)
+      </a>
+      <a href="/admin/questions"
+        class="block px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm transition">
+        📚 Manage question packs
+      </a>
+    </div>
+  </div>
+
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+    <h2 class="font-semibold mb-4">Game modes</h2>
+    <div class="space-y-1 text-sm">
+      <% modes.forEach(function(m) { %>
+        <div class="flex items-center justify-between py-1 border-b border-gray-800">
+          <span><%= m.name %></span>
+          <span class="<%= m.isActive ? 'text-green-400' : 'text-gray-500' %>">
+            <%= m.isActive ? 'Active' : 'Hidden' %>
+          </span>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</div>

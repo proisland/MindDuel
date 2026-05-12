@@ -1,0 +1,332 @@
+import type { FastifyInstance } from 'fastify'
+import { z } from 'zod'
+import { validatePiAnswer } from '../../lib/pi'
+import { calculateScore, applyProgressionDelta, shouldFlagUser } from '../../lib/scoring'
+import { config } from '../../config'
+
+const MIN_ANSWER_MS = 200
+const FAST_AVG_THRESHOLD_MS = 400
+const FAST_ROUND_MIN_ANSWERS = 5
+const FLAG_THRESHOLD = 5
+
+const startSessionBody = z.object({
+  mode: z.string().min(1),
+  isTraining: z.boolean().default(false),
+  localDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  startPosition: z.number().int().min(0).optional(),
+})
+
+const submitAnswerBody = z.object({
+  sessionToken: z.string().min(1),
+  questionRef: z.string().min(1),
+  userAnswer: z.string().min(1),
+  answerTimeMs: z.number().int().positive(),
+  waitTimeMs: z.number().int().min(0).default(0),
+  wasSkipped: z.boolean().default(false),
+})
+
+const endSessionBody = z.object({
+  reason: z.enum(['no_lives', 'no_skips', 'user_quit', 'won']),
+})
+
+const syncQuotaBody = z.object({
+  localDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  localCount: z.number().int().min(0),
+})
+
+async function getOrCreateQuota(
+  prisma: FastifyInstance['prisma'],
+  userId: string,
+  localDate: string,
+) {
+  return prisma.dailyQuota.upsert({
+    where: { userId },
+    update: {},
+    create: { userId, date: localDate, count: 0 },
+  })
+}
+
+async function checkQuota(
+  prisma: FastifyInstance['prisma'],
+  userId: string,
+  isPremium: boolean,
+  isTraining: boolean,
+  localDate: string,
+): Promise<{ allowed: boolean; count: number; remaining: number }> {
+  if (isPremium || isTraining) return { allowed: true, count: 0, remaining: 999 }
+
+  const quota = await getOrCreateQuota(prisma, userId, localDate)
+  const count = quota.date === localDate ? quota.count : 0
+  const remaining = Math.max(0, config.quota.freeLimit - count)
+  return { allowed: remaining > 0, count, remaining }
+}
+
+export default async function gamesRoutes(app: FastifyInstance) {
+  const auth = { onRequest: [app.authenticate] }
+
+  // POST /v1/games/sessions — start a session
+  app.post('/sessions', auth, async (request, reply) => {
+    const body = startSessionBody.safeParse(request.body)
+    if (!body.success) return reply.status(400).send({ error: 'Invalid body', details: body.error.flatten() })
+
+    const user = await app.prisma.user.findUnique({
+      where: { id: request.userId },
+      select: { isPremium: true, progressions: { where: { mode: body.data.mode } } },
+    })
+    if (!user) return reply.status(404).send({ error: 'User not found' })
+
+    const { allowed, remaining } = await checkQuota(
+      app.prisma, request.userId, user.isPremium, body.data.isTraining, body.data.localDate,
+    )
+    if (!allowed) return reply.status(429).send({ error: 'Daily quota exceeded', quotaRemaining: 0 })
+
+    const progression = user.progressions[0]
+    const startPos = body.data.startPosition ?? progression?.position ?? 0
+
+    const session = await app.prisma.gameSession.create({
+      data: {
+        userId: request.userId,
+        mode: body.data.mode,
+        isTraining: body.data.isTraining,
+      },
+    })
+
+    return reply.send({
+      sessionToken: session.sessionToken,
+      mode: session.mode,
+      isTraining: session.isTraining,
+      startPosition: startPos,
+      quotaRemaining: remaining,
+    })
+  })
+
+  // POST /v1/games/sessions/:token/answers — submit one answer
+  app.post('/sessions/:token/answers', auth, async (request, reply) => {
+    const { token } = request.params as { token: string }
+    const body = submitAnswerBody.safeParse(request.body)
+    if (!body.success) return reply.status(400).send({ error: 'Invalid body', details: body.error.flatten() })
+
+    if (!body.data.wasSkipped && body.data.answerTimeMs < MIN_ANSWER_MS) {
+      return reply.status(400).send({ error: `Answer time below minimum (${MIN_ANSWER_MS}ms)` })
+    }
+
+    const session = await app.prisma.gameSession.findUnique({
+      where: { sessionToken: token },
+      select: { id: true, userId: true, mode: true, isTraining: true, endedAt: true },
+    })
+    if (!session) return reply.status(404).send({ error: 'Session not found' })
+    if (session.userId !== request.userId) return reply.status(403).send({ error: 'Forbidden' })
+    if (session.endedAt) return reply.status(409).send({ error: 'Session already ended' })
+
+    // Validate answer serverside
+    let isCorrect = false
+    let correctAnswer = ''
+
+    if (session.mode === 'pi') {
+      const position = parseInt(body.data.questionRef, 10)
+      isCorrect = !body.data.wasSkipped && validatePiAnswer(position, body.data.userAnswer)
+      const { getPiDigit } = await import('../../lib/pi')
+      correctAnswer = getPiDigit(position)
+    } else {
+      // Knowledge modes: look up question in DB
+      const pack = await app.prisma.questionPack.findFirst({
+        where: { mode: session.mode, isActive: true },
+        orderBy: { version: 'desc' },
+      })
+      if (pack) {
+        const questions = pack.data as Array<{ id: string; answer: string }>
+        const q = questions.find(q => q.id === body.data.questionRef)
+        if (q) {
+          correctAnswer = q.answer
+          isCorrect = !body.data.wasSkipped && q.answer === body.data.userAnswer
+        }
+      }
+    }
+
+    // Persist answer
+    const difficulty = session.mode === 'pi' ? 1 : 1 // level-based difficulty set at session end
+    await app.prisma.gameAnswer.create({
+      data: {
+        sessionId: session.id,
+        questionRef: body.data.questionRef,
+        userAnswer: body.data.wasSkipped ? '__skip__' : body.data.userAnswer,
+        isCorrect,
+        answerTimeMs: body.data.answerTimeMs,
+        waitTimeMs: body.data.waitTimeMs,
+      },
+    })
+
+    // Update quota (non-training only)
+    let quotaRemaining = 999
+    if (!session.isTraining) {
+      const user = await app.prisma.user.findUnique({
+        where: { id: request.userId },
+        select: { isPremium: true },
+      })
+      if (!user?.isPremium) {
+        const today = new Date().toISOString().slice(0, 10)
+        const quota = await app.prisma.dailyQuota.upsert({
+          where: { userId: request.userId },
+          update: { count: { increment: 1 }, date: today },
+          create: { userId: request.userId, date: today, count: 1 },
+        })
+        quotaRemaining = Math.max(0, config.quota.freeLimit - quota.count)
+      }
+    }
+
+    return reply.send({ isCorrect, correctAnswer, quotaRemaining })
+  })
+
+  // POST /v1/games/sessions/:token/end — finalise session
+  app.post('/sessions/:token/end', auth, async (request, reply) => {
+    const { token } = request.params as { token: string }
+    const body = endSessionBody.safeParse(request.body)
+    if (!body.success) return reply.status(400).send({ error: 'Invalid body' })
+
+    const session = await app.prisma.gameSession.findUnique({
+      where: { sessionToken: token },
+      include: { answers: true },
+    })
+    if (!session) return reply.status(404).send({ error: 'Session not found' })
+    if (session.userId !== request.userId) return reply.status(403).send({ error: 'Forbidden' })
+    if (session.endedAt) return reply.status(409).send({ error: 'Session already ended' })
+
+    const isWin = body.data.reason === 'won'
+    const correctAnswers = session.answers.filter(a => a.isCorrect)
+    const correctCount = correctAnswers.length
+
+    const scoredAnswers = session.answers.map(a => ({
+      isCorrect: a.isCorrect,
+      answerTimeMs: a.answerTimeMs,
+      difficulty: 1,
+      wasSkipped: a.userAnswer === '__skip__',
+    }))
+    const score = session.isTraining ? 0 : calculateScore(scoredAnswers)
+
+    // Anti-cheat: check average response time
+    if (!session.isTraining && correctAnswers.length >= FAST_ROUND_MIN_ANSWERS) {
+      const avgMs = correctAnswers.reduce((s, a) => s + a.answerTimeMs, 0) / correctAnswers.length
+      if (avgMs < FAST_AVG_THRESHOLD_MS) {
+        const user = await app.prisma.user.findUnique({
+          where: { id: request.userId },
+          select: { fastRoundCount: true },
+        })
+        const newCount = (user?.fastRoundCount ?? 0) + 1
+        await app.prisma.user.update({
+          where: { id: request.userId },
+          data: {
+            fastRoundCount: newCount,
+            ...(shouldFlagUser(newCount, FLAG_THRESHOLD) && { isFlagged: true }),
+          },
+        })
+      }
+    }
+
+    // Update progression
+    const progression = await app.prisma.progression.upsert({
+      where: { userId_mode: { userId: request.userId, mode: session.mode } },
+      update: {},
+      create: { userId: request.userId, mode: session.mode, position: 0 },
+    })
+
+    const newPosition = session.isTraining
+      ? progression.position
+      : applyProgressionDelta(progression.position, correctCount, isWin)
+
+    const updatedProgression = await app.prisma.progression.update({
+      where: { userId_mode: { userId: request.userId, mode: session.mode } },
+      data: { position: newPosition },
+    })
+
+    // Store score
+    if (!session.isTraining && score > 0) {
+      await app.prisma.score.create({
+        data: { userId: request.userId, mode: session.mode, value: score },
+      })
+    }
+
+    // Mark session done
+    await app.prisma.gameSession.update({
+      where: { id: session.id },
+      data: {
+        endedAt: new Date(),
+        score,
+        correctCount,
+        totalCount: session.answers.length,
+      },
+    })
+
+    // Update user stats
+    await app.prisma.user.update({
+      where: { id: request.userId },
+      data: {
+        totalRoundsPlayed: { increment: 1 },
+        totalCorrectAnswers: { increment: correctCount },
+        lastActiveAt: new Date(),
+      },
+    })
+
+    const quota = await app.prisma.dailyQuota.findUnique({ where: { userId: request.userId } })
+
+    return reply.send({
+      score,
+      progression: {
+        mode: updatedProgression.mode,
+        position: updatedProgression.position,
+        progress: updatedProgression.progress,
+      },
+      quota: quota ? { date: quota.date, count: quota.count } : null,
+    })
+  })
+
+  // GET /v1/games/quota
+  app.get('/quota', auth, async (request, reply) => {
+    const { localDate } = request.query as { localDate?: string }
+    const date = localDate ?? new Date().toISOString().slice(0, 10)
+
+    const [user, quota] = await Promise.all([
+      app.prisma.user.findUnique({ where: { id: request.userId }, select: { isPremium: true } }),
+      app.prisma.dailyQuota.findUnique({ where: { userId: request.userId } }),
+    ])
+
+    if (!user) return reply.status(404).send({ error: 'User not found' })
+
+    const count = quota?.date === date ? quota.count : 0
+    const limit = config.quota.freeLimit
+    const remaining = user.isPremium ? 999 : Math.max(0, limit - count)
+
+    return reply.send({ date, count, limit: user.isPremium ? null : limit, remaining })
+  })
+
+  // POST /v1/games/quota/sync — reconcile offline count with server
+  app.post('/quota/sync', auth, async (request, reply) => {
+    const body = syncQuotaBody.safeParse(request.body)
+    if (!body.success) return reply.status(400).send({ error: 'Invalid body' })
+
+    const { localDate, localCount } = body.data
+
+    const quota = await app.prisma.dailyQuota.upsert({
+      where: { userId: request.userId },
+      update: (q => ({
+        // Use whichever count is higher to prevent offline bypass
+        count: q.date === localDate ? { increment: 0 } : localCount,
+        date: localDate,
+      }))(await app.prisma.dailyQuota.findUnique({ where: { userId: request.userId } }) ?? { date: '', count: 0 }),
+      create: { userId: request.userId, date: localDate, count: localCount },
+    })
+
+    const serverCount = quota.date === localDate ? Math.max(quota.count, localCount) : localCount
+    if (serverCount !== quota.count || quota.date !== localDate) {
+      await app.prisma.dailyQuota.update({
+        where: { userId: request.userId },
+        data: { count: serverCount, date: localDate },
+      })
+    }
+
+    const user = await app.prisma.user.findUnique({ where: { id: request.userId }, select: { isPremium: true } })
+    const limit = config.quota.freeLimit
+    const remaining = user?.isPremium ? 999 : Math.max(0, limit - serverCount)
+
+    return reply.send({ used: serverCount, limit: user?.isPremium ? 999 : limit })
+  })
+}

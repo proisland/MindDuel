@@ -1,3 +1,4 @@
+import AuthenticationServices
 import SwiftUI
 
 struct SignInView: View {
@@ -34,10 +35,31 @@ struct SignInView: View {
                 Spacer()
 
                 VStack(spacing: MDSpacing.md) {
-                    MDButton(.primary, title: String(localized: "sign_in_placeholder")) {
-                        authState.startGuestSession()
+                    SignInWithAppleButton(.signIn, onRequest: { _ in }, onCompletion: { _ in })
+                        .signInWithAppleButtonStyle(.white)
+                        .frame(height: 50)
+                        .cornerRadius(25)
+                        .padding(.horizontal, MDSpacing.lg)
+                        .opacity(authState.isLoading ? 0.5 : 1)
+                        .allowsHitTesting(!authState.isLoading)
+                        .onTapGesture {
+                            Task { await authState.signInWithApple() }
+                        }
+
+                    #if DEBUG
+                    MDButton(.ghost, title: "Dev Login") {
+                        Task { await authState.devSignIn(username: "devuser") }
                     }
                     .padding(.horizontal, MDSpacing.lg)
+                    #endif
+
+                    if let error = authState.errorMessage {
+                        Text(error)
+                            .mdStyle(.footnote)
+                            .foregroundStyle(Color.mdRed)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, MDSpacing.lg)
+                    }
 
                     Text(String(localized: "sign_in_terms"))
                         .mdStyle(.footnote)

@@ -7,6 +7,7 @@ struct ScoreboardView: View {
     @ObservedObject private var progression = ProgressionStore.shared
     @ObservedObject private var modePrefs = ModePreferences.shared
     @ObservedObject private var locationAuth = LocationAuthStore.shared
+    @ObservedObject private var scoreboardStore = ScoreboardStore.shared
     @Environment(\.dismiss) private var dismiss
     @State private var selectedTab = 0          // default: Venner (#76)
     @State private var selectedProfile: UserProfile? = nil
@@ -92,6 +93,10 @@ struct ScoreboardView: View {
         }
         .fullScreenCover(item: $selectedProfile) { profile in
             OtherProfileView(profile: profile, ownUsername: ownUsername)
+        }
+        .task { await scoreboardStore.refresh(mode: scoreMode) }
+        .onChange(of: scoreMode) { mode in
+            Task { await scoreboardStore.refresh(mode: mode) }
         }
     }
 
@@ -260,7 +265,7 @@ struct ScoreboardView: View {
     // MARK: – List
 
     private var filteredGlobalEntries: [UserProfile] {
-        let base = social.globalLeaderboard
+        let base = scoreboardStore.globalEntries.map { scoreboardStore.userProfile(for: $0) }
         return searchText.isEmpty
             ? base
             : base.filter { $0.username.localizedCaseInsensitiveContains(searchText) }
@@ -353,7 +358,8 @@ struct ScoreboardView: View {
 
     @ViewBuilder
     private var rankedFriendsSection: some View {
-        let ranked = buildRanked(social.friendsLeaderboard, own: ownEntry)
+        let apiEntries = scoreboardStore.friendEntries.map { scoreboardStore.userProfile(for: $0) }
+        let ranked = buildRanked(apiEntries.isEmpty ? social.friends : apiEntries, own: ownEntry)
         if ranked.isEmpty {
             Text(String(localized: "no_friends_yet"))
                 .mdStyle(.body)

@@ -18,6 +18,7 @@ struct SportGameView: View {
     @State private var startLevel:          Int
 
     @Environment(\.dismiss) private var dismiss
+    private let sessionService = GameSessionService()
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
     init(username: String, resumeRoomID: String? = nil) {
@@ -62,7 +63,7 @@ struct SportGameView: View {
                 )
             }
         }
-        .onAppear { restoreSavedSessionIfNeeded() }
+        .onAppear { restoreSavedSessionIfNeeded(); Task { try? await sessionService.startSession(mode: "sport") } }
         .onDisappear { autoSaveIfInProgress() }
         .onReceive(timer) { _ in handleTimerTick() }
         .onChange(of: engine.isRoundOver) { over in
@@ -201,6 +202,8 @@ struct SportGameView: View {
         selectedIndex     = index
         let correct       = problem.options[index] == problem.correctAnswer
         feedbackIsCorrect = correct
+        let answeredAt = ISO8601DateFormatter.ms.string(from: Date())
+        Task { try? await sessionService.submitAnswer(answeredAt: answeredAt, questionId: "sport-\(problemCount)", answer: problem.options[index]) }
 
         Task {
             try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
@@ -242,6 +245,7 @@ struct SportGameView: View {
 
     private func finaliseRound(won: Bool) {
         guard roundResult == nil else { return }
+        Task { try? await sessionService.endSession() }
         roundResult = progression.applySportRound(
             correctCount: engine.correctCount,
             level: startLevel,

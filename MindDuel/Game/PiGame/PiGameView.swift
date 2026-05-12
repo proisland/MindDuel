@@ -15,6 +15,8 @@ struct PiGameView: View {
     @State private var roundResult:      ProgressionStore.RoundResult? = nil
     @State private var sessionStartIndex: Int = 0
 
+    private let sessionService = GameSessionService()
+
     @Environment(\.dismiss) private var dismiss
 
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
@@ -81,7 +83,10 @@ struct PiGameView: View {
                 )
             }
         }
-        .onAppear { restoreOrStartFresh() }
+        .onAppear {
+            restoreOrStartFresh()
+            Task { try? await sessionService.startSession(mode: "pi") }
+        }
         .onDisappear { autoSaveIfInProgress() }
         .onReceive(timer) { _ in handleTimerTick() }
         .animation(.easeInOut(duration: 0.2), value: showQuitModal)
@@ -276,6 +281,11 @@ struct PiGameView: View {
         selectedDigit = digit
         let correct   = digit == targetDigit
         feedbackIsCorrect = correct
+        let questionId = "pi-\(startIndex + currentIndex)"
+        let answeredAt = ISO8601DateFormatter.ms.string(from: Date())
+
+        // Fire-and-forget: don't block UI feedback on network latency.
+        Task { try? await sessionService.submitAnswer(answeredAt: answeredAt, questionId: questionId, answer: String(digit)) }
 
         Task {
             try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
@@ -285,8 +295,6 @@ struct PiGameView: View {
                 engine.recordCorrect()
                 currentIndex   += 1
                 elapsedSeconds  = 0
-                // Live progression: piPosition reflects the highest digit the user has
-                // ever answered correctly. Replays of already-mastered digits don't bump it.
                 progression.advancePiPosition(toFrontier: sessionStartIndex + currentIndex)
             } else {
                 engine.recordWrong()
@@ -316,6 +324,7 @@ struct PiGameView: View {
             avgTime: avgTime,
             won: won
         )
+        Task { try? await sessionService.endSession() }
     }
 
     private func resetRound() {
