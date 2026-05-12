@@ -189,11 +189,18 @@ export default async function gamesRoutes(app: FastifyInstance) {
       })
       if (!user?.isPremium) {
         const today = new Date().toISOString().slice(0, 10)
-        const quota = await app.prisma.dailyQuota.upsert({
-          where: { userId: request.userId },
-          update: { count: { increment: 1 }, date: today },
-          create: { userId: request.userId, date: today, count: 1 },
-        })
+        // Use $executeRaw to atomically reset-or-increment in a single statement:
+        // - same day → increment
+        // - new day  → reset to 1 (don't carry over yesterday's count)
+        await app.prisma.$executeRaw`
+          INSERT INTO "DailyQuota" ("userId", date, count, "updatedAt")
+          VALUES (${request.userId}, ${today}, 1, NOW())
+          ON CONFLICT ("userId") DO UPDATE
+            SET count       = CASE WHEN "DailyQuota".date = ${today} THEN "DailyQuota".count + 1 ELSE 1 END,
+                date        = ${today},
+                "updatedAt" = NOW()
+        `
+        const quota = await app.prisma.dailyQuota.findUniqueOrThrow({ where: { userId: request.userId } })
         quotaRemaining = Math.max(0, config.quota.freeLimit - quota.count)
       }
     }
@@ -329,28 +336,24 @@ export default async function gamesRoutes(app: FastifyInstance) {
 
     const { localDate, localCount } = body.data
 
-    const quota = await app.prisma.dailyQuota.upsert({
-      where: { userId: request.userId },
-      update: (q => ({
-        // Use whichever count is higher to prevent offline bypass
-        count: q.date === localDate ? { increment: 0 } : localCount,
-        date: localDate,
-      }))(await app.prisma.dailyQuota.findUnique({ where: { userId: request.userId } }) ?? { date: '', count: 0 }),
-      create: { userId: request.userId, date: localDate, count: localCount },
-    })
+    const existing = await app.prisma.dailyQuota.findUnique({ where: { userId: request.userId } })
+    // Same day: take max(server, local) to reconcile offline play.
+    // New day (from iOS perspective): trust localCount as the fresh day's tally.
+    const syncedCount = existing?.date === localDate
+      ? Math.max(existing.count, localCount)
+      : localCount
 
-    const serverCount = quota.date === localDate ? Math.max(quota.count, localCount) : localCount
-    if (serverCount !== quota.count || quota.date !== localDate) {
-      await app.prisma.dailyQuota.update({
-        where: { userId: request.userId },
-        data: { count: serverCount, date: localDate },
-      })
-    }
+    await app.prisma.$executeRaw`
+      INSERT INTO "DailyQuota" ("userId", date, count, "updatedAt")
+      VALUES (${request.userId}, ${localDate}, ${syncedCount}, NOW())
+      ON CONFLICT ("userId") DO UPDATE
+        SET count       = ${syncedCount},
+            date        = ${localDate},
+            "updatedAt" = NOW()
+    `
 
     const user = await app.prisma.user.findUnique({ where: { id: request.userId }, select: { isPremium: true } })
     const limit = config.quota.freeLimit
-    const remaining = user?.isPremium ? 999 : Math.max(0, limit - serverCount)
-
-    return reply.send({ used: serverCount, limit: user?.isPremium ? 999 : limit })
+    return reply.send({ used: syncedCount, limit: user?.isPremium ? 999 : limit })
   })
 }
