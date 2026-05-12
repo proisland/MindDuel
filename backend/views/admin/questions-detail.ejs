@@ -1,0 +1,138 @@
+<div class="flex items-center gap-3 mb-6">
+  <a href="/admin/questions" class="text-sm text-gray-400 hover:text-white">← Tilbake</a>
+  <h1 class="text-2xl font-bold"><%= pack.mode %> v<%= pack.version %></h1>
+  <% if (pack.isActive) { %>
+    <span class="text-green-400 text-xs">● Aktiv</span>
+  <% } else { %>
+    <span class="text-gray-500 text-xs">Inaktiv</span>
+  <% } %>
+  <span class="text-gray-500 text-xs ml-auto"><%= totalCount %> spørsmål totalt</span>
+</div>
+
+<div class="flex gap-3 mb-6">
+  <a href="/admin/questions/<%= pack.id %>/csv"
+    class="text-sm px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded">
+    Last ned CSV
+  </a>
+  <% if (!pack.isActive) { %>
+    <button onclick="activate('<%= pack.id %>')"
+      class="text-sm px-3 py-1.5 bg-green-900 hover:bg-green-800 text-green-300 rounded">
+      Aktiver
+    </button>
+  <% } %>
+  <% if (pack.isActive) { %>
+    <button onclick="deactivate('<%= pack.id %>')"
+      class="text-sm px-3 py-1.5 bg-yellow-900 hover:bg-yellow-800 text-yellow-300 rounded">
+      Deaktiver
+    </button>
+  <% } %>
+</div>
+
+<!-- Level filter tabs -->
+<div class="flex flex-wrap gap-2 mb-4" id="level-tabs">
+  <button onclick="showAll()" id="tab-all"
+    class="text-xs px-3 py-1 rounded bg-indigo-600 text-white">
+    Alle nivåer
+  </button>
+  <% Object.keys(byLevel).sort((a,b) => Number(a)-Number(b)).forEach(function(lvl) { %>
+    <button onclick="showLevel(<%= lvl %>)" id="tab-<%= lvl %>"
+      class="text-xs px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-gray-300">
+      L<%= lvl %> (<%= byLevel[lvl].length %>)
+    </button>
+  <% }) %>
+</div>
+
+<!-- Search -->
+<div class="mb-4">
+  <input type="text" id="search-box" placeholder="Søk i spørsmål…"
+    oninput="filterTable()"
+    class="w-full max-w-md bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+</div>
+
+<div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+  <table class="w-full text-sm" id="questions-table">
+    <thead class="text-gray-500 text-xs bg-gray-800">
+      <tr>
+        <th class="text-left px-4 py-2 w-12">Nivå</th>
+        <th class="text-left px-4 py-2">Spørsmål</th>
+        <th class="text-left px-4 py-2">Riktig svar</th>
+        <th class="text-left px-4 py-2 hidden md:table-cell">Distraktorer</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-800" id="questions-body">
+      <% Object.keys(byLevel).sort((a,b) => Number(a)-Number(b)).forEach(function(lvl) { %>
+        <% byLevel[lvl].forEach(function(q) { %>
+          <% const distractors = q.options.filter(function(o){ return o !== q.answer }) %>
+          <tr class="hover:bg-gray-800/50 question-row" data-level="<%= lvl %>"
+            data-search="<%= (q.prompt + ' ' + q.answer).toLowerCase().replace(/"/g,'') %>">
+            <td class="px-4 py-2 text-gray-500 text-xs"><%= lvl %></td>
+            <td class="px-4 py-2 text-gray-200 max-w-xs"><%= q.prompt %></td>
+            <td class="px-4 py-2 text-green-400"><%= q.answer %></td>
+            <td class="px-4 py-2 text-gray-400 text-xs hidden md:table-cell">
+              <%= distractors.join(' · ') %>
+            </td>
+          </tr>
+        <% }) %>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<div class="text-xs text-gray-500 mt-3" id="row-count"></div>
+
+<script>
+let activeLevel = null
+
+function showAll() {
+  activeLevel = null
+  document.querySelectorAll('.question-row').forEach(r => r.classList.remove('hidden'))
+  document.querySelectorAll('[id^="tab-"]').forEach(b => {
+    b.className = b.id === 'tab-all'
+      ? 'text-xs px-3 py-1 rounded bg-indigo-600 text-white'
+      : 'text-xs px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-gray-300'
+  })
+  filterTable()
+}
+
+function showLevel(lvl) {
+  activeLevel = String(lvl)
+  document.querySelectorAll('.question-row').forEach(r => {
+    r.classList.toggle('hidden', r.dataset.level !== activeLevel)
+  })
+  document.querySelectorAll('[id^="tab-"]').forEach(b => {
+    const isActive = b.id === 'tab-' + lvl
+    b.className = isActive
+      ? 'text-xs px-3 py-1 rounded bg-indigo-600 text-white'
+      : 'text-xs px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-gray-300'
+  })
+  filterTable()
+}
+
+function filterTable() {
+  const q = document.getElementById('search-box').value.toLowerCase()
+  let visible = 0
+  document.querySelectorAll('.question-row').forEach(r => {
+    const levelMatch = !activeLevel || r.dataset.level === activeLevel
+    const searchMatch = !q || r.dataset.search.includes(q)
+    const show = levelMatch && searchMatch
+    r.classList.toggle('hidden', !show)
+    if (show) visible++
+  })
+  document.getElementById('row-count').textContent = visible + ' spørsmål vises'
+}
+
+async function activate(id) {
+  await fetch('/admin/questions/' + id + '/activate', { method: 'PATCH' })
+  location.reload()
+}
+
+async function deactivate(id) {
+  if (!confirm('Deaktivere denne pakken?')) return
+  const res = await fetch('/admin/questions/' + id + '/deactivate', { method: 'PATCH' })
+  if (res.ok) location.reload()
+  else { const err = await res.json(); alert(err.error) }
+}
+
+// Show initial count
+filterTable()
+</script>

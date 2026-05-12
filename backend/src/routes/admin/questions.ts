@@ -150,6 +150,18 @@ export default async function adminQuestionsRoutes(app: FastifyInstance) {
     return reply.send({ ok: true })
   })
 
+  // PATCH /admin/questions/:id/deactivate — deactivate active pack
+  app.patch('/:id/deactivate', async (request, reply) => {
+    const { id } = request.params as { id: string }
+    const pack = await app.prisma.questionPack.findUnique({ where: { id } })
+    if (!pack) return reply.status(404).send({ error: 'Not found' })
+    if (!pack.isActive) return reply.status(409).send({ error: 'Pack is already inactive' })
+
+    await app.prisma.questionPack.update({ where: { id }, data: { isActive: false } })
+    await app.redis.del('modes:active')
+    return reply.send({ ok: true })
+  })
+
   // DELETE /admin/questions/:id — delete inactive pack
   app.delete('/:id', async (request, reply) => {
     const { id } = request.params as { id: string }
@@ -159,5 +171,26 @@ export default async function adminQuestionsRoutes(app: FastifyInstance) {
 
     await app.prisma.questionPack.delete({ where: { id } })
     return reply.send({ ok: true })
+  })
+
+  // GET /admin/questions/:id — view pack detail (questions list)
+  app.get('/:id', async (request, reply) => {
+    const { id } = request.params as { id: string }
+    const pack = await app.prisma.questionPack.findUnique({ where: { id } })
+    if (!pack) return reply.status(404).send('Not found')
+
+    const questions = pack.data as Array<{ id: string; prompt: string; options: string[]; answer: string; level: number }>
+    const byLevel: Record<number, typeof questions> = {}
+    for (const q of questions) {
+      byLevel[q.level] = byLevel[q.level] ?? []
+      byLevel[q.level].push(q)
+    }
+
+    return reply.view('admin/questions-detail.ejs', {
+      title: `${pack.mode} v${pack.version}`,
+      pack,
+      byLevel,
+      totalCount: questions.length,
+    })
   })
 }

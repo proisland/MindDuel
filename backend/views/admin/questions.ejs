@@ -54,13 +54,23 @@
                 <% } %>
               </td>
               <td class="px-4 py-2 text-gray-500 text-xs"><%= new Date(p.createdAt).toLocaleDateString() %></td>
-              <td class="px-4 py-2 flex gap-2">
+              <td class="px-4 py-2 flex gap-2 flex-wrap">
                 <% if (!p.isActive) { %>
                   <button onclick="activate('<%= p.id %>')"
                     class="text-xs px-2 py-1 bg-green-900 hover:bg-green-800 text-green-300 rounded">
                     Aktiver
                   </button>
                 <% } %>
+                <% if (p.isActive) { %>
+                  <button onclick="deactivate('<%= p.id %>', 'v<%= p.version %>')"
+                    class="text-xs px-2 py-1 bg-yellow-900 hover:bg-yellow-800 text-yellow-300 rounded">
+                    Deaktiver
+                  </button>
+                <% } %>
+                <a href="/admin/questions/<%= p.id %>"
+                  class="text-xs px-2 py-1 bg-indigo-900 hover:bg-indigo-800 text-indigo-300 rounded">
+                  Se spørsmål
+                </a>
                 <a href="/admin/questions/<%= p.id %>/csv"
                   class="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded">
                   Last ned CSV
@@ -84,6 +94,13 @@
 async function activate(id) {
   await fetch('/admin/questions/' + id + '/activate', { method: 'PATCH' })
   location.reload()
+}
+
+async function deactivate(id, label) {
+  if (!confirm('Deaktivere ' + label + '? Pakken vil ikke lenger serveres til spillere.')) return
+  const res = await fetch('/admin/questions/' + id + '/deactivate', { method: 'PATCH' })
+  if (res.ok) location.reload()
+  else { const err = await res.json(); alert(err.error) }
 }
 
 async function deletePack(id, label) {
