@@ -56,8 +56,8 @@ export async function runStartupMigrations(prisma: PrismaClient) {
   ]
   for (const m of defaultModes) {
     await prisma.$executeRawUnsafe(
-      `INSERT INTO "GameMode" (id, slug, name, "isActive", "sortOrder", "createdAt")
-       VALUES (gen_random_uuid(), $1, $2, true, $3, NOW())
+      `INSERT INTO "GameMode" (id, slug, name, "isActive", "sortOrder", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, true, $3, NOW(), NOW())
        ON CONFLICT (slug) DO NOTHING`,
       m.slug, m.name, m.sortOrder,
     )
