@@ -24,6 +24,7 @@ model User {
   totalRoundsPlayed       Int       @default(0)
   totalCorrectAnswers     Int       @default(0)
   totalCorrectAnswerTimeMs BigInt   @default(0)
+  locale                  String?
   lastActiveAt            DateTime?
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
@@ -235,15 +236,29 @@ model Feedback {
   id            String    @id @default(cuid())
   userId        String
   message       String
+  imageUrl      String?
   status        String    @default("open") // open | in_progress | closed
   adminResponse String?
   respondedAt   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments      FeedbackComment[]
 
   @@index([status, createdAt(sort: Desc)])
+}
+
+model FeedbackComment {
+  id         String   @id @default(cuid())
+  feedbackId String
+  body       String
+  notified   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  feedback   Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+
+  @@index([feedbackId, createdAt(sort: Desc)])
 }
 
 // ── Telemetry ─────────────────────────────────────────────────────────────────

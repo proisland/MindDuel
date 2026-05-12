@@ -19,7 +19,7 @@ struct GrammarGameView: View {
     @State private var startLevel:          Int
 
     @Environment(\.dismiss) private var dismiss
-    private let sessionService = GameSessionService()
+    @StateObject private var sessionService = GameSessionService()
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
     init(username: String, resumeRoomID: String? = nil) {
@@ -64,8 +64,8 @@ struct GrammarGameView: View {
                 )
             }
         }
-        .onAppear { restoreSavedSessionIfNeeded(); Task { try? await sessionService.startSession(mode: "grammar") } }
-        .onDisappear { autoSaveIfInProgress() }
+        .onAppear { restoreSavedSessionIfNeeded(); Task { try? await sessionService.startSession(mode: "grammar", startPosition: startLevel) } }
+        .onDisappear { autoSaveIfInProgress(); Task { try? await sessionService.endSession() } }
         .onReceive(timer) { _ in handleTimerTick() }
         .onChange(of: engine.isRoundOver) { over in
             if over && roundResult == nil { finaliseRound(won: false) }
@@ -204,7 +204,7 @@ struct GrammarGameView: View {
         let correct       = problem.options[index] == problem.correctAnswer
         feedbackIsCorrect = correct
         let answeredAt = ISO8601DateFormatter.ms.string(from: Date())
-        Task { try? await sessionService.submitAnswer(answeredAt: answeredAt, questionId: "grammar-\(problemCount)", answer: problem.options[index]) }
+        Task { try? await sessionService.submitAnswer(answeredAt: answeredAt, questionId: "grammar-\(problemCount)", answer: problem.options[index], isCorrect: correct) }
 
         Task {
             try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)

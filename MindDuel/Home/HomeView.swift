@@ -211,7 +211,7 @@ struct HomeView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(prefs.order, id: \.self) { mode in
+                    ForEach(prefs.activeOrder, id: \.self) { mode in
                         MDQuickPill(mode: mode) { startOrResume(mode) }
                     }
                 }

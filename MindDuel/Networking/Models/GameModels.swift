@@ -1,25 +1,30 @@
 import Foundation
 
 struct GameSessionResponse: Decodable {
-    let token: String
+    let sessionToken: String
     let mode: String
-    let startsAt: Date
+    let isTraining: Bool
+    let startPosition: Int
+    let quotaRemaining: Int
 }
 
 struct AnswerRequest: Encodable {
-    let answeredAt: String // ISO8601 ms precision
-    let answer: String
-    let questionId: String
+    let questionRef: String
+    let userAnswer: String
+    let answerTimeMs: Int
+    let waitTimeMs: Int
+    let wasSkipped: Bool
+    let isCorrect: Bool?
 }
 
 struct AnswerResponse: Decodable {
-    let ok: Bool
-    let correct: Bool
-    let correctAnswer: String?
+    let isCorrect: Bool
+    let correctAnswer: String
+    let quotaRemaining: Int
 }
 
 struct EndSessionRequest: Encodable {
-    let endedAt: String
+    let reason: String
 }
 
 struct EndSessionResponse: Decodable {
@@ -28,13 +33,14 @@ struct EndSessionResponse: Decodable {
 }
 
 struct ProgressionDelta: Decodable {
+    let mode: String
     let position: Double
     let progress: Double
-    let didLevelUp: Bool
 }
 
 struct QuotaSyncRequest: Encodable {
-    let localUsed: Int
+    let localDate: String
+    let localCount: Int
 }
 
 struct ModeResponse: Codable {

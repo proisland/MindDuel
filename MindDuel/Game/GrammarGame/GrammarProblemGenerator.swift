@@ -11,7 +11,7 @@ enum GrammarProblemGenerator {
 
     static func generate(level: Int = 1) -> GrammarProblem {
         let clamped = max(1, min(20, level))
-        let pool = GrammarQuestionBank.questions(forLevel: clamped)
+        let pool = pool(forLevel: clamped)
         var candidates = pool.filter { !seenCorrects.contains($0.correct + ":" + $0.prompt) }
         if candidates.isEmpty {
             seenCorrects.subtract(pool.map { $0.correct + ":" + $0.prompt })
@@ -23,6 +23,19 @@ enum GrammarProblemGenerator {
         return GrammarProblem(prompt: raw.prompt,
                               correctAnswer: raw.correct,
                               options: opts)
+    }
+
+    private static func pool(forLevel level: Int) -> [Raw] {
+        if let cached = QuestionPackCache.shared.questions(for: "grammar") {
+            let filtered = cached.filter { $0.level == level }
+            if !filtered.isEmpty {
+                return filtered.map { q in
+                    Raw(prompt: q.prompt, correct: q.answer,
+                        distractors: q.options.filter { $0 != q.answer })
+                }
+            }
+        }
+        return GrammarQuestionBank.questions(forLevel: level)
     }
 
     static func curriculumLabel(forLevel level: Int) -> String {

@@ -60,9 +60,9 @@ struct AllModesSheet: View {
     }
 
     private var displayed: [GameMode] {
-        guard !search.isEmpty else { return prefs.order }
+        guard !search.isEmpty else { return prefs.activeOrder }
         let q = search.lowercased()
-        return prefs.order.filter { $0.localizedTitle.lowercased().contains(q) }
+        return prefs.activeOrder.filter { $0.localizedTitle.lowercased().contains(q) }
     }
 
     private var searchBar: some View {

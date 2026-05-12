@@ -41,6 +41,11 @@ import SwiftUI
         }
     }
 
+    /// Modes the backend reports as active, in the user's custom order.
+    var activeOrder: [GameMode] {
+        order.filter { ModeConfigCache.shared.isActive(slug: $0.slug) }
+    }
+
     func isFavorite(_ mode: GameMode) -> Bool { favorites.contains(mode) }
 
     /// True when the user is at the cap and must remove a favorite before
@@ -72,9 +77,11 @@ import SwiftUI
 
     /// Modes used to fill the featured grid: favorites first (in custom
     /// order), then top-played non-favorites until we hit `count`.
+    /// Only includes modes the backend reports as active.
     func featured(count: Int = 4) -> [GameMode] {
-        let favs = order.filter(favorites.contains)
-        let fillers = order.filter { !favorites.contains($0) }
+        let active = activeOrder
+        let favs = active.filter(favorites.contains)
+        let fillers = active.filter { !favorites.contains($0) }
         return Array((favs + fillers).prefix(count))
     }
 

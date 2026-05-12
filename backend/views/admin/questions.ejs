@@ -1,11 +1,34 @@
 <h1 class="text-2xl font-bold mb-6">Question Packs</h1>
 
+<!-- CSV upload -->
 <div class="mb-6 bg-gray-900 border border-gray-800 rounded-xl p-5">
-  <h2 class="font-semibold mb-3">Upload new pack (JSON)</h2>
-  <p class="text-sm text-gray-400 mb-3">POST a JSON body to <code class="bg-gray-800 px-1 rounded">/admin/questions</code> with <code class="bg-gray-800 px-1 rounded">{ mode, questions: [{id, prompt, options[4], answer, level}] }</code></p>
-  <p class="text-sm text-gray-500">The pack starts inactive. Use "Activate" below to make it live.</p>
+  <h2 class="font-semibold mb-2">Last opp CSV-spørsmålsliste</h2>
+  <p class="text-sm text-gray-400 mb-3">
+    Format: <code class="bg-gray-800 px-1 rounded">level,prompt,correct,distractor1,distractor2,distractor3</code>
+    — Første rad er header. Pakken starter inaktiv; bruk «Aktiver» nedenfor for å gjøre den aktiv.
+  </p>
+  <form onsubmit="uploadCsv(event)" class="space-y-3">
+    <div class="flex gap-3">
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Modus</label>
+        <select name="mode" class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+          <% ['grammar','history','science','physics','sport','math','chem','geo','brain','pi'].forEach(function(m) { %>
+            <option value="<%= m %>"><%= m %></option>
+          <% }) %>
+        </select>
+      </div>
+    </div>
+    <textarea name="csv" rows="6" placeholder="level,prompt,correct,distractor1,distractor2,distractor3&#10;1,Hva er 2+2?,4,3,5,6"
+      class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-indigo-500 resize-y"></textarea>
+    <button type="submit"
+      class="text-sm px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded">
+      Last opp
+    </button>
+    <span id="csv-status" class="text-sm text-gray-400 ml-3"></span>
+  </form>
 </div>
 
+<!-- Pack list -->
 <div class="space-y-6">
   <% Object.entries(grouped).forEach(function([mode, packs]) { %>
     <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
@@ -13,10 +36,10 @@
       <table class="w-full text-sm">
         <thead class="text-gray-500 text-xs">
           <tr>
-            <th class="text-left px-4 py-2">Version</th>
+            <th class="text-left px-4 py-2">Versjon</th>
             <th class="text-left px-4 py-2">Status</th>
-            <th class="text-left px-4 py-2">Created</th>
-            <th class="text-left px-4 py-2">Action</th>
+            <th class="text-left px-4 py-2">Opprettet</th>
+            <th class="text-left px-4 py-2">Handlinger</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-800">
@@ -24,16 +47,38 @@
             <tr>
               <td class="px-4 py-2">v<%= p.version %></td>
               <td class="px-4 py-2">
-                <%= p.isActive
-                  ? '<span class="text-green-400 text-xs">● Active</span>'
-                  : '<span class="text-gray-500 text-xs">Inactive</span>' %>
+                <% if (p.isActive) { %>
+                  <span class="text-green-400 text-xs">● Aktiv</span>
+                <% } else { %>
+                  <span class="text-gray-500 text-xs">Inaktiv</span>
+                <% } %>
               </td>
-              <td class="px-4 py-2 text-gray-500 text-xs"><%= new Date(p.createdAt).toLocaleDateString() %></td>
-              <td class="px-4 py-2">
+              <td class="px-4 py-2 text-gray-500 text-xs"><%= fmtDate(p.createdAt) %></td>
+              <td class="px-4 py-2 flex gap-2 flex-wrap">
                 <% if (!p.isActive) { %>
                   <button onclick="activate('<%= p.id %>')"
                     class="text-xs px-2 py-1 bg-green-900 hover:bg-green-800 text-green-300 rounded">
-                    Activate
+                    Aktiver
+                  </button>
+                <% } %>
+                <% if (p.isActive) { %>
+                  <button onclick="deactivate('<%= p.id %>', 'v<%= p.version %>')"
+                    class="text-xs px-2 py-1 bg-yellow-900 hover:bg-yellow-800 text-yellow-300 rounded">
+                    Deaktiver
+                  </button>
+                <% } %>
+                <a href="/admin/questions/<%= p.id %>"
+                  class="text-xs px-2 py-1 bg-indigo-900 hover:bg-indigo-800 text-indigo-300 rounded">
+                  Se spørsmål
+                </a>
+                <a href="/admin/questions/<%= p.id %>/csv"
+                  class="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded">
+                  Last ned CSV
+                </a>
+                <% if (!p.isActive) { %>
+                  <button onclick="deletePack('<%= p.id %>', 'v<%= p.version %>')"
+                    class="text-xs px-2 py-1 bg-gray-700 hover:bg-red-900 text-red-400 rounded">
+                    Slett
                   </button>
                 <% } %>
               </td>
@@ -49,5 +94,44 @@
 async function activate(id) {
   await fetch('/admin/questions/' + id + '/activate', { method: 'PATCH' })
   location.reload()
+}
+
+async function deactivate(id, label) {
+  if (!confirm('Deaktivere ' + label + '? Pakken vil ikke lenger serveres til spillere.')) return
+  const res = await fetch('/admin/questions/' + id + '/deactivate', { method: 'PATCH' })
+  if (res.ok) location.reload()
+  else { const err = await res.json(); alert(err.error) }
+}
+
+async function deletePack(id, label) {
+  if (!confirm('Slette ' + label + '? Kan ikke angres.')) return
+  const res = await fetch('/admin/questions/' + id, { method: 'DELETE' })
+  if (res.ok) location.reload()
+  else { const err = await res.json(); alert(err.error) }
+}
+
+async function uploadCsv(e) {
+  e.preventDefault()
+  const form = e.target
+  const mode = form.mode.value
+  const csv  = form.csv.value.trim()
+  if (!csv) return
+  const status = document.getElementById('csv-status')
+  status.textContent = 'Laster opp…'
+
+  const res = await fetch('/admin/questions/csv', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ mode, csv })
+  })
+  if (res.ok) {
+    const data = await res.json()
+    status.textContent = '✓ Opprettet ' + mode + ' v' + data.version + ' med ' + data.count + ' spørsmål (inaktiv)'
+    form.csv.value = ''
+    setTimeout(() => location.reload(), 1500)
+  } else {
+    const err = await res.json()
+    status.textContent = '✗ Feil: ' + err.error
+  }
 }
 </script>

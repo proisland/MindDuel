@@ -895,6 +895,23 @@
         }
       }
     },
+    "error_account_suspended" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your account has been suspended. Please contact support."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontoen din er suspendert. Vennligst kontakt support."
+          }
+        }
+      }
+    },
     "error_decoding" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1116,19 +1133,70 @@
         }
       }
     },
+    "feedback_image_add" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add image"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Legg ved bilde"
+          }
+        }
+      }
+    },
+    "feedback_image_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ATTACHMENT (OPTIONAL)"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "VEDLEGG (VALGFRITT)"
+          }
+        }
+      }
+    },
+    "feedback_image_selected" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image attached"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilde vedlagt"
+          }
+        }
+      }
+    },
     "feedback_submit_action" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open in GitHub"
+            "value" : "Send"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Åpne i GitHub"
+            "value" : "Send"
           }
         }
       }
@@ -1139,13 +1207,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your draft was opened in GitHub. Press Submit there to file the issue."
+            "value" : "Your feedback has been submitted. Thank you!"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Utkastet ble åpnet i GitHub. Trykk Submit der for å sende inn saken."
+            "value" : "Tilbakemeldingen din er sendt. Takk!"
           }
         }
       }
@@ -1156,13 +1224,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browser opened"
+            "value" : "Send"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nettleser åpnet"
+            "value" : "Send"
           }
         }
       }
@@ -3485,6 +3553,23 @@
         }
       }
     },
+    "save_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lagre"
+          }
+        }
+      }
+    },
     "search_username_placeholder" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3549,6 +3634,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "branch: ukjent"
+          }
+        }
+      }
+    },
+    "settings_birthdate_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date of birth"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fødselsdato"
+          }
+        }
+      }
+    },
+    "settings_birthdate_not_set" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not set"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ikke angitt"
           }
         }
       }

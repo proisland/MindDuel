@@ -12,11 +12,18 @@
       <span class="<%= user.isSuspended ? 'text-red-400' : 'text-gray-500' %>">
         <%= user.isSuspended ? '🚫 Yes' : 'No' %></span></div>
     <div class="flex justify-between"><span class="text-gray-400">Fast rounds</span><span><%= user.fastRoundCount %></span></div>
-    <div class="flex justify-between"><span class="text-gray-400">Total rounds</span><span><%= user.totalRoundsPlayed %></span></div>
+    <div class="flex justify-between"><span class="text-gray-400">Total rounds</span><span><%= totalRounds %></span></div>
+    <% if (quota) { %>
+    <div class="flex justify-between"><span class="text-gray-400">Dagskvote</span>
+      <span class="<%= quota.used >= quota.limit ? 'text-red-400' : 'text-gray-300' %>">
+        <%= quota.used %>/<%= quota.limit %>
+        <% if (!quota.isToday) { %><span class="text-gray-600 text-xs">(<%= quota.date %>)</span><% } %>
+      </span></div>
+    <% } %>
     <div class="flex justify-between"><span class="text-gray-400">Last active</span>
-      <span><%= user.lastActiveAt ? new Date(user.lastActiveAt).toLocaleString() : '–' %></span></div>
+      <span><%= fmtDateTime(user.lastActiveAt) %></span></div>
     <div class="flex justify-between"><span class="text-gray-400">Joined</span>
-      <span><%= new Date(user.createdAt).toLocaleDateString() %></span></div>
+      <span><%= fmtDate(user.createdAt) %></span></div>
   </div>
 
   <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
@@ -42,6 +49,82 @@
       <div class="text-gray-500 text-xs"><%= Math.round(p.progress*100) %>% to next</div>
     </div>
   <% }) %>
+</div>
+
+<div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden mb-8">
+  <div class="bg-gray-800 px-4 py-2 font-semibold text-sm">Per-mode stats</div>
+  <% if (modeStats.length > 0) { %>
+  <table class="w-full text-sm">
+    <thead class="text-gray-500 text-xs">
+      <tr>
+        <th class="text-left px-4 py-2">Mode</th>
+        <th class="text-right px-4 py-2">Rounds</th>
+        <th class="text-right px-4 py-2">Questions</th>
+        <th class="text-right px-4 py-2">Correct</th>
+        <th class="text-right px-4 py-2">% correct</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-800">
+      <% modeStats.forEach(function(s) { %>
+        <tr>
+          <td class="px-4 py-2 font-medium"><%= s.mode %></td>
+          <td class="px-4 py-2 text-right text-gray-300"><%= s.rounds %></td>
+          <td class="px-4 py-2 text-right text-gray-300"><%= s.answered %></td>
+          <td class="px-4 py-2 text-right text-gray-300"><%= s.correct %></td>
+          <td class="px-4 py-2 text-right">
+            <% if (s.pctCorrect !== null) { %>
+              <span class="<%= s.pctCorrect >= 70 ? 'text-green-400' : s.pctCorrect >= 50 ? 'text-amber-400' : 'text-red-400' %>">
+                <%= s.pctCorrect %>%
+              </span>
+            <% } else { %>
+              <span class="text-gray-600">–</span>
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } else { %>
+    <p class="text-gray-600 text-sm px-4 py-3">Ingen fullførte spilløkter ennå</p>
+  <% } %>
+</div>
+
+<div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden mb-8">
+  <div class="bg-gray-800 px-4 py-2 font-semibold text-sm">Per-nivå nøyaktighet</div>
+  <% if (levelStats.length > 0) { %>
+  <table class="w-full text-sm">
+    <thead class="text-gray-500 text-xs">
+      <tr>
+        <th class="text-left px-4 py-2">Modus</th>
+        <th class="text-left px-4 py-2">Nivå</th>
+        <th class="text-right px-4 py-2">Riktige</th>
+        <th class="text-right px-4 py-2">Totalt</th>
+        <th class="text-right px-4 py-2">% riktig</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-800">
+      <% levelStats.forEach(function(r) { %>
+        <tr>
+          <td class="px-4 py-2 text-gray-400"><%= r.mode %></td>
+          <td class="px-4 py-2 font-medium"><%= r.level %></td>
+          <td class="px-4 py-2 text-right text-gray-300"><%= r.correct %></td>
+          <td class="px-4 py-2 text-right text-gray-300"><%= r.total %></td>
+          <td class="px-4 py-2 text-right">
+            <% if (r.pct !== null) { %>
+              <span class="<%= r.pct >= 70 ? 'text-green-400' : r.pct >= 50 ? 'text-amber-400' : 'text-red-400' %>">
+                <%= r.pct %>%
+              </span>
+            <% } else { %>
+              <span class="text-gray-600">–</span>
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } else { %>
+    <p class="text-gray-600 text-sm px-4 py-3">Ingen data ennå</p>
+  <% } %>
 </div>
 
 <script>

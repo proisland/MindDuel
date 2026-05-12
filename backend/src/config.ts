@@ -42,4 +42,11 @@ export const config = {
   quota: {
     freeLimit: 20,
   },
+
+  apns: {
+    keyId:          process.env.APNS_KEY_ID ?? '',
+    teamId:         process.env.APNS_TEAM_ID ?? '',
+    bundleId:       process.env.APNS_BUNDLE_ID ?? '',
+    privateKeyBase64: process.env.APNS_PRIVATE_KEY_BASE64 ?? '',
+  },
 } as const

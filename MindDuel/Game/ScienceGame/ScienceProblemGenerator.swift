@@ -45,6 +45,15 @@ enum ScienceProblemGenerator {
     }
 
     private static func pool(forLevel level: Int) -> [Raw] {
-        ScienceQuestionBank.questions(forLevel: level)
+        if let cached = QuestionPackCache.shared.questions(for: "science") {
+            let filtered = cached.filter { $0.level == level }
+            if !filtered.isEmpty {
+                return filtered.map { q in
+                    Raw(prompt: q.prompt, correct: q.answer,
+                        distractors: q.options.filter { $0 != q.answer })
+                }
+            }
+        }
+        return ScienceQuestionBank.questions(forLevel: level)
     }
 }

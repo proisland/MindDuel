@@ -40,8 +40,9 @@ actor QuestionPackCache {
     }
 
     /// Returns cached questions for a mode, or nil if not yet downloaded.
-    func questions(for mode: String) -> [APIQuestion]? {
-        let file = packFile(mode: mode)
+    nonisolated func questions(for mode: String) -> [APIQuestion]? {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let file = docs.appendingPathComponent("QuestionPacks/\(mode).json")
         guard let data = try? Data(contentsOf: file) else { return nil }
         return try? JSONDecoder().decode([APIQuestion].self, from: data)
     }

@@ -74,6 +74,18 @@ export default async function wsRoutes(app: FastifyInstance) {
     const body = createRoomBody.safeParse(request.body)
     if (!body.success) return reply.status(400).send({ error: 'Invalid body' })
 
+    const now = new Date()
+    const activeMode = await app.prisma.gameMode.findFirst({
+      where: {
+        slug: body.data.mode,
+        isActive: true,
+        OR: [{ startsAt: null }, { startsAt: { lte: now } }],
+        AND: [{ OR: [{ endsAt: null }, { endsAt: { gte: now } }] }],
+      },
+      select: { id: true },
+    })
+    if (!activeMode) return reply.status(400).send({ error: 'Mode not available' })
+
     const user = await app.prisma.user.findUnique({
       where: { id: request.userId },
       select: { username: true, avatarEmoji: true },

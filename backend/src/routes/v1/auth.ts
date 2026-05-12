@@ -6,6 +6,7 @@ import { config } from '../../config'
 
 const appleSignInBody = z.object({
   identityToken: z.string().min(1),
+  locale: z.string().max(20).optional(),
   // Optional fields sent only on first sign-in by Apple
   email: z.string().email().optional(),
   fullName: z.object({
@@ -71,6 +72,11 @@ export default async function authRoutes(app: FastifyInstance) {
         where: { id: user.id },
         data: { lastActiveAt: new Date() },
       })
+    }
+
+    // locale is not in the stale Prisma client — update via raw SQL
+    if (body.data.locale) {
+      await app.prisma.$executeRaw`UPDATE "User" SET locale = ${body.data.locale} WHERE id = ${user.id}`
     }
 
     if (user.isSuspended) {

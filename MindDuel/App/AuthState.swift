@@ -16,6 +16,16 @@ final class AuthState: ObservableObject {
 
     init() {
         restoreSession()
+        NotificationCenter.default.addObserver(
+            forName: .accountSuspended,
+            object: nil,
+            queue: nil
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.signOut()
+                self?.errorMessage = String(localized: "error_account_suspended")
+            }
+        }
     }
 
     // MARK: – Sign in with Apple
@@ -35,6 +45,8 @@ final class AuthState: ObservableObject {
             }
         } catch AuthError.cancelled {
             return
+        } catch APIError.forbidden {
+            errorMessage = String(localized: "error_account_suspended")
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -98,11 +110,19 @@ final class AuthState: ObservableObject {
         Task {
             do {
                 let user: APIUser = try await APIClient.shared.get("me")
+                if user.isSuspended {
+                    signOut()
+                    errorMessage = String(localized: "error_account_suspended")
+                    return
+                }
                 if let username = user.username {
                     phase = .authenticated(userID: user.id, username: username)
                 } else {
                     phase = .needsUsername(userID: user.id)
                 }
+            } catch APIError.forbidden {
+                signOut()
+                errorMessage = String(localized: "error_account_suspended")
             } catch APIError.unauthorized {
                 tokenStore.clear()
             } catch {

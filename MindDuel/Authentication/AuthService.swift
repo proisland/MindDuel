@@ -32,11 +32,12 @@ final class AuthService: NSObject {
 
         struct AppleAuthBody: Encodable {
             let identityToken: String
+            let locale: String
         }
 
         let response: AuthResponse = try await APIClient.shared.post(
             "auth/apple",
-            body: AppleAuthBody(identityToken: idToken)
+            body: AppleAuthBody(identityToken: idToken, locale: Locale.current.identifier)
         )
 
         AuthTokenStore.shared.save(

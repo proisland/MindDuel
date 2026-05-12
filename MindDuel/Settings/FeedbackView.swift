@@ -1,8 +1,6 @@
 import SwiftUI
+import PhotosUI
 
-/// #89: lets users submit task suggestions, general feedback, feature
-/// requests and bug reports. Each submission opens a pre-filled GitHub
-/// issue with the right label so the team can triage from existing tools.
 struct FeedbackView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var category: Category = .feedback
@@ -10,6 +8,8 @@ struct FeedbackView: View {
     @State private var details: String = ""
     @State private var showOpenedConfirm = false
     @State private var isSubmitting = false
+    @State private var selectedPhotoItem: PhotosPickerItem? = nil
+    @State private var selectedImageData: Data? = nil
 
     enum Category: String, CaseIterable, Identifiable {
         case task, feedback, feature, bug
@@ -30,16 +30,6 @@ struct FeedbackView: View {
             case .feedback: return "bubble.left.and.bubble.right"
             case .feature:  return "sparkles"
             case .bug:      return "ladybug.fill"
-            }
-        }
-
-        /// GitHub issue label applied to the auto-opened issue.
-        var ghLabel: String {
-            switch self {
-            case .task:     return "task-suggestion"
-            case .feedback: return "feedback"
-            case .feature:  return "feature"
-            case .bug:      return "bug"
             }
         }
 
@@ -87,6 +77,51 @@ struct FeedbackView: View {
                             .background(Color.mdSurface2)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.mdBorder2, lineWidth: 0.5))
+
+                        // Image attachment
+                        sectionLabel(String(localized: "feedback_image_label"))
+                        PhotosPicker(selection: $selectedPhotoItem,
+                                     matching: .images,
+                                     photoLibrary: .shared()) {
+                            HStack(spacing: MDSpacing.sm) {
+                                if let data = selectedImageData,
+                                   let uiImage = UIImage(data: data) {
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 48, height: 48)
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                } else {
+                                    Image(systemName: "photo.badge.plus")
+                                        .foregroundStyle(Color.mdAccent)
+                                }
+                                Text(selectedImageData != nil
+                                     ? String(localized: "feedback_image_selected")
+                                     : String(localized: "feedback_image_add"))
+                                    .mdStyle(.caption)
+                                    .foregroundStyle(Color.mdText)
+                                Spacer()
+                                if selectedImageData != nil {
+                                    Button {
+                                        selectedPhotoItem = nil
+                                        selectedImageData = nil
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundStyle(Color.mdText3)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(MDSpacing.sm)
+                            .background(Color.mdSurface2)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.mdBorder2, lineWidth: 0.5))
+                        }
+                        .onChange(of: selectedPhotoItem) { newItem in
+                            Task {
+                                selectedImageData = try? await newItem?.loadTransferable(type: Data.self)
+                            }
+                        }
 
                         MDButton(.primary, title: String(localized: "feedback_submit_action")) {
                             Task { await submit() }
@@ -159,8 +194,24 @@ struct FeedbackView: View {
         """
 
         do {
-            struct Body: Encodable { let message: String }
-            let _: Empty = try await APIClient.shared.post("feedback", body: Body(message: message))
+            // Upload image if selected — failure is non-fatal; submit without image
+            var imageUrl: String? = nil
+            if let imageData = selectedImageData {
+                do {
+                    struct UploadUrlResponse: Decodable { let uploadUrl: String; let publicUrl: String }
+                    let urls: UploadUrlResponse = try await APIClient.shared.post("feedback/upload-url", body: Empty())
+                    var request = URLRequest(url: URL(string: urls.uploadUrl)!)
+                    request.httpMethod = "PUT"
+                    request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
+                    _ = try await URLSession.shared.upload(for: request, from: imageData)
+                    imageUrl = urls.publicUrl
+                } catch {
+                    // Proceed without image
+                }
+            }
+
+            struct Body: Encodable { let message: String; let imageUrl: String? }
+            let _: Empty = try await APIClient.shared.post("feedback", body: Body(message: message, imageUrl: imageUrl))
             showOpenedConfirm = true
         } catch APIError.unauthorized {
             // User not signed in; silently ignore (feedback requires auth)
@@ -170,4 +221,3 @@ struct FeedbackView: View {
         }
     }
 }
-

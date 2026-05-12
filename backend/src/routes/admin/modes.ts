@@ -1,7 +1,17 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 
+const createBody = z.object({
+  slug:      z.string().min(1).regex(/^[a-z0-9_]+$/, 'Slug must be lowercase alphanumeric + underscores'),
+  name:      z.string().min(1),
+  isActive:  z.boolean().default(false),
+  sortOrder: z.number().int().default(0),
+  startsAt:  z.string().datetime().nullable().optional(),
+  endsAt:    z.string().datetime().nullable().optional(),
+})
+
 const patchBody = z.object({
+  name:      z.string().min(1).optional(),
   isActive:  z.boolean().optional(),
   startsAt:  z.string().datetime().nullable().optional(),
   endsAt:    z.string().datetime().nullable().optional(),
@@ -15,6 +25,26 @@ export default async function adminModesRoutes(app: FastifyInstance) {
     return reply.view('admin/modes.ejs', { title: 'Game Modes', modes })
   })
 
+  // POST /admin/modes — create new mode
+  app.post('/', async (request, reply) => {
+    const body = createBody.safeParse(request.body)
+    if (!body.success) return reply.status(400).send({ error: body.error.flatten() })
+
+    const existing = await app.prisma.gameMode.findUnique({ where: { slug: body.data.slug } })
+    if (existing) return reply.status(409).send({ error: 'Slug already exists' })
+
+    const { startsAt, endsAt, ...rest } = body.data
+    const mode = await app.prisma.gameMode.create({
+      data: {
+        ...rest,
+        ...(startsAt != null && { startsAt: new Date(startsAt) }),
+        ...(endsAt != null && { endsAt: new Date(endsAt) }),
+      },
+    })
+    await app.redis.del('modes:active')
+    return reply.status(201).send(mode)
+  })
+
   // PATCH /admin/modes/:id
   app.patch('/:id', async (request, reply) => {
     const { id } = request.params as { id: string }
@@ -24,14 +54,23 @@ export default async function adminModesRoutes(app: FastifyInstance) {
     const mode = await app.prisma.gameMode.update({
       where: { id },
       data: {
-        ...(body.data.isActive !== undefined && { isActive: body.data.isActive }),
-        ...(body.data.startsAt !== undefined && { startsAt: body.data.startsAt ? new Date(body.data.startsAt) : null }),
-        ...(body.data.endsAt !== undefined && { endsAt: body.data.endsAt ? new Date(body.data.endsAt) : null }),
+        ...(body.data.name      !== undefined && { name: body.data.name }),
+        ...(body.data.isActive  !== undefined && { isActive: body.data.isActive }),
         ...(body.data.sortOrder !== undefined && { sortOrder: body.data.sortOrder }),
+        ...(body.data.startsAt  !== undefined && { startsAt: body.data.startsAt ? new Date(body.data.startsAt) : null }),
+        ...(body.data.endsAt    !== undefined && { endsAt: body.data.endsAt ? new Date(body.data.endsAt) : null }),
       },
     })
 
     await app.redis.del('modes:active')
     return reply.send({ ok: true, isActive: mode.isActive })
+  })
+
+  // DELETE /admin/modes/:id
+  app.delete('/:id', async (request, reply) => {
+    const { id } = request.params as { id: string }
+    await app.prisma.gameMode.delete({ where: { id } })
+    await app.redis.del('modes:active')
+    return reply.send({ ok: true })
   })
 }

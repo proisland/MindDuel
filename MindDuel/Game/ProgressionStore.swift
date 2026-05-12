@@ -9,7 +9,7 @@ import SwiftUI
 
     static let dailyQuota = 20
     private static let rollbackRate: Double = 0.15
-    private static let mathLevelUpThreshold = 12
+    private static let mathLevelUpThreshold = 25
     private static let K: Double = 50.0
     /// Gentler level multiplier so high levels don't dwarf low-level
     /// scores (#69). Linear `level` made level-20 worth 20× a level-1
@@ -18,19 +18,17 @@ import SwiftUI
         (3.0 + Double(level)) / 4.0
     }
 
-    /// Adaptive level-up threshold (#43). Uses the player's pace within the
-    /// CURRENT level — not lifetime — so a long-tenured player who has slowed
-    /// down still gets extra questions, and a player on a hot streak ramps up
-    /// quickly. Recent wrongs in the current level grow the threshold so
-    /// slip-ups buy more practice before progression. Bounded [3, 10].
+    /// Adaptive level-up threshold (#43, #159). Base is 25 correct answers.
+    /// Fast players can reach the threshold in fewer answers; slow players or
+    /// those making mistakes need more. Bounded [15, 50].
     private static func adaptiveThreshold(avgTime: Double, recentWrongs: Int) -> Int {
         var t = mathLevelUpThreshold
-        if avgTime > 0 && avgTime < 1.2 { t -= 4 }       // very fast → -4
-        else if avgTime > 0 && avgTime < 2.0 { t -= 2 }  // fast → -2
-        if avgTime > 4.0                { t += 4 }       // slow → +4
-        else if avgTime > 3.0           { t += 2 }       // somewhat slow → +2
-        t += min(8, max(0, recentWrongs))                // each wrong adds one extra Q
-        return max(8, min(25, t))
+        if avgTime > 0 && avgTime < 1.2 { t -= 8 }       // very fast → -8
+        else if avgTime > 0 && avgTime < 2.0 { t -= 4 }  // fast → -4
+        if avgTime > 4.0                { t += 8 }       // slow → +8
+        else if avgTime > 3.0           { t += 4 }       // somewhat slow → +4
+        t += min(15, max(0, recentWrongs * 2))            // each wrong adds two extra Q
+        return max(15, min(50, t))
     }
 
     /// Per-mode running stats inside the current level. Both reset on
@@ -304,9 +302,13 @@ import SwiftUI
     func syncWithBackend() {
         Task { @MainActor in
             do {
-                let body = QuotaSyncRequest(localUsed: dailyUsed)
+                let body = QuotaSyncRequest(localDate: DateFormatter.localDate.string(from: Date()), localCount: dailyUsed)
                 let quota: QuotaInfo = try await APIClient.shared.post("games/quota/sync", body: body)
                 set(dailyUsed: max(dailyUsed, quota.used))
+                // Patch locale so stats stay accurate
+                let locale = Locale.current.language.languageCode?.identifier ?? Locale.current.identifier.components(separatedBy: "_").first ?? "en"
+                struct LocalePatch: Encodable { let locale: String }
+                let _: Empty = try await APIClient.shared.patch("me", body: LocalePatch(locale: locale))
                 // Pull full profile to sync server-side progressions
                 let user: APIUser = try await APIClient.shared.get("me")
                 applyServerProgressions(user.progressions ?? [])

@@ -32,7 +32,7 @@
             </a>
             <% if (u.isPremium) { %><span class="ml-1 text-xs text-amber-400">★ Premium</span><% } %>
           </td>
-          <td class="px-4 py-3 text-gray-400"><%= u.totalRoundsPlayed %></td>
+          <td class="px-4 py-3 text-gray-400"><%= u._count.gameSessions %></td>
           <td class="px-4 py-3">
             <% if (u.isSuspended) { %>
               <span class="px-2 py-0.5 bg-red-900 text-red-300 rounded text-xs">Suspended</span>
@@ -43,7 +43,7 @@
             <% } %>
           </td>
           <td class="px-4 py-3 text-gray-500 text-xs">
-            <%= u.lastActiveAt ? new Date(u.lastActiveAt).toLocaleDateString() : '–' %>
+            <%= fmtDate(u.lastActiveAt) %>
           </td>
           <td class="px-4 py-3 flex gap-2">
             <button onclick="toggleFlag('<%= u.id %>', <%= u.isFlagged %>)"

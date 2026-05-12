@@ -9,6 +9,7 @@ const patchBody = z.object({
   username: z.string().regex(USERNAME_RE).optional(),
   avatarEmoji: z.string().emoji().optional(),
   birthDate: z.string().datetime().optional(),
+  locale: z.string().max(20).optional(),
 })
 
 const usernameBody = z.object({
@@ -33,6 +34,7 @@ export default async function meRoutes(app: FastifyInstance) {
     })
 
     if (!user) return reply.status(404).send({ error: 'User not found' })
+    if (user.isSuspended) return reply.status(403).send({ error: 'Account suspended' })
 
     return reply.send({
       id: user.id,
@@ -100,7 +102,7 @@ export default async function meRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'Invalid body', details: body.error.flatten() })
     }
 
-    const { username, avatarEmoji, birthDate } = body.data
+    const { username, avatarEmoji, birthDate, locale } = body.data
 
     if (username) {
       if (RESERVED_USERNAMES.has(username.toLowerCase())) {
@@ -112,14 +114,20 @@ export default async function meRoutes(app: FastifyInstance) {
       if (taken) return reply.status(409).send({ error: 'Username taken' })
     }
 
-    const user = await app.prisma.user.update({
-      where: { id: request.userId },
-      data: {
-        ...(username && { username }),
-        ...(avatarEmoji && { avatarEmoji }),
-        ...(birthDate && { birthDate: new Date(birthDate) }),
-      },
-    })
+    // locale is not in the stale Prisma client — update via raw SQL separately
+    if (locale) {
+      await app.prisma.$executeRaw`UPDATE "User" SET locale = ${locale} WHERE id = ${request.userId}`
+    }
+
+    const prismaData: Record<string, unknown> = {
+      ...(username && { username }),
+      ...(avatarEmoji && { avatarEmoji }),
+      ...(birthDate && { birthDate: new Date(birthDate) }),
+    }
+
+    const user = Object.keys(prismaData).length > 0
+      ? await app.prisma.user.update({ where: { id: request.userId }, data: prismaData })
+      : await app.prisma.user.findUniqueOrThrow({ where: { id: request.userId } })
 
     return reply.send({ id: user.id, username: user.username, avatarEmoji: user.avatarEmoji })
   })

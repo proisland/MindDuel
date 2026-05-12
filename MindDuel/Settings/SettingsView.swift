@@ -16,6 +16,9 @@ struct SettingsView: View {
     @State private var showFeedback = false
     @State private var showDeleteConfirm = false
     @State private var showDeleteDone = false
+    @State private var birthDate: Date? = nil
+    @State private var showBirthDatePicker = false
+    @State private var pendingBirthDate: Date = Calendar.current.date(byAdding: .year, value: -18, to: Date()) ?? Date()
 
     var body: some View {
         ZStack {
@@ -46,6 +49,18 @@ struct SettingsView: View {
                                     icon: "globe", iconBg: .mdAccentSoft, iconColor: .mdAccent,
                                     label: String(localized: "settings_language_label"),
                                     value: currentLanguageLabel
+                                )
+                            }
+                            .buttonStyle(.plain)
+
+                            Button {
+                                pendingBirthDate = birthDate ?? Calendar.current.date(byAdding: .year, value: -18, to: Date()) ?? Date()
+                                showBirthDatePicker = true
+                            } label: {
+                                staticRow(
+                                    icon: "calendar", iconBg: .mdAccentSoft, iconColor: .mdAccent,
+                                    label: String(localized: "settings_birthdate_label"),
+                                    value: birthDate.map { Self.birthDateFormatter.string(from: $0) } ?? String(localized: "settings_birthdate_not_set")
                                 )
                             }
                             .buttonStyle(.plain)
@@ -146,6 +161,7 @@ struct SettingsView: View {
                 signOutModal
             }
         }
+        .onAppear { loadProfile() }
         .animation(.easeInOut(duration: 0.2), value: showSignOutModal)
         .animation(.easeInOut(duration: 0.2), value: showDebugSection)
         .confirmationDialog(
@@ -163,6 +179,34 @@ struct SettingsView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text(String(localized: "settings_language_restart_message"))
+        }
+        .sheet(isPresented: $showBirthDatePicker) {
+            NavigationStack {
+                VStack(spacing: MDSpacing.lg) {
+                    DatePicker(
+                        String(localized: "settings_birthdate_label"),
+                        selection: $pendingBirthDate,
+                        in: ...Calendar.current.date(byAdding: .year, value: -5, to: Date())!,
+                        displayedComponents: .date
+                    )
+                    .datePickerStyle(.wheel)
+                    .labelsHidden()
+                    .padding()
+                }
+                .navigationTitle(String(localized: "settings_birthdate_label"))
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(String(localized: "cancel_action")) { showBirthDatePicker = false }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(String(localized: "save_action")) {
+                            saveBirthDate(pendingBirthDate)
+                            showBirthDatePicker = false
+                        }
+                    }
+                }
+            }
         }
         .sheet(isPresented: $showTerms) { TermsAndPrivacyView() }
         .fullScreenCover(isPresented: $showFeedback) { FeedbackView() }
@@ -184,6 +228,34 @@ struct SettingsView: View {
             Button("OK", role: .cancel) { onSignOut() }
         } message: {
             Text(String(localized: "settings_delete_done_message"))
+        }
+    }
+
+    // MARK: – Profile (birthDate)
+
+    private static let birthDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        f.timeStyle = .none
+        return f
+    }()
+
+    private func loadProfile() {
+        Task {
+            guard let user: APIUser = try? await APIClient.shared.get("me") else { return }
+            await MainActor.run { birthDate = user.birthDate }
+        }
+    }
+
+    private func saveBirthDate(_ date: Date) {
+        birthDate = date
+        Task {
+            struct Patch: Encodable { let birthDate: String }
+            struct Empty: Decodable {}
+            let iso = ISO8601DateFormatter()
+            iso.formatOptions = [.withInternetDateTime]
+            let body = Patch(birthDate: iso.string(from: date))
+            let _: Empty? = try? await APIClient.shared.patch("me", body: body)
         }
     }
 

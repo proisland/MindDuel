@@ -17,12 +17,16 @@ const startSessionBody = z.object({
 })
 
 const submitAnswerBody = z.object({
-  sessionToken: z.string().min(1),
   questionRef: z.string().min(1),
-  userAnswer: z.string().min(1),
+  userAnswer: z.string().min(0),
   answerTimeMs: z.number().int().positive(),
   waitTimeMs: z.number().int().min(0).default(0),
   wasSkipped: z.boolean().default(false),
+  // Client-supplied correctness for procedurally-generated knowledge questions.
+  // Pi always validates server-side via the digit position; knowledge modes
+  // currently generate questions on-device with no QuestionPack-matching id,
+  // so we trust the client's verdict (anti-cheat is enforced via timing).
+  isCorrect: z.boolean().optional(),
 })
 
 const endSessionBody = z.object({
@@ -69,11 +73,24 @@ export default async function gamesRoutes(app: FastifyInstance) {
     const body = startSessionBody.safeParse(request.body)
     if (!body.success) return reply.status(400).send({ error: 'Invalid body', details: body.error.flatten() })
 
+    const now = new Date()
+    const activeMode = await app.prisma.gameMode.findFirst({
+      where: {
+        slug: body.data.mode,
+        isActive: true,
+        OR: [{ startsAt: null }, { startsAt: { lte: now } }],
+        AND: [{ OR: [{ endsAt: null }, { endsAt: { gte: now } }] }],
+      },
+      select: { id: true },
+    })
+    if (!activeMode) return reply.status(400).send({ error: 'Mode not available' })
+
     const user = await app.prisma.user.findUnique({
       where: { id: request.userId },
-      select: { isPremium: true, progressions: { where: { mode: body.data.mode } } },
+      select: { isPremium: true, isSuspended: true, progressions: { where: { mode: body.data.mode } } },
     })
     if (!user) return reply.status(404).send({ error: 'User not found' })
+    if (user.isSuspended) return reply.status(403).send({ error: 'Account suspended' })
 
     const { allowed, remaining } = await checkQuota(
       app.prisma, request.userId, user.isPremium, body.data.isTraining, body.data.localDate,
@@ -90,6 +107,9 @@ export default async function gamesRoutes(app: FastifyInstance) {
         isTraining: body.data.isTraining,
       },
     })
+
+    // startPosition not in stale Prisma client — write via raw SQL
+    await app.prisma.$executeRaw`UPDATE "GameSession" SET "startPosition" = ${startPos} WHERE id = ${session.id}`
 
     return reply.send({
       sessionToken: session.sessionToken,
@@ -127,8 +147,12 @@ export default async function gamesRoutes(app: FastifyInstance) {
       isCorrect = !body.data.wasSkipped && validatePiAnswer(position, body.data.userAnswer)
       const { getPiDigit } = await import('../../lib/pi')
       correctAnswer = getPiDigit(position)
+    } else if (body.data.isCorrect !== undefined) {
+      // Procedural knowledge mode: trust the client's verdict.
+      isCorrect = !body.data.wasSkipped && body.data.isCorrect
+      correctAnswer = body.data.userAnswer
     } else {
-      // Knowledge modes: look up question in DB
+      // Fallback: look up question in QuestionPack (server-validated knowledge).
       const pack = await app.prisma.questionPack.findFirst({
         where: { mode: session.mode, isActive: true },
         orderBy: { version: 'desc' },
@@ -165,11 +189,18 @@ export default async function gamesRoutes(app: FastifyInstance) {
       })
       if (!user?.isPremium) {
         const today = new Date().toISOString().slice(0, 10)
-        const quota = await app.prisma.dailyQuota.upsert({
-          where: { userId: request.userId },
-          update: { count: { increment: 1 }, date: today },
-          create: { userId: request.userId, date: today, count: 1 },
-        })
+        // Use $executeRaw to atomically reset-or-increment in a single statement:
+        // - same day → increment
+        // - new day  → reset to 1 (don't carry over yesterday's count)
+        await app.prisma.$executeRaw`
+          INSERT INTO "DailyQuota" ("userId", "date", "count", "updatedAt")
+          VALUES (${request.userId}, ${today}, 1, NOW())
+          ON CONFLICT ("userId") DO UPDATE
+            SET "count"     = CASE WHEN "DailyQuota"."date" = ${today} THEN "DailyQuota"."count" + 1 ELSE 1 END,
+                "date"      = ${today},
+                "updatedAt" = NOW()
+        `
+        const quota = await app.prisma.dailyQuota.findUniqueOrThrow({ where: { userId: request.userId } })
         quotaRemaining = Math.max(0, config.quota.freeLimit - quota.count)
       }
     }
@@ -305,28 +336,24 @@ export default async function gamesRoutes(app: FastifyInstance) {
 
     const { localDate, localCount } = body.data
 
-    const quota = await app.prisma.dailyQuota.upsert({
-      where: { userId: request.userId },
-      update: (q => ({
-        // Use whichever count is higher to prevent offline bypass
-        count: q.date === localDate ? { increment: 0 } : localCount,
-        date: localDate,
-      }))(await app.prisma.dailyQuota.findUnique({ where: { userId: request.userId } }) ?? { date: '', count: 0 }),
-      create: { userId: request.userId, date: localDate, count: localCount },
-    })
+    const existing = await app.prisma.dailyQuota.findUnique({ where: { userId: request.userId } })
+    // Same day: take max(server, local) to reconcile offline play.
+    // New day (from iOS perspective): trust localCount as the fresh day's tally.
+    const syncedCount = existing?.date === localDate
+      ? Math.max(existing.count, localCount)
+      : localCount
 
-    const serverCount = quota.date === localDate ? Math.max(quota.count, localCount) : localCount
-    if (serverCount !== quota.count || quota.date !== localDate) {
-      await app.prisma.dailyQuota.update({
-        where: { userId: request.userId },
-        data: { count: serverCount, date: localDate },
-      })
-    }
+    await app.prisma.$executeRaw`
+      INSERT INTO "DailyQuota" ("userId", "date", "count", "updatedAt")
+      VALUES (${request.userId}, ${localDate}, ${syncedCount}, NOW())
+      ON CONFLICT ("userId") DO UPDATE
+        SET "count"     = ${syncedCount},
+            "date"      = ${localDate},
+            "updatedAt" = NOW()
+    `
 
     const user = await app.prisma.user.findUnique({ where: { id: request.userId }, select: { isPremium: true } })
     const limit = config.quota.freeLimit
-    const remaining = user?.isPremium ? 999 : Math.max(0, limit - serverCount)
-
-    return reply.send({ used: serverCount, limit: user?.isPremium ? 999 : limit })
+    return reply.send({ used: syncedCount, limit: user?.isPremium ? 999 : limit })
   })
 }

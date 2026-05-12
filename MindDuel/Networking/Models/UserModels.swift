@@ -5,7 +5,9 @@ struct APIUser: Decodable {
     let username: String?
     let avatarEmoji: String
     let isPremium: Bool
+    let isSuspended: Bool
     let createdAt: Date
+    let birthDate: Date?
     let dailyQuota: QuotaInfo?
     let progressions: [APIProgression]?
 }
