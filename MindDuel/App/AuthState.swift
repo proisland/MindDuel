@@ -8,19 +8,38 @@ enum AuthPhase {
 
 @MainActor
 final class AuthState: ObservableObject {
-    @Published var phase: AuthPhase = .signedOut
+    private static let userIDKey   = "auth.userID"
+    private static let usernameKey = "auth.username"
+
+    @Published var phase: AuthPhase
+
+    init() {
+        let defaults = UserDefaults.standard
+        if let userID   = defaults.string(forKey: Self.userIDKey),
+           let username = defaults.string(forKey: Self.usernameKey) {
+            phase = .authenticated(userID: userID, username: username)
+        } else if let userID = defaults.string(forKey: Self.userIDKey) {
+            phase = .needsUsername(userID: userID)
+        } else {
+            phase = .signedOut
+        }
+    }
 
     func startGuestSession() {
-        // Placeholder until Sign in with Apple is added (requires Apple Developer account)
-        phase = .needsUsername(userID: UUID().uuidString)
+        let userID = UUID().uuidString
+        UserDefaults.standard.set(userID, forKey: Self.userIDKey)
+        phase = .needsUsername(userID: userID)
     }
 
     func setUsername(_ username: String, userID: String) {
-        // M2+: POST username to backend
+        UserDefaults.standard.set(userID,    forKey: Self.userIDKey)
+        UserDefaults.standard.set(username,  forKey: Self.usernameKey)
         phase = .authenticated(userID: userID, username: username)
     }
 
     func signOut() {
+        UserDefaults.standard.removeObject(forKey: Self.userIDKey)
+        UserDefaults.standard.removeObject(forKey: Self.usernameKey)
         phase = .signedOut
     }
 }
