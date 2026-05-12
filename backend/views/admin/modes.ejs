@@ -1,5 +1,31 @@
 <h1 class="text-2xl font-bold mb-6">Game Modes</h1>
 
+<!-- Create form -->
+<div class="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-6">
+  <h2 class="font-semibold mb-3">New mode</h2>
+  <form onsubmit="createMode(event)" class="flex flex-wrap gap-2 items-end">
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">Slug</label>
+      <input name="slug" placeholder="e.g. trivia" required
+        class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 w-36">
+    </div>
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">Name</label>
+      <input name="name" placeholder="e.g. Trivia" required
+        class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 w-40">
+    </div>
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">Sort order</label>
+      <input name="sortOrder" type="number" value="99"
+        class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 w-24">
+    </div>
+    <button type="submit"
+      class="text-sm px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded">
+      Create
+    </button>
+  </form>
+</div>
+
 <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
   <table class="w-full text-sm">
     <thead class="bg-gray-800 text-gray-400">
@@ -8,13 +34,19 @@
         <th class="text-left px-4 py-3">Status</th>
         <th class="text-left px-4 py-3">Starts at</th>
         <th class="text-left px-4 py-3">Ends at</th>
-        <th class="text-left px-4 py-3">Toggle</th>
+        <th class="text-left px-4 py-3">Sort</th>
+        <th class="text-left px-4 py-3">Actions</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-gray-800">
       <% modes.forEach(function(m) { %>
-        <tr id="mode-<%= m.id %>">
-          <td class="px-4 py-3 font-medium"><%= m.name %> <span class="text-gray-500 text-xs">(<%= m.slug %>)</span></td>
+        <tr id="mode-<%= m.id %>" class="hover:bg-gray-850">
+          <td class="px-4 py-3">
+            <span id="name-display-<%= m.id %>" class="font-medium"><%= m.name %></span>
+            <span class="text-gray-500 text-xs ml-1">(<%= m.slug %>)</span>
+            <input id="name-input-<%= m.id %>" value="<%= m.name %>"
+              class="hidden bg-gray-800 border border-gray-600 rounded px-2 py-0.5 text-sm text-white w-36 focus:outline-none focus:border-indigo-500">
+          </td>
           <td class="px-4 py-3">
             <span class="<%= m.isActive ? 'text-green-400' : 'text-gray-500' %> text-xs font-medium">
               <%= m.isActive ? '● Active' : '○ Hidden' %>
@@ -22,10 +54,23 @@
           </td>
           <td class="px-4 py-3 text-gray-500 text-xs"><%= m.startsAt ? new Date(m.startsAt).toLocaleString() : '–' %></td>
           <td class="px-4 py-3 text-gray-500 text-xs"><%= m.endsAt ? new Date(m.endsAt).toLocaleString() : '–' %></td>
-          <td class="px-4 py-3">
+          <td class="px-4 py-3 text-gray-500 text-xs"><%= m.sortOrder %></td>
+          <td class="px-4 py-3 flex gap-2">
             <button onclick="toggleMode('<%= m.id %>', <%= m.isActive %>)"
               class="text-xs px-3 py-1 rounded <%= m.isActive ? 'bg-gray-700 hover:bg-red-800' : 'bg-gray-700 hover:bg-green-800' %>">
               <%= m.isActive ? 'Hide' : 'Show' %>
+            </button>
+            <button id="edit-btn-<%= m.id %>" onclick="startEdit('<%= m.id %>')"
+              class="text-xs px-3 py-1 rounded bg-gray-700 hover:bg-indigo-800">
+              Edit
+            </button>
+            <button id="save-btn-<%= m.id %>" onclick="saveEdit('<%= m.id %>')"
+              class="hidden text-xs px-3 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white">
+              Save
+            </button>
+            <button onclick="deleteMode('<%= m.id %>', '<%= m.name %>')"
+              class="text-xs px-3 py-1 rounded bg-gray-700 hover:bg-red-900 text-red-400">
+              Delete
             </button>
           </td>
         </tr>
@@ -41,6 +86,51 @@ async function toggleMode(id, isActive) {
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({ isActive: !isActive })
   })
+  location.reload()
+}
+
+async function createMode(e) {
+  e.preventDefault()
+  const form = e.target
+  const data = {
+    slug: form.slug.value.trim(),
+    name: form.name.value.trim(),
+    sortOrder: parseInt(form.sortOrder.value, 10) || 99,
+  }
+  const res = await fetch('/admin/modes', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(data)
+  })
+  if (res.ok) {
+    location.reload()
+  } else {
+    const err = await res.json()
+    alert('Error: ' + JSON.stringify(err.error))
+  }
+}
+
+function startEdit(id) {
+  document.getElementById('name-display-' + id).classList.add('hidden')
+  document.getElementById('name-input-' + id).classList.remove('hidden')
+  document.getElementById('edit-btn-' + id).classList.add('hidden')
+  document.getElementById('save-btn-' + id).classList.remove('hidden')
+}
+
+async function saveEdit(id) {
+  const name = document.getElementById('name-input-' + id).value.trim()
+  if (!name) return
+  await fetch('/admin/modes/' + id, {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ name })
+  })
+  location.reload()
+}
+
+async function deleteMode(id, name) {
+  if (!confirm('Delete mode "' + name + '"? This cannot be undone.')) return
+  await fetch('/admin/modes/' + id, { method: 'DELETE' })
   location.reload()
 }
 </script>

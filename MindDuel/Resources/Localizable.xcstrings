@@ -1031,6 +1031,54 @@
         }
       }
     },
+    "feedback_image_label" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ATTACHMENT (OPTIONAL)"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "VEDLEGG (VALGFRITT)"
+          }
+        }
+      }
+    },
+    "feedback_image_add" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add image"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Legg ved bilde"
+          }
+        }
+      }
+    },
+    "feedback_image_selected" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image attached"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilde vedlagt"
+          }
+        }
+      }
+    },
     "feedback_category_bug" : {
       "extractionState" : "stale",
       "localizations" : {

@@ -45,17 +45,35 @@ export default async function adminUsersRoutes(app: FastifyInstance) {
   // GET /admin/users/:id
   app.get('/:id', async (request, reply) => {
     const { id } = request.params as { id: string }
-    const user = await app.prisma.user.findUnique({
-      where: { id },
-      include: {
-        progressions: true,
-        scores: { orderBy: { createdAt: 'desc' }, take: 20 },
-        feedbacks: { orderBy: { createdAt: 'desc' }, take: 10 },
-        gameSessions: { orderBy: { startedAt: 'desc' }, take: 20 },
-      },
-    })
+    const [user, modeStats] = await Promise.all([
+      app.prisma.user.findUnique({
+        where: { id },
+        include: {
+          progressions: true,
+          scores:       { orderBy: { createdAt: 'desc' }, take: 20 },
+          feedbacks:    { orderBy: { createdAt: 'desc' }, take: 10 },
+          gameSessions: { orderBy: { startedAt: 'desc' }, take: 20 },
+        },
+      }),
+      app.prisma.gameSession.groupBy({
+        by: ['mode'],
+        where: { userId: id },
+        _count: { id: true },
+        _sum:   { correctCount: true, totalCount: true },
+        orderBy: { mode: 'asc' },
+      }),
+    ])
     if (!user) return reply.status(404).send('Not found')
-    return reply.view('admin/user-detail.ejs', { title: `@${user.username}`, user })
+
+    const modeStatsFormatted = modeStats.map(s => ({
+      mode:         s.mode,
+      rounds:       s._count.id,
+      answered:     s._sum.totalCount ?? 0,
+      correct:      s._sum.correctCount ?? 0,
+      pctCorrect:   s._sum.totalCount ? Math.round((s._sum.correctCount ?? 0) / s._sum.totalCount * 100) : null,
+    }))
+
+    return reply.view('admin/user-detail.ejs', { title: `@${user.username}`, user, modeStats: modeStatsFormatted })
   })
 
   // PATCH /admin/users/:id (JSON API for HTMX)

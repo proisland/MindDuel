@@ -6,6 +6,7 @@ import { config } from '../../config'
 
 const appleSignInBody = z.object({
   identityToken: z.string().min(1),
+  locale: z.string().max(20).optional(),
   // Optional fields sent only on first sign-in by Apple
   email: z.string().email().optional(),
   fullName: z.object({
@@ -63,13 +64,17 @@ export default async function authRoutes(app: FastifyInstance) {
       user = await app.prisma.user.create({
         data: {
           appleUserId: applePayload.appleUserId,
+          locale:       body.data.locale ?? null,
           lastActiveAt: new Date(),
         },
       })
     } else {
       await app.prisma.user.update({
         where: { id: user.id },
-        data: { lastActiveAt: new Date() },
+        data: {
+          lastActiveAt: new Date(),
+          ...(body.data.locale && { locale: body.data.locale }),
+        },
       })
     }
 
