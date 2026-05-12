@@ -123,6 +123,30 @@ export default async function authRoutes(app: FastifyInstance) {
     })
   })
 
+  // POST /v1/auth/dev  — development only, bypasses Apple verification
+  if (config.nodeEnv === 'development') {
+    const devBody = z.object({ username: z.string().min(1) })
+    app.post('/dev', async (request, reply) => {
+      const body = devBody.safeParse(request.body)
+      if (!body.success) return reply.status(400).send({ error: 'username required' })
+
+      const fakeAppleId = `dev-${body.data.username}`
+      let user = await app.prisma.user.findFirst({ where: { appleUserId: fakeAppleId } })
+      if (!user) {
+        user = await app.prisma.user.create({
+          data: { appleUserId: fakeAppleId, username: body.data.username, lastActiveAt: new Date() },
+        })
+      } else {
+        await app.prisma.user.update({ where: { id: user.id }, data: { lastActiveAt: new Date() } })
+      }
+
+      const accessToken = app.jwt.sign({ sub: user.id }, { expiresIn: config.jwt.accessTtlSeconds })
+      const refreshToken = generateRefreshToken()
+      await storeRefreshToken(app.redis, user.id, refreshToken)
+      return reply.send({ accessToken, refreshToken, needsUsername: !user.username, user: userResponse(user) })
+    })
+  }
+
   // POST /v1/auth/logout
   app.post('/logout', { onRequest: [app.authenticate] }, async (request, reply) => {
     const body = refreshBody.safeParse(request.body)

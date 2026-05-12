@@ -61,6 +61,31 @@ final class AuthState: ObservableObject {
         }
     }
 
+    // MARK: – Dev login (DEBUG only)
+
+    #if DEBUG
+    func devSignIn(username: String) async {
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        do {
+            struct DevBody: Encodable { let username: String }
+            struct DevResponse: Decodable { let accessToken: String; let refreshToken: String; let needsUsername: Bool }
+            let response: DevResponse = try await APIClient.shared.post(
+                "auth/dev", body: DevBody(username: username)
+            )
+            AuthTokenStore.shared.save(accessToken: response.accessToken, refreshToken: response.refreshToken)
+            if response.needsUsername {
+                phase = .needsUsername(userID: username)
+            } else {
+                try await loadProfile(userID: username)
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+    #endif
+
     func signOut() {
         tokenStore.clear()
         phase = .signedOut

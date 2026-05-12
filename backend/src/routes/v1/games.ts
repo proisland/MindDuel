@@ -327,6 +327,6 @@ export default async function gamesRoutes(app: FastifyInstance) {
     const limit = config.quota.freeLimit
     const remaining = user?.isPremium ? 999 : Math.max(0, limit - serverCount)
 
-    return reply.send({ serverCount, limit: user?.isPremium ? null : limit, remaining })
+    return reply.send({ used: serverCount, limit: user?.isPremium ? 999 : limit })
   })
 }

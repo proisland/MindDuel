@@ -46,6 +46,13 @@ struct SignInView: View {
                             Task { await authState.signInWithApple() }
                         }
 
+                    #if DEBUG
+                    MDButton(.ghost, title: "Dev Login") {
+                        Task { await authState.devSignIn(username: "devuser") }
+                    }
+                    .padding(.horizontal, MDSpacing.lg)
+                    #endif
+
                     if let error = authState.errorMessage {
                         Text(error)
                             .mdStyle(.footnote)

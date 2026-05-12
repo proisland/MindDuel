@@ -31,13 +31,12 @@ final class AuthService: NSObject {
         else { throw AuthError.missingToken }
 
         struct AppleAuthBody: Encodable {
-            let idToken: String
-            let bundleId: String
+            let identityToken: String
         }
 
         let response: AuthResponse = try await APIClient.shared.post(
             "auth/apple",
-            body: AppleAuthBody(idToken: idToken, bundleId: "no.mindduel.app")
+            body: AppleAuthBody(identityToken: idToken)
         )
 
         AuthTokenStore.shared.save(

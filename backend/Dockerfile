@@ -1,5 +1,6 @@
 FROM node:20-alpine AS base
 WORKDIR /app
+RUN apk add --no-cache openssl
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 
 # ── Dev target (used in docker-compose) ──────────────────────────────────────

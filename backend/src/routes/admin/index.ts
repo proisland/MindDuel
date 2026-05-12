@@ -30,15 +30,18 @@ export default async function adminRoutes(app: FastifyInstance) {
   const guard = { onRequest: [requireAdmin(app)] }
 
   // ── Auth ───────────────────────────────────────────────────────────────────
-  app.get('/login', async (_req, reply) => reply.view('admin/login.ejs', {}))
+  const loginView = (reply: any, data: object = {}) =>
+    reply.view('admin/login.ejs', data, { layout: false })
+
+  app.get('/login', async (_req, reply) => loginView(reply))
 
   app.post('/login', async (request, reply) => {
     const body = loginBody.safeParse(request.body)
-    if (!body.success) return reply.view('admin/login.ejs', { error: 'Invalid form' })
+    if (!body.success) return loginView(reply, { error: 'Invalid form' })
 
     const admin = await app.prisma.adminUser.findUnique({ where: { username: body.data.username } })
     const valid = admin && await bcrypt.compare(body.data.password, admin.passwordHash)
-    if (!valid) return reply.view('admin/login.ejs', { error: 'Invalid credentials' })
+    if (!valid) return loginView(reply, { error: 'Invalid credentials' })
 
     const token = crypto.randomBytes(32).toString('hex')
     await app.redis.set(`admin_session:${token}`, admin.id, 'EX', SESSION_TTL)

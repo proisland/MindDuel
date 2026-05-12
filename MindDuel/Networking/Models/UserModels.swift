@@ -19,7 +19,6 @@ struct APIProgression: Decodable {
 struct QuotaInfo: Decodable {
     let used: Int
     let limit: Int
-    let resetsAt: Date
 }
 
 struct UsernameResponse: Decodable {

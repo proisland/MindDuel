@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
+import { config } from '../../config'
 
 const RESERVED_USERNAMES = new Set(['admin', 'mindduel', 'support', 'moderator', 'system'])
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
@@ -50,9 +51,10 @@ export default async function meRoutes(app: FastifyInstance) {
         position: p.position,
         progress: p.progress,
       })),
-      dailyQuota: user.dailyQuota
-        ? { date: user.dailyQuota.date, count: user.dailyQuota.count }
-        : { date: null, count: 0 },
+      dailyQuota: {
+        used: user.dailyQuota?.count ?? 0,
+        limit: config.quota.freeLimit,
+      },
     })
   })
 
