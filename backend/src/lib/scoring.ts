@@ -24,14 +24,12 @@ export function applyProgressionDelta(
   position: number,
   correctCount: number,
   isWin: boolean,
-  rollbackPercent: number = 0.15,
   minPosition: number = 0,
 ): number {
-  if (isWin) {
-    return position + correctCount
-  }
-  const rollback = Math.round(correctCount * rollbackPercent)
-  return Math.max(minPosition, position - rollback)
+  // Position maps 1:1 to level number. +1 per win, -1 per loss (floor 0).
+  if (isWin) return position + 1
+  if (correctCount === 0) return position          // no answers → no rollback
+  return Math.max(minPosition, position - 1)
 }
 
 export function shouldFlagUser(fastRoundCount: number, threshold = 5): boolean {

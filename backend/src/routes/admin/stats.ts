@@ -5,12 +5,13 @@ export default async function adminStatsRoutes(app: FastifyInstance) {
     const now = new Date()
     const day1  = new Date(now.getTime() - 86_400_000)
     const day30 = new Date(now.getTime() - 30 * 86_400_000)
+    const todayStr = now.toISOString().slice(0, 10)
 
     const [
       totalUsers, dau, mau, premiumUsers, flaggedUsers, suspendedUsers,
       totalSessions, sessionsToday, openFeedback,
       modePopularity, modeAccuracy, localeDistribution, sessionTimeSeries, ageDistribution,
-      levelAccuracy, ageAccuracy,
+      levelAccuracy, ageAccuracy, quotaStats,
     ] = await Promise.all([
       app.prisma.user.count(),
       app.prisma.user.count({ where: { lastActiveAt: { gte: day1 } } }),
@@ -114,6 +115,25 @@ export default async function adminStatsRoutes(app: FastifyInstance) {
         GROUP BY gs.mode, gs."startPosition", age_group, age_sort
         ORDER BY gs.mode, gs."startPosition", age_sort
       `,
+      app.prisma.$queryRaw<Array<{
+        active_today: bigint; hit_limit: bigint; avg_usage: number | null;
+        bucket_1_5: bigint; bucket_6_10: bigint; bucket_11_15: bigint;
+        bucket_16_19: bigint; bucket_20plus: bigint;
+      }>>`
+        SELECT
+          COUNT(*)                            FILTER (WHERE dq.count > 0)           AS active_today,
+          COUNT(*)                            FILTER (WHERE dq.count >= 20)         AS hit_limit,
+          ROUND(AVG(dq.count)::numeric, 1)                                          AS avg_usage,
+          COUNT(*)                            FILTER (WHERE dq.count BETWEEN 1 AND 5)   AS bucket_1_5,
+          COUNT(*)                            FILTER (WHERE dq.count BETWEEN 6 AND 10)  AS bucket_6_10,
+          COUNT(*)                            FILTER (WHERE dq.count BETWEEN 11 AND 15) AS bucket_11_15,
+          COUNT(*)                            FILTER (WHERE dq.count BETWEEN 16 AND 19) AS bucket_16_19,
+          COUNT(*)                            FILTER (WHERE dq.count >= 20)             AS bucket_20plus
+        FROM "DailyQuota" dq
+        JOIN "User" u ON u.id = dq."userId"
+        WHERE dq.date = ${todayStr}
+          AND u."isPremium" = false
+      `,
     ])
 
     return reply.view('admin/stats.ejs', {
@@ -154,6 +174,17 @@ export default async function adminStatsRoutes(app: FastifyInstance) {
         total:    Number(r.total),
         pct:      Number(r.total) > 0 ? Math.round(Number(r.correct) / Number(r.total) * 100) : null,
       })),
+      quotaStats: quotaStats[0] ? {
+        activeToday:  Number(quotaStats[0].active_today),
+        hitLimit:     Number(quotaStats[0].hit_limit),
+        avgUsage:     quotaStats[0].avg_usage != null ? Number(quotaStats[0].avg_usage) : null,
+        bucket1_5:    Number(quotaStats[0].bucket_1_5),
+        bucket6_10:   Number(quotaStats[0].bucket_6_10),
+        bucket11_15:  Number(quotaStats[0].bucket_11_15),
+        bucket16_19:  Number(quotaStats[0].bucket_16_19),
+        bucket20plus: Number(quotaStats[0].bucket_20plus),
+        todayStr,
+      } : null,
     })
   })
 }

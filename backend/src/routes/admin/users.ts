@@ -47,7 +47,8 @@ export default async function adminUsersRoutes(app: FastifyInstance) {
   // GET /admin/users/:id
   app.get('/:id', async (request, reply) => {
     const { id } = request.params as { id: string }
-    const [user, modeStats, levelStats] = await Promise.all([
+    const todayStr = new Date().toISOString().slice(0, 10)
+    const [user, modeStats, levelStats, quota] = await Promise.all([
       app.prisma.user.findUnique({
         where: { id },
         include: {
@@ -77,6 +78,7 @@ export default async function adminUsersRoutes(app: FastifyInstance) {
         GROUP BY gs.mode, gs."startPosition"
         ORDER BY gs.mode, gs."startPosition"
       `,
+      app.prisma.dailyQuota.findUnique({ where: { userId: id } }),
     ])
     if (!user) return reply.status(404).send('Not found')
 
@@ -98,12 +100,17 @@ export default async function adminUsersRoutes(app: FastifyInstance) {
       pct:     Number(r.total) > 0 ? Math.round(Number(r.correct) / Number(r.total) * 100) : null,
     }))
 
+    const quotaDisplay = user.isPremium
+      ? null
+      : { used: quota?.count ?? 0, limit: 20, date: quota?.date ?? todayStr, isToday: quota?.date === todayStr }
+
     return reply.view('admin/user-detail.ejs', {
       title: `@${user.username}`,
       user,
       modeStats: modeStatsFormatted,
       totalRounds,
       levelStats: levelStatsFormatted,
+      quota: quotaDisplay,
     })
   })
 

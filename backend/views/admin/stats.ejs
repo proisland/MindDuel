@@ -36,6 +36,46 @@
   </div>
 </div>
 
+<!-- Daily quota (free users) -->
+<% if (quotaStats) { %>
+<div class="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
+  <h2 class="font-semibold mb-4">Dagskvote – gratisbrukere (<%= quotaStats.todayStr %>)</h2>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+    <div>
+      <div class="text-2xl font-bold text-indigo-400"><%= quotaStats.activeToday %></div>
+      <div class="text-xs text-gray-400 mt-0.5">Har brukt kvote i dag</div>
+    </div>
+    <div>
+      <div class="text-2xl font-bold text-red-400"><%= quotaStats.hitLimit %></div>
+      <div class="text-xs text-gray-400 mt-0.5">Nådd daglig grense</div>
+    </div>
+    <div>
+      <div class="text-2xl font-bold text-amber-400"><%= quotaStats.avgUsage !== null ? quotaStats.avgUsage : '–' %></div>
+      <div class="text-xs text-gray-400 mt-0.5">Snittforbruk (aktive)</div>
+    </div>
+  </div>
+  <div class="flex gap-1 items-end h-20">
+    <% const buckets = [
+      { label: '1–5', val: quotaStats.bucket1_5 },
+      { label: '6–10', val: quotaStats.bucket6_10 },
+      { label: '11–15', val: quotaStats.bucket11_15 },
+      { label: '16–19', val: quotaStats.bucket16_19 },
+      { label: '20', val: quotaStats.bucket20plus },
+    ]
+    const maxBucket = Math.max(...buckets.map(b => b.val), 1)
+    %>
+    <% buckets.forEach(function(b) { %>
+      <div class="flex flex-col items-center gap-1 flex-1">
+        <span class="text-xs text-gray-400"><%= b.val %></span>
+        <div class="w-full rounded-t"
+          style="height: <%= Math.round(b.val / maxBucket * 60) %>px; background: <%= b.label === '20' ? '#f87171' : '#6366f1' %>"></div>
+        <span class="text-xs text-gray-500"><%= b.label %></span>
+      </div>
+    <% }) %>
+  </div>
+</div>
+<% } %>
+
 <!-- Mode popularity + accuracy side by side -->
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
   <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">

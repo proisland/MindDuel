@@ -13,6 +13,11 @@
         <%= user.isSuspended ? '🚫 Yes' : 'No' %></span></div>
     <div class="flex justify-between"><span class="text-gray-400">Fast rounds</span><span><%= user.fastRoundCount %></span></div>
     <div class="flex justify-between"><span class="text-gray-400">Total rounds</span><span><%= totalRounds %></span></div>
+    <% if (quota) { %>
+    <div class="flex justify-between"><span class="text-gray-400">Dagskvote</span>
+      <span class="<%= quota.used >= quota.limit ? 'text-red-400' : 'text-gray-300' %>">
+        <%= quota.used %>/<%= quota.limit %> <%= !quota.isToday ? '<span class="text-gray-600 text-xs">(' + quota.date + ')</span>' : '' %></span></div>
+    <% } %>
     <div class="flex justify-between"><span class="text-gray-400">Last active</span>
       <span><%= fmtDateTime(user.lastActiveAt) %></span></div>
     <div class="flex justify-between"><span class="text-gray-400">Joined</span>
