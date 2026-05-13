@@ -3,11 +3,30 @@ import Foundation
 /// Manages versioned question pack downloads. Packs are stored on disk so they
 /// survive app restarts and work offline. The cache performs atomic swaps: the
 /// new pack is fully written before the old one is replaced.
+///
+/// Packs are keyed by `{mode}_{language}` so Norwegian and English versions
+/// coexist without evicting each other. The app language is detected once per
+/// launch via `Bundle.main.preferredLocalizations.first` and normalised to a
+/// two-letter code; English is the fallback when no supported code matches.
 actor QuestionPackCache {
     static let shared = QuestionPackCache()
 
     private let cacheDir: URL
     private let versionsKey = "questionPackVersions"
+
+    /// The two-letter language code derived from the app's preferred localisation.
+    /// Supported values match the backend: "no" or "en". Any unsupported locale
+    /// falls back to "en" per the product spec.
+    nonisolated static var appLanguage: String {
+        let raw = Bundle.main.preferredLocalizations.first ?? "en"
+        let code = Locale(identifier: raw).language.languageCode?.identifier ?? "en"
+        // Norwegian Bokmål ("nb") and Nynorsk ("nn") both map to "no".
+        switch code {
+        case "no", "nb", "nn": return "no"
+        case "en":             return "en"
+        default:               return "en"
+        }
+    }
 
     private init() {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -17,21 +36,23 @@ actor QuestionPackCache {
 
     // MARK: – Public
 
-    /// Checks for updates for the given modes and downloads any new packs.
-    /// Safe to call on every launch.
+    /// Checks for updates for the given modes (in the current app language) and
+    /// downloads any new packs. Safe to call on every launch.
     func syncIfNeeded(modes: [String]) async {
         guard !modes.isEmpty else { return }
+        let lang = QuestionPackCache.appLanguage
         do {
             let query = modes.joined(separator: ",")
             let remote: QuestionVersionsResponse = try await APIClient.shared.get(
                 "questions/versions",
-                query: ["modes": query]
+                query: ["modes": query, "lang": lang]
             )
             let local = loadLocalVersions()
             for mode in modes {
-                guard let remoteVer = remote.versions[mode] else { continue }
-                if local[mode] == nil || local[mode]! < remoteVer {
-                    try await download(mode: mode, version: remoteVer)
+                guard let info = remote.versions[mode] else { continue }
+                let cacheKey = "\(mode)_\(info.language)"
+                if local[cacheKey] == nil || local[cacheKey]! < info.version {
+                    try await download(mode: mode, language: info.language, version: info.version)
                 }
             }
         } catch {
@@ -39,31 +60,43 @@ actor QuestionPackCache {
         }
     }
 
-    /// Returns cached questions for a mode, or nil if not yet downloaded.
+    /// Returns cached questions for a mode in the current app language, or nil
+    /// if not yet downloaded.
     nonisolated func questions(for mode: String) -> [APIQuestion]? {
+        let lang = QuestionPackCache.appLanguage
+        return questions(for: mode, language: lang)
+    }
+
+    /// Returns cached questions for a specific mode and language, or nil if not
+    /// yet downloaded.
+    nonisolated func questions(for mode: String, language: String) -> [APIQuestion]? {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let file = docs.appendingPathComponent("QuestionPacks/\(mode).json")
+        let file = docs.appendingPathComponent("QuestionPacks/\(mode)_\(language).json")
         guard let data = try? Data(contentsOf: file) else { return nil }
         return try? JSONDecoder().decode([APIQuestion].self, from: data)
     }
 
     // MARK: – Private
 
-    private func download(mode: String, version: Int) async throws {
-        let pack: QuestionPackResponse = try await APIClient.shared.get("questions/\(mode)")
+    private func download(mode: String, language: String, version: Int) async throws {
+        let pack: QuestionPackResponse = try await APIClient.shared.get(
+            "questions/\(mode)",
+            query: ["lang": language]
+        )
         let data = try JSONEncoder().encode(pack.questions)
-        let tmpFile = cacheDir.appendingPathComponent("\(mode).tmp.json")
-        let finalFile = packFile(mode: mode)
+        let cacheKey = "\(mode)_\(pack.language)"
+        let tmpFile = cacheDir.appendingPathComponent("\(cacheKey).tmp.json")
+        let finalFile = packFile(mode: mode, language: pack.language)
         try data.write(to: tmpFile, options: .atomic)
         _ = try? FileManager.default.replaceItemAt(finalFile, withItemAt: tmpFile)
         try? FileManager.default.removeItem(at: tmpFile)
         var versions = loadLocalVersions()
-        versions[mode] = version
+        versions[cacheKey] = version
         saveLocalVersions(versions)
     }
 
-    private func packFile(mode: String) -> URL {
-        cacheDir.appendingPathComponent("\(mode).json")
+    private func packFile(mode: String, language: String) -> URL {
+        cacheDir.appendingPathComponent("\(mode)_\(language).json")
     }
 
     private func loadLocalVersions() -> [String: Int] {

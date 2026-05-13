@@ -8,13 +8,20 @@
     — Første rad er header. Pakken starter inaktiv; bruk «Aktiver» nedenfor for å gjøre den aktiv.
   </p>
   <form onsubmit="uploadCsv(event)" class="space-y-3">
-    <div class="flex gap-3">
+    <div class="flex gap-3 flex-wrap">
       <div>
         <label class="block text-xs text-gray-400 mb-1">Modus</label>
         <select name="mode" class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500">
-          <% ['grammar','history','science','physics','sport','math','chem','geo','brain','pi'].forEach(function(m) { %>
+          <% modes.forEach(function(m) { %>
             <option value="<%= m %>"><%= m %></option>
           <% }) %>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Språk</label>
+        <select name="language" class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+          <option value="no">Norsk (no)</option>
+          <option value="en">Engelsk (en)</option>
         </select>
       </div>
     </div>
@@ -37,6 +44,7 @@
         <thead class="text-gray-500 text-xs">
           <tr>
             <th class="text-left px-4 py-2">Versjon</th>
+            <th class="text-left px-4 py-2">Språk</th>
             <th class="text-left px-4 py-2">Status</th>
             <th class="text-left px-4 py-2">Opprettet</th>
             <th class="text-left px-4 py-2">Handlinger</th>
@@ -46,6 +54,7 @@
           <% packs.forEach(function(p) { %>
             <tr>
               <td class="px-4 py-2">v<%= p.version %></td>
+              <td class="px-4 py-2 text-gray-400 text-xs"><%= p.language || 'no' %></td>
               <td class="px-4 py-2">
                 <% if (p.isActive) { %>
                   <span class="text-green-400 text-xs">● Aktiv</span>
@@ -113,8 +122,9 @@ async function deletePack(id, label) {
 async function uploadCsv(e) {
   e.preventDefault()
   const form = e.target
-  const mode = form.mode.value
-  const csv  = form.csv.value.trim()
+  const mode     = form.mode.value
+  const language = form.language.value
+  const csv      = form.csv.value.trim()
   if (!csv) return
   const status = document.getElementById('csv-status')
   status.textContent = 'Laster opp…'
@@ -122,11 +132,11 @@ async function uploadCsv(e) {
   const res = await fetch('/admin/questions/csv', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ mode, csv })
+    body: JSON.stringify({ mode, language, csv })
   })
   if (res.ok) {
     const data = await res.json()
-    status.textContent = '✓ Opprettet ' + mode + ' v' + data.version + ' med ' + data.count + ' spørsmål (inaktiv)'
+    status.textContent = '✓ Opprettet ' + mode + ' (' + data.language + ') v' + data.version + ' med ' + data.count + ' spørsmål (inaktiv)'
     form.csv.value = ''
     setTimeout(() => location.reload(), 1500)
   } else {

@@ -40,6 +40,43 @@ export async function runStartupMigrations(prisma: PrismaClient) {
       ADD COLUMN IF NOT EXISTS "startPosition" INTEGER NOT NULL DEFAULT 0
   `)
 
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "QuestionPack"
+      ADD COLUMN IF NOT EXISTS "language" TEXT NOT NULL DEFAULT 'no'
+  `)
+
+  // Replace the old (mode, version) unique constraint/index with (mode, language, version).
+  // Prisma creates unique constraints as indexes, so we must DROP INDEX (not DROP CONSTRAINT).
+  await prisma.$executeRawUnsafe(`
+    DROP INDEX IF EXISTS "QuestionPack_mode_version_key"
+  `)
+
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "QuestionPack"
+      DROP CONSTRAINT IF EXISTS "QuestionPack_mode_version_key"
+  `)
+
+  await prisma.$executeRawUnsafe(`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'QuestionPack_mode_language_version_key'
+      ) THEN
+        ALTER TABLE "QuestionPack"
+          ADD CONSTRAINT "QuestionPack_mode_language_version_key"
+          UNIQUE ("mode", "language", "version");
+      END IF;
+    END $$
+  `)
+
+  await prisma.$executeRawUnsafe(`
+    DROP INDEX IF EXISTS "QuestionPack_mode_isActive_idx"
+  `)
+
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS "QuestionPack_mode_language_isActive_idx"
+      ON "QuestionPack"("mode", "language", "isActive")
+  `)
+
   // Seed the 10 built-in game modes as active if they don't already exist.
   // Uses ON CONFLICT DO NOTHING so re-runs are safe and admin edits are preserved.
   const defaultModes = [
