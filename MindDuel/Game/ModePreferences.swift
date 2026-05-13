@@ -23,6 +23,7 @@ enum AnyMode: Identifiable {
     static let shared = ModePreferences()
 
     @Published private(set) var favorites: Set<GameMode>
+    @Published private(set) var serverFavorites: Set<String>
     @Published private(set) var combinedOrder: [String]
 
     /// Maximum number of favorites the user can pick (matches the
@@ -30,6 +31,7 @@ enum AnyMode: Identifiable {
     static let maxFavorites = 4
 
     private static let favKey          = "modePrefs.favorites"
+    private static let serverFavKey    = "modePrefs.serverFavorites"
     private static let combinedOrderKey = "modePrefs.combinedOrder"
     // Legacy keys — read once during migration, then ignored.
     private static let orderKey        = "modePrefs.order"
@@ -41,6 +43,11 @@ enum AnyMode: Identifiable {
             favorites = Set(raw.compactMap(GameMode.init(rawValue:)))
         } else {
             favorites = Set(GameMode.allCases.prefix(Self.maxFavorites))
+        }
+        if let raw = d.array(forKey: Self.serverFavKey) as? [String] {
+            serverFavorites = Set(raw)
+        } else {
+            serverFavorites = []
         }
         if let raw = d.array(forKey: Self.combinedOrderKey) as? [String], !raw.isEmpty {
             combinedOrder = raw
@@ -56,13 +63,15 @@ enum AnyMode: Identifiable {
             combinedOrder = merged
         }
         // Migrate legacy state that may have stored more than the cap.
-        if favorites.count > Self.maxFavorites {
+        if favorites.count + serverFavorites.count > Self.maxFavorites {
             let trimmed = combinedOrder
                 .compactMap(GameMode.init(slug:))
                 .filter { favorites.contains($0) }
                 .prefix(Self.maxFavorites)
             favorites = Set(trimmed)
+            serverFavorites = []
             persistFavorites()
+            persistServerFavorites()
         }
     }
 
@@ -113,10 +122,12 @@ enum AnyMode: Identifiable {
     }
 
     func isFavorite(_ mode: GameMode) -> Bool { favorites.contains(mode) }
+    func isFavoriteServer(slug: String) -> Bool { serverFavorites.contains(slug) }
 
     /// True when the user is at the cap and must remove a favorite before
     /// adding another. Used by AllModesSheet to grey out the star button.
-    var isAtFavoriteCap: Bool { favorites.count >= Self.maxFavorites }
+    var isAtFavoriteCap: Bool { (favorites.count + serverFavorites.count) >= Self.maxFavorites }
+    private var totalFavoritesCount: Int { favorites.count + serverFavorites.count }
 
     /// Returns false if the toggle was rejected because the cap was hit.
     @discardableResult
@@ -124,10 +135,22 @@ enum AnyMode: Identifiable {
         if favorites.contains(mode) {
             favorites.remove(mode)
         } else {
-            guard favorites.count < Self.maxFavorites else { return false }
+            guard totalFavoritesCount < Self.maxFavorites else { return false }
             favorites.insert(mode)
         }
         persistFavorites()
+        return true
+    }
+
+    @discardableResult
+    func toggleFavoriteServer(slug: String) -> Bool {
+        if serverFavorites.contains(slug) {
+            serverFavorites.remove(slug)
+        } else {
+            guard totalFavoritesCount < Self.maxFavorites else { return false }
+            serverFavorites.insert(slug)
+        }
+        persistServerFavorites()
         return true
     }
 
@@ -141,15 +164,29 @@ enum AnyMode: Identifiable {
     /// Modes used to fill the featured grid: favorites first (in custom
     /// order), then top-played non-favorites until we hit `count`.
     /// Only includes modes the backend reports as active.
-    func featured(count: Int = 4) -> [GameMode] {
-        let active = activeOrder
-        let favs = active.filter(favorites.contains)
-        let fillers = active.filter { !favorites.contains($0) }
+    func featured(count: Int = 4) -> [AnyMode] {
+        let active = activeCombinedOrder
+        let favs = active.filter { mode in
+            switch mode {
+            case .known(let m): return favorites.contains(m)
+            case .server(let m): return serverFavorites.contains(m.slug)
+            }
+        }
+        let fillers = active.filter { mode in
+            switch mode {
+            case .known(let m): return !favorites.contains(m)
+            case .server(let m): return !serverFavorites.contains(m.slug)
+            }
+        }
         return Array((favs + fillers).prefix(count))
     }
 
     private func persistFavorites() {
         UserDefaults.standard.set(favorites.map(\.rawValue), forKey: Self.favKey)
+    }
+
+    private func persistServerFavorites() {
+        UserDefaults.standard.set(Array(serverFavorites), forKey: Self.serverFavKey)
     }
 
     private func persistCombinedOrder() {

@@ -155,6 +155,57 @@ struct ServerModeQuickPill: View {
     }
 }
 
+/// Compact horizontal featured card for a server-only mode — mirrors MDFeaturedCard layout.
+struct MDServerFeaturedCard: View {
+    let serverMode: ServerMode
+    let score: Int
+    let level: Int
+    var maxLevel: Int = 20
+    var action: (() -> Void)? = nil
+
+    var body: some View {
+        let content = HStack(spacing: 10) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(serverMode.accentColor.opacity(0.13))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(serverMode.accentColor.opacity(0.27), lineWidth: 1.5)
+                    )
+                ServerModeGlyph(iconSymbol: serverMode.iconSymbol, size: 22,
+                                color: serverMode.accentColor)
+            }
+            .frame(width: 44, height: 44)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(serverMode.name)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.mdText)
+                Text(formatPoints(score))
+                    .font(.system(size: 13, weight: .heavy))
+                    .foregroundStyle(serverMode.accentColor)
+                LevelBar(level: level, maxLevel: maxLevel, color: serverMode.accentColor)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(serverMode.accentColor.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(serverMode.accentColor.opacity(0.18), lineWidth: 1)
+        )
+
+        if let action {
+            Button(action: action) { content }
+                .buttonStyle(.plain)
+        } else {
+            content
+        }
+    }
+}
+
 /// Breaks "Naturvitenskap" between "Natur" and "vitenskap" on the two-line
 /// pill labels so the science card matches the height of the others without
 /// shrinking text. English ("Science") stays on one line.

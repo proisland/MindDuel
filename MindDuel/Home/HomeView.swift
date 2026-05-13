@@ -144,7 +144,7 @@ struct HomeView: View {
             case .allModes:
                 AllModesSheet(
                     onPlay: { startOrResume($0) },
-                    onPlayServerMode: { mode in activeServerMode = mode }
+                    onPlayServerMode: { startOrResumeServer($0) }
                 )
             }
         }
@@ -183,7 +183,7 @@ struct HomeView: View {
 
     private var favoritesSection: some View {
         let featured = prefs.featured(count: 4)
-        let title = prefs.favorites.isEmpty
+        let title = prefs.favorites.isEmpty && prefs.serverFavorites.isEmpty
             ? String(localized: "favorites_section_most_played")
             : String(localized: "favorites_section_title")
         return VStack(alignment: .leading, spacing: MDSpacing.sm) {
@@ -203,13 +203,23 @@ struct HomeView: View {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
                                 GridItem(.flexible(), spacing: 10)],
                       spacing: 10) {
-                ForEach(featured, id: \.self) { mode in
-                    MDFeaturedCard(
-                        mode: mode,
-                        score: progression.bestScore(for: mode),
-                        level: progression.level(for: mode),
-                        action: { startOrResume(mode) }
-                    )
+                ForEach(featured) { mode in
+                    switch mode {
+                    case .known(let gm):
+                        MDFeaturedCard(
+                            mode: gm,
+                            score: progression.bestScore(for: gm),
+                            level: progression.level(for: gm),
+                            action: { startOrResume(gm) }
+                        )
+                    case .server(let sm):
+                        MDServerFeaturedCard(
+                            serverMode: sm,
+                            score: progression.bestScore(forSlug: sm.slug),
+                            level: progression.level(forSlug: sm.slug),
+                            action: { startOrResumeServer(sm) }
+                        )
+                    }
                 }
             }
         }
@@ -230,7 +240,7 @@ struct HomeView: View {
                     }
                     ForEach(modeCache.serverOnlyModes) { serverMode in
                         ServerModeQuickPill(serverMode: serverMode) {
-                            activeServerMode = serverMode
+                            startOrResumeServer(serverMode)
                         }
                     }
                 }
@@ -431,6 +441,17 @@ struct HomeView: View {
             resumeSoloRoomID = nil
         }
         activeMode = mode
+    }
+
+    private func startOrResumeServer(_ serverMode: ServerMode) {
+        if let existing = multiplayer.backgroundRooms.first(where: {
+            $0.isStandaloneSolo && $0.serverModeSlug == serverMode.slug && $0.status == .playing
+        }) {
+            resumeServerRoomID = existing.id
+        } else {
+            resumeServerRoomID = nil
+        }
+        activeServerMode = serverMode
     }
 
     private func modeLabel(for mode: GameMode) -> String {

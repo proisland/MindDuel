@@ -9,7 +9,7 @@ import SwiftUI
 
     static let dailyQuota = 20
     private static let rollbackRate: Double = 0.15
-    private static let mathLevelUpThreshold = 25
+    private static let mathLevelUpThreshold = 60
     private static let K: Double = 50.0
     /// Gentler level multiplier so high levels don't dwarf low-level
     /// scores (#69). Linear `level` made level-20 worth 20× a level-1
@@ -18,17 +18,17 @@ import SwiftUI
         (3.0 + Double(level)) / 4.0
     }
 
-    /// Adaptive level-up threshold (#43, #159). Base is 25 correct answers.
+    /// Adaptive level-up threshold (#43, #159). Base is 60 correct answers.
     /// Fast players can reach the threshold in fewer answers; slow players or
-    /// those making mistakes need more. Bounded [15, 50].
+    /// those making mistakes need more. Bounded [40, 120].
     private static func adaptiveThreshold(avgTime: Double, recentWrongs: Int) -> Int {
         var t = mathLevelUpThreshold
-        if avgTime > 0 && avgTime < 1.2 { t -= 8 }       // very fast → -8
-        else if avgTime > 0 && avgTime < 2.0 { t -= 4 }  // fast → -4
-        if avgTime > 4.0                { t += 8 }       // slow → +8
-        else if avgTime > 3.0           { t += 4 }       // somewhat slow → +4
-        t += min(15, max(0, recentWrongs * 2))            // each wrong adds two extra Q
-        return max(15, min(50, t))
+        if avgTime > 0 && avgTime < 1.2 { t -= 20 }      // very fast → -20
+        else if avgTime > 0 && avgTime < 2.0 { t -= 10 } // fast → -10
+        if avgTime > 4.0                { t += 20 }      // slow → +20
+        else if avgTime > 3.0           { t += 10 }      // somewhat slow → +10
+        t += min(40, max(0, recentWrongs * 4))            // each wrong adds four extra Q
+        return max(40, min(120, t))
     }
 
     /// Per-mode running stats inside the current level. Both reset on

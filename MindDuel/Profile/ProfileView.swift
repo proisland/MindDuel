@@ -6,6 +6,7 @@ struct ProfileView: View {
     @ObservedObject private var progression = ProgressionStore.shared
     @ObservedObject private var social = SocialStore.shared
     @ObservedObject private var avatar = AvatarStore.shared
+    @ObservedObject private var modeCache = ModeConfigCache.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showSettings = false
     @State private var showAvatarPicker = false
@@ -74,7 +75,8 @@ struct ProfileView: View {
                         // FREMGANG — same compact horizontal cards as the
                         // home screen's favorites grid for visual continuity.
                         let playedModes = GameMode.allCases.filter { progression.bestScore(for: $0) > 0 }
-                        if !playedModes.isEmpty {
+                        let playedServerModes = modeCache.serverOnlyModes.filter { progression.bestScore(forSlug: $0.slug) > 0 }
+                        if !playedModes.isEmpty || !playedServerModes.isEmpty {
                             sectionContainer(String(localized: "progress_section_title")) {
                                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
                                                     GridItem(.flexible(), spacing: 10)],
@@ -84,6 +86,13 @@ struct ProfileView: View {
                                             mode: mode,
                                             score: progression.bestScore(for: mode),
                                             level: progression.level(for: mode)
+                                        )
+                                    }
+                                    ForEach(playedServerModes) { serverMode in
+                                        MDServerFeaturedCard(
+                                            serverMode: serverMode,
+                                            score: progression.bestScore(forSlug: serverMode.slug),
+                                            level: progression.level(forSlug: serverMode.slug)
                                         )
                                     }
                                 }

@@ -20,12 +20,14 @@ import UserNotifications
     // MARK: – API room creation / join
 
     /// Creates a real room via the backend. Falls back to local mock on failure.
-    func createRealRoom(mode: GameMode, ownUsername: String) async {
+    /// Pass `serverSlug` when the selected mode is a server-only mode (no GameMode enum case).
+    func createRealRoom(mode: GameMode, serverSlug: String? = nil, ownUsername: String) async {
+        let modeSlug = serverSlug ?? mode.slug
         do {
             struct Body: Encodable { let mode: String; let maxPlayers: Int }
             let room: RoomResponse = try await APIClient.shared.post(
                 "ws/rooms",
-                body: Body(mode: mode.slug, maxPlayers: 4)
+                body: Body(mode: modeSlug, maxPlayers: 4)
             )
             createRoom(mode: mode, ownUsername: ownUsername)
             backendRoomId = room.id
@@ -387,6 +389,16 @@ import UserNotifications
 
     // MARK: – Standalone solo (Pi/Math) sessions
 
+    /// Removes any existing standalone solo save for the given mode or server slug
+    /// before a new save is appended, so only one save per mode exists at a time.
+    private func removeExistingStandaloneSave(mode: GameMode? = nil, serverSlug: String? = nil) {
+        if let slug = serverSlug {
+            backgroundRooms.removeAll { $0.isStandaloneSolo && $0.serverModeSlug == slug }
+        } else if let m = mode {
+            backgroundRooms.removeAll { $0.isStandaloneSolo && $0.mode == m && $0.serverModeSlug == nil }
+        }
+    }
+
     /// Save a standalone solo Pi session to backgroundRooms. Returns the new room id.
     func saveStandaloneSoloPi(ownUsername: String,
                               lives: Int, skips: Int,
@@ -404,6 +416,7 @@ import UserNotifications
         room.myPiDigitIndex = currentDigit
         room.isStandaloneSolo = true
         room.lastActivityAt = Date()
+        removeExistingStandaloneSave(mode: .pi)
         backgroundRooms.append(room)
         return id
     }
@@ -424,6 +437,7 @@ import UserNotifications
                                    players: [player], status: .playing)
         room.isStandaloneSolo = true
         room.lastActivityAt = Date()
+        removeExistingStandaloneSave(mode: .geography)
         backgroundRooms.append(room)
         return id
     }
@@ -444,6 +458,7 @@ import UserNotifications
                                    players: [player], status: .playing)
         room.isStandaloneSolo = true
         room.lastActivityAt = Date()
+        removeExistingStandaloneSave(mode: .chemistry)
         backgroundRooms.append(room)
         return id
     }
@@ -513,6 +528,7 @@ import UserNotifications
                                    players: [player], status: .playing)
         room.isStandaloneSolo = true
         room.lastActivityAt = Date()
+        removeExistingStandaloneSave(mode: mode)
         backgroundRooms.append(room)
         return id
     }
@@ -533,6 +549,7 @@ import UserNotifications
                                    players: [player], status: .playing)
         room.isStandaloneSolo = true
         room.lastActivityAt = Date()
+        removeExistingStandaloneSave(mode: .grammar)
         backgroundRooms.append(room)
         return id
     }
@@ -555,6 +572,7 @@ import UserNotifications
         room.serverModeName = name
         room.isStandaloneSolo = true
         room.lastActivityAt = Date()
+        removeExistingStandaloneSave(serverSlug: slug)
         backgroundRooms.append(room)
         return id
     }
@@ -575,6 +593,7 @@ import UserNotifications
                                    players: [player], status: .playing)
         room.isStandaloneSolo = true
         room.lastActivityAt = Date()
+        removeExistingStandaloneSave(mode: .math)
         backgroundRooms.append(room)
         return id
     }
