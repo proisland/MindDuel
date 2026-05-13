@@ -11,6 +11,7 @@ const questionSchema = z.object({
 
 const createPackBody = z.object({
   mode:      z.string().min(1),
+  language:  z.string().min(2).max(10).default('no'),
   questions: z.array(questionSchema).min(1),
 })
 
@@ -51,10 +52,16 @@ function parseCsv(csv: string): z.infer<typeof questionSchema>[] {
 export default async function adminQuestionsRoutes(app: FastifyInstance) {
   // GET /admin/questions
   app.get('/', async (_request, reply) => {
-    const packs = await app.prisma.questionPack.findMany({
-      orderBy: [{ mode: 'asc' }, { version: 'desc' }],
-      select: { id: true, mode: true, version: true, isActive: true, createdAt: true },
-    })
+    const [packs, modes] = await Promise.all([
+      app.prisma.questionPack.findMany({
+        orderBy: [{ mode: 'asc' }, { language: 'asc' }, { version: 'desc' }],
+        select: { id: true, mode: true, language: true, version: true, isActive: true, createdAt: true },
+      }),
+      app.prisma.gameMode.findMany({
+        orderBy: { sortOrder: 'asc' },
+        select: { slug: true },
+      }),
+    ])
 
     const grouped: Record<string, typeof packs> = {}
     for (const p of packs) {
@@ -62,7 +69,8 @@ export default async function adminQuestionsRoutes(app: FastifyInstance) {
       grouped[p.mode].push(p)
     }
 
-    return reply.view('admin/questions.ejs', { title: 'Questions', grouped })
+    const modeSlugs = modes.map(m => m.slug)
+    return reply.view('admin/questions.ejs', { title: 'Questions', grouped, modes: modeSlugs })
   })
 
   // POST /admin/questions — upload new pack (JSON body)
@@ -70,23 +78,28 @@ export default async function adminQuestionsRoutes(app: FastifyInstance) {
     const body = createPackBody.safeParse(request.body)
     if (!body.success) return reply.status(400).send({ error: 'Invalid body', details: body.error.flatten() })
 
+    const { mode, language } = body.data
     const latest = await app.prisma.questionPack.findFirst({
-      where: { mode: body.data.mode },
+      where: { mode, language },
       orderBy: { version: 'desc' },
       select: { version: true },
     })
 
     const version = (latest?.version ?? 0) + 1
     const pack = await app.prisma.questionPack.create({
-      data: { mode: body.data.mode, version, data: body.data.questions, isActive: false },
+      data: { mode, language, version, data: body.data.questions, isActive: false },
     })
 
-    return reply.status(201).send({ id: pack.id, mode: pack.mode, version: pack.version })
+    return reply.status(201).send({ id: pack.id, mode: pack.mode, language: pack.language, version: pack.version })
   })
 
-  // POST /admin/questions/csv — upload new pack from CSV body { mode, csv }
+  // POST /admin/questions/csv — upload new pack from CSV body { mode, language, csv }
   app.post('/csv', async (request, reply) => {
-    const body = z.object({ mode: z.string().min(1), csv: z.string().min(1) }).safeParse(request.body)
+    const body = z.object({
+      mode:     z.string().min(1),
+      language: z.string().min(2).max(10).default('no'),
+      csv:      z.string().min(1),
+    }).safeParse(request.body)
     if (!body.success) return reply.status(400).send({ error: 'Invalid body' })
 
     let questions: ReturnType<typeof parseCsv>
@@ -96,18 +109,19 @@ export default async function adminQuestionsRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: err.message })
     }
 
+    const { mode, language } = body.data
     const latest = await app.prisma.questionPack.findFirst({
-      where: { mode: body.data.mode },
+      where: { mode, language },
       orderBy: { version: 'desc' },
       select: { version: true },
     })
 
     const version = (latest?.version ?? 0) + 1
     const pack = await app.prisma.questionPack.create({
-      data: { mode: body.data.mode, version, data: questions, isActive: false },
+      data: { mode, language, version, data: questions, isActive: false },
     })
 
-    return reply.status(201).send({ id: pack.id, mode: pack.mode, version: pack.version, count: questions.length })
+    return reply.status(201).send({ id: pack.id, mode: pack.mode, language: pack.language, version: pack.version, count: questions.length })
   })
 
   // GET /admin/questions/:id/csv — download pack as CSV
@@ -125,7 +139,7 @@ export default async function adminQuestionsRoutes(app: FastifyInstance) {
 
     const csv = `id,level,prompt,correct,distractor1,distractor2,distractor3\n` + rows.join('\n')
     reply.header('Content-Type', 'text/csv')
-    reply.header('Content-Disposition', `attachment; filename="${pack.mode}-v${pack.version}.csv"`)
+    reply.header('Content-Disposition', `attachment; filename="${pack.mode}-${pack.language}-v${pack.version}.csv"`)
     return reply.send(csv)
   })
 
@@ -137,7 +151,7 @@ export default async function adminQuestionsRoutes(app: FastifyInstance) {
 
     await app.prisma.$transaction([
       app.prisma.questionPack.updateMany({
-        where: { mode: pack.mode, isActive: true },
+        where: { mode: pack.mode, language: pack.language, isActive: true },
         data: { isActive: false },
       }),
       app.prisma.questionPack.update({

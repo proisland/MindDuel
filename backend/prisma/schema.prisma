@@ -158,13 +158,14 @@ model GameAnswer {
 model QuestionPack {
   id        String   @id @default(cuid())
   mode      String
+  language  String   @default("no")
   version   Int
   data      Json
   isActive  Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  @@unique([mode, version])
-  @@index([mode, isActive])
+  @@unique([mode, language, version])
+  @@index([mode, language, isActive])
 }
 
 // ── Game modes ────────────────────────────────────────────────────────────────

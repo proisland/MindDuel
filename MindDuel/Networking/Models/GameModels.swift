@@ -52,12 +52,18 @@ struct ModeResponse: Codable {
     let endsAt: Date?
 }
 
+struct QuestionVersionInfo: Decodable {
+    let version: Int
+    let language: String
+}
+
 struct QuestionVersionsResponse: Decodable {
-    let versions: [String: Int]
+    let versions: [String: QuestionVersionInfo]
 }
 
 struct QuestionPackResponse: Decodable {
     let mode: String
+    let language: String
     let version: Int
     let questions: [APIQuestion]
 }
