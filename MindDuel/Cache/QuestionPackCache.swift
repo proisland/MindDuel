@@ -8,8 +8,32 @@ import Foundation
 /// coexist without evicting each other. The app language is detected once per
 /// launch via `Bundle.main.preferredLocalizations.first` and normalised to a
 /// two-letter code; English is the fallback when no supported code matches.
+// Thread-safe in-memory cache for decoded question packs. Used by `nonisolated`
+// methods that can be called from any thread during gameplay.
+private final class MemoryCache: @unchecked Sendable {
+    private var store: [String: [APIQuestion]] = [:]
+    private let lock = NSLock()
+
+    func get(_ key: String) -> [APIQuestion]? {
+        lock.lock(); defer { lock.unlock() }
+        return store[key]
+    }
+
+    func set(_ key: String, _ value: [APIQuestion]) {
+        lock.lock(); defer { lock.unlock() }
+        store[key] = value
+    }
+
+    func remove(_ key: String) {
+        lock.lock(); defer { lock.unlock() }
+        store.removeValue(forKey: key)
+    }
+}
+
 actor QuestionPackCache {
     static let shared = QuestionPackCache()
+
+    private static let memoryCache = MemoryCache()
 
     private let cacheDir: URL
     private let versionsKey = "questionPackVersions"
@@ -70,12 +94,17 @@ actor QuestionPackCache {
     }
 
     /// Returns cached questions for a specific mode and language, or nil if not
-    /// yet downloaded.
+    /// yet downloaded. Results are cached in memory to avoid repeated disk reads.
     nonisolated func questions(for mode: String, language: String) -> [APIQuestion]? {
+        let key = "\(mode)_\(language)"
+        if let cached = Self.memoryCache.get(key) { return cached }
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let file = docs.appendingPathComponent("QuestionPacks/\(mode)_\(language).json")
-        guard let data = try? Data(contentsOf: file) else { return nil }
-        return try? JSONDecoder().decode([APIQuestion].self, from: data)
+        let file = docs.appendingPathComponent("QuestionPacks/\(key).json")
+        guard let data = try? Data(contentsOf: file),
+              let questions = try? JSONDecoder().decode([APIQuestion].self, from: data)
+        else { return nil }
+        Self.memoryCache.set(key, questions)
+        return questions
     }
 
     // MARK: – Private
@@ -92,6 +121,7 @@ actor QuestionPackCache {
         try data.write(to: tmpFile, options: .atomic)
         _ = try? FileManager.default.replaceItemAt(finalFile, withItemAt: tmpFile)
         try? FileManager.default.removeItem(at: tmpFile)
+        Self.memoryCache.remove(cacheKey)
         var versions = loadLocalVersions()
         versions[cacheKey] = version
         saveLocalVersions(versions)

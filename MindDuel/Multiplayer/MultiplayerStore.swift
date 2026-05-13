@@ -49,7 +49,8 @@ import UserNotifications
     }
 
     private func observeWS() {
-        Task {
+        wsObserveTask?.cancel()
+        wsObserveTask = Task {
             for await msg in wsMessages() {
                 handle(wsMessage: msg)
             }
@@ -128,7 +129,9 @@ import UserNotifications
         let players: [MultiplayerPlayer]
     }
 
-    private var botTask: Task<Void, Never>?
+    private var wsObserveTask: Task<Void, Never>?
+    private var botReadyTask: Task<Void, Never>?
+    private var botTurnTask: Task<Void, Never>?
     private var backgroundSimTask: Task<Void, Never>?
 
     private static let backgroundRoomsKey = "multiplayer.backgroundRooms"
@@ -243,8 +246,8 @@ import UserNotifications
     }
 
     private func simulatePlayerReady(playerID: String) {
-        botTask?.cancel()
-        botTask = Task {
+        botReadyTask?.cancel()
+        botReadyTask = Task {
             try? await Task.sleep(nanoseconds: 1_800_000_000)
             guard !Task.isCancelled else { return }
             if let idx = currentRoom?.players.firstIndex(where: { $0.id == playerID }) {
@@ -254,8 +257,8 @@ import UserNotifications
     }
 
     private func seedBotReadyStates() {
-        botTask?.cancel()
-        botTask = Task {
+        botReadyTask?.cancel()
+        botReadyTask = Task {
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             guard !Task.isCancelled else { return }
             if let idx = currentRoom?.players.firstIndex(where: { $0.id == "u1" }) {
@@ -347,8 +350,8 @@ import UserNotifications
 
     func dismissGame() {
         guard let room = currentRoom else { return }
-        botTask?.cancel()
-        botTask = nil
+        botTurnTask?.cancel()
+        botTurnTask = nil
         if room.status == .playing {
             if !backgroundRooms.contains(where: { $0.id == room.id }) {
                 backgroundRooms.append(room)
@@ -372,8 +375,12 @@ import UserNotifications
     }
 
     func leaveRoom() {
-        botTask?.cancel()
-        botTask = nil
+        wsObserveTask?.cancel()
+        wsObserveTask = nil
+        botReadyTask?.cancel()
+        botReadyTask = nil
+        botTurnTask?.cancel()
+        botTurnTask = nil
         backgroundSimTask?.cancel()
         backgroundSimTask = nil
         cancelGameReminderNotification()
@@ -656,14 +663,14 @@ import UserNotifications
     // MARK: – Private helpers
 
     private func scheduleBotTurn() {
-        botTask?.cancel()
+        botTurnTask?.cancel()
         guard let room = currentRoom,
               !room.isMyTurn,
               room.status == .playing,
               room.winner == nil else { return }
 
         let delay = UInt64(Double.random(in: 1_500_000_000...3_500_000_000))
-        botTask = Task {
+        botTurnTask = Task {
             try? await Task.sleep(nanoseconds: delay)
             guard !Task.isCancelled else { return }
             executeBotTurn()
