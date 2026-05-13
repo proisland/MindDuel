@@ -10,9 +10,10 @@ struct MultiplayerLobbyView: View {
     @ObservedObject private var progression = ProgressionStore.shared
     @ObservedObject private var modePrefs = ModePreferences.shared
     @Environment(\.dismiss) private var dismiss
-    @State private var showGame        = false
+    @State private var showGame         = false
     @State private var showFriendPicker = false
     @State private var pickerSelection: Set<String> = []
+    @State private var roomName         = ""
 
     var body: some View {
         ZStack {
@@ -52,6 +53,7 @@ struct MultiplayerLobbyView: View {
             } else if store.currentRoom == nil {
                 store.joinMockRoom(ownUsername: ownUsername)
             }
+            roomName = store.currentRoom?.customName ?? ""
         }
         .onDisappear {
             if store.currentRoom?.status == .lobby {
@@ -113,11 +115,9 @@ struct MultiplayerLobbyView: View {
             if editable {
                 TextField(
                     String(localized: "multiplayer_name_placeholder"),
-                    text: Binding(
-                        get: { store.currentRoom?.customName ?? "" },
-                        set: { store.currentRoom?.customName = $0 }
-                    )
+                    text: $roomName
                 )
+                .onSubmit { store.currentRoom?.customName = roomName }
                 .mdStyle(.bodyMd)
                 .foregroundStyle(Color.mdText)
                 .padding(.horizontal, MDSpacing.md)

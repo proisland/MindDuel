@@ -24,12 +24,21 @@ final class WebSocketClient: NSObject, ObservableObject {
 
     func connect(roomId: String) {
         pingTask?.cancel()
-        guard let token = AuthTokenStore.shared.accessToken else { return }
-        var components = URLComponents(string: "\(wsBase)/\(roomId)/ws")!
-        components.queryItems = [URLQueryItem(name: "token", value: token)]
-        guard let url = components.url else { return }
-
         state = .connecting
+        Task { @MainActor in
+            await connectAsync(roomId: roomId)
+        }
+    }
+
+    private func connectAsync(roomId: String) async {
+        struct TicketResponse: Decodable { let ticket: String }
+        guard let response = try? await APIClient.shared.post("rooms/ws/ticket", body: Empty()) as TicketResponse,
+              var components = URLComponents(string: "\(wsBase)/\(roomId)/ws") else {
+            state = .disconnected; return
+        }
+        components.queryItems = [URLQueryItem(name: "ticket", value: response.ticket)]
+        guard let url = components.url else { state = .disconnected; return }
+
         task = URLSession.shared.webSocketTask(with: url)
         task?.resume()
         scheduleReceive()

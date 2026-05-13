@@ -44,12 +44,15 @@ actor APIClient {
     private func request<B: Encodable, T: Decodable>(
         method: String, path: String, query: [String: String], body: B?
     ) async throws -> T {
-        var urlComponents = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
+        guard var urlComponents = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false) else {
+            throw URLError(.badURL)
+        }
         if !query.isEmpty {
             urlComponents.queryItems = query.map { URLQueryItem(name: $0.key, value: $0.value) }
         }
+        guard let requestURL = urlComponents.url else { throw URLError(.badURL) }
 
-        var req = URLRequest(url: urlComponents.url!)
+        var req = URLRequest(url: requestURL)
         req.httpMethod = method
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
 

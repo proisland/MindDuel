@@ -35,7 +35,7 @@ const endSessionBody = z.object({
 
 const syncQuotaBody = z.object({
   localDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  localCount: z.number().int().min(0),
+  localCount: z.number().int().min(0).max(config.quota.freeLimit),
 })
 
 async function getOrCreateQuota(
@@ -100,16 +100,17 @@ export default async function gamesRoutes(app: FastifyInstance) {
     const progression = user.progressions[0]
     const startPos = body.data.startPosition ?? progression?.position ?? 0
 
-    const session = await app.prisma.gameSession.create({
-      data: {
-        userId: request.userId,
-        mode: body.data.mode,
-        isTraining: body.data.isTraining,
-      },
+    const session = await app.prisma.$transaction(async (tx) => {
+      const s = await tx.gameSession.create({
+        data: {
+          userId: request.userId,
+          mode: body.data.mode,
+          isTraining: body.data.isTraining,
+        },
+      })
+      await tx.$executeRaw`UPDATE "GameSession" SET "startPosition" = ${startPos} WHERE id = ${s.id}`
+      return s
     })
-
-    // startPosition not in stale Prisma client — write via raw SQL
-    await app.prisma.$executeRaw`UPDATE "GameSession" SET "startPosition" = ${startPos} WHERE id = ${session.id}`
 
     return reply.send({
       sessionToken: session.sessionToken,

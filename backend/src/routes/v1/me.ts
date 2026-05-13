@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { config } from '../../config'
+import { revokeAllRefreshTokens } from '../../lib/tokens'
 
 const RESERVED_USERNAMES = new Set(['admin', 'mindduel', 'support', 'moderator', 'system'])
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
@@ -149,6 +150,7 @@ export default async function meRoutes(app: FastifyInstance) {
 
   // DELETE /v1/me
   app.delete('/', auth, async (request, reply) => {
+    await revokeAllRefreshTokens(app.redis, request.userId)
     await app.prisma.user.delete({ where: { id: request.userId } })
     return reply.status(204).send()
   })

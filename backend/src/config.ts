@@ -36,7 +36,9 @@ export const config = {
   },
 
   admin: {
-    sessionSecret: process.env.ADMIN_SESSION_SECRET ?? 'dev-admin-secret',
+    sessionSecret: process.env.NODE_ENV === 'production'
+      ? required('ADMIN_SESSION_SECRET')
+      : (process.env.ADMIN_SESSION_SECRET ?? 'dev-admin-secret'),
   },
 
   quota: {

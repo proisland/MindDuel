@@ -125,6 +125,13 @@ export default async function wsRoutes(app: FastifyInstance) {
   })
   app.addHook('onClose', async () => { await subscriber.quit() })
 
+  // POST /v1/rooms/ws/ticket — issue a one-time WS connection ticket (30 s TTL)
+  app.post('/rooms/ws/ticket', auth, async (request, reply) => {
+    const ticket = crypto.randomBytes(16).toString('hex')
+    await app.redis.set(`ws_ticket:${ticket}`, request.userId, 'EX', 30)
+    return reply.status(201).send({ ticket })
+  })
+
   // POST /v1/rooms — create a multiplayer room
   app.post('/rooms', auth, async (request, reply) => {
     const body = createRoomBody.safeParse(request.body)
@@ -196,17 +203,13 @@ export default async function wsRoutes(app: FastifyInstance) {
 
   // WS /v1/rooms/:roomId/ws — real-time game connection
   app.get('/rooms/:roomId/ws', { websocket: true }, async (socket: WebSocket, request) => {
-    // Authenticate via ?token= query param (JWT cannot be sent in WS headers from iOS)
-    const token = (request.query as { token?: string }).token
-    if (!token) { socket.close(4001, 'Unauthorized'); return }
+    // Authenticate via one-time ?ticket= query param fetched just before connecting.
+    // Short-lived tickets avoid exposing the long-lived JWT in WS URLs.
+    const ticket = (request.query as { ticket?: string }).ticket
+    if (!ticket) { socket.close(4001, 'Unauthorized'); return }
 
-    let userId: string
-    try {
-      const payload = app.jwt.verify(token) as { sub: string }
-      userId = payload.sub
-    } catch {
-      socket.close(4001, 'Invalid token'); return
-    }
+    const userId = await app.redis.getdel(`ws_ticket:${ticket}`)
+    if (!userId) { socket.close(4001, 'Invalid or expired ticket'); return }
 
     // Verify user is not suspended before allowing connection
     const user = await app.prisma.user.findUnique({

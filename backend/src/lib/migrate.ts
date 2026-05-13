@@ -150,4 +150,12 @@ async function runMigrationsInternal(prisma: PrismaClient) {
     UPDATE "GameMode" SET "nameNo" = name WHERE "nameNo" = ''
   `)
 
+  // Enable trigram extension for fast ILIKE username search.
+  await prisma.$executeRawUnsafe(`CREATE EXTENSION IF NOT EXISTS pg_trgm`)
+
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS "User_username_trgm_idx"
+      ON "User" USING GIN (username gin_trgm_ops)
+  `)
+
 }

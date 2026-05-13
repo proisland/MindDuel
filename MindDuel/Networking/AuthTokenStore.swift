@@ -2,6 +2,8 @@ import Foundation
 import Security
 
 /// Persists JWT access + refresh tokens in the iOS Keychain.
+/// An in-memory cache backed by NSLock avoids a Keychain round-trip on every
+/// token read and ensures that `save(accessToken:refreshToken:)` is atomic.
 final class AuthTokenStore {
     static let shared = AuthTokenStore()
 
@@ -9,39 +11,68 @@ final class AuthTokenStore {
     private let accessKey = "accessToken"
     private let refreshKey = "refreshToken"
 
-    private init() {}
+    private let lock = NSLock()
+    private var cachedAccessToken: String?
+    private var cachedRefreshToken: String?
+
+    private init() {
+        cachedAccessToken  = readKeychain(key: accessKey)
+        cachedRefreshToken = readKeychain(key: refreshKey)
+    }
 
     var accessToken: String? {
-        get { read(key: accessKey) }
-        set { newValue == nil ? delete(key: accessKey) : write(key: accessKey, value: newValue!) }
+        get { lock.withLock { cachedAccessToken } }
+        set {
+            lock.withLock {
+                cachedAccessToken = newValue
+                if let v = newValue { writeKeychain(key: accessKey, value: v) }
+                else { deleteKeychain(key: accessKey) }
+            }
+        }
     }
 
     var refreshToken: String? {
-        get { read(key: refreshKey) }
-        set { newValue == nil ? delete(key: refreshKey) : write(key: refreshKey, value: newValue!) }
+        get { lock.withLock { cachedRefreshToken } }
+        set {
+            lock.withLock {
+                cachedRefreshToken = newValue
+                if let v = newValue { writeKeychain(key: refreshKey, value: v) }
+                else { deleteKeychain(key: refreshKey) }
+            }
+        }
     }
 
     func save(accessToken: String, refreshToken: String) {
-        self.accessToken = accessToken
-        self.refreshToken = refreshToken
+        lock.withLock {
+            cachedAccessToken  = accessToken
+            cachedRefreshToken = refreshToken
+            writeKeychain(key: accessKey,  value: accessToken)
+            writeKeychain(key: refreshKey, value: refreshToken)
+        }
     }
 
     func clear() {
-        accessToken = nil
-        refreshToken = nil
+        lock.withLock {
+            cachedAccessToken  = nil
+            cachedRefreshToken = nil
+            deleteKeychain(key: accessKey)
+            deleteKeychain(key: refreshKey)
+        }
     }
 
     // MARK: – Keychain primitives
 
-    private func write(key: String, value: String) {
+    private func writeKeychain(key: String, value: String) {
         guard let data = value.data(using: .utf8) else { return }
         var query = baseQuery(key: key)
         query[kSecValueData as String] = data
         SecItemDelete(query as CFDictionary)
-        SecItemAdd(query as CFDictionary, nil)
+        let status = SecItemAdd(query as CFDictionary, nil)
+        assert(status == errSecSuccess || status == errSecDuplicateItem,
+               "Keychain write failed: \(status)")
     }
 
-    private func read(key: String) -> String? {
+    private func readKeychain(key: String) -> String? {
         var query = baseQuery(key: key)
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
@@ -51,7 +82,7 @@ final class AuthTokenStore {
         return String(data: data, encoding: .utf8)
     }
 
-    private func delete(key: String) {
+    private func deleteKeychain(key: String) {
         SecItemDelete(baseQuery(key: key) as CFDictionary)
     }
 

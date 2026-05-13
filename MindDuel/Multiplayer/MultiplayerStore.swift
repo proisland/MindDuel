@@ -19,23 +19,19 @@ import UserNotifications
 
     // MARK: – API room creation / join
 
-    /// Creates a real room via the backend. Falls back to local mock on failure.
+    /// Creates a real room via the backend.
     /// Pass `serverSlug` when the selected mode is a server-only mode (no GameMode enum case).
-    func createRealRoom(mode: GameMode, serverSlug: String? = nil, ownUsername: String) async {
+    func createRealRoom(mode: GameMode, serverSlug: String? = nil, ownUsername: String) async throws {
         let modeSlug = serverSlug ?? mode.slug
-        do {
-            struct Body: Encodable { let mode: String; let maxPlayers: Int }
-            let room: RoomResponse = try await APIClient.shared.post(
-                "ws/rooms",
-                body: Body(mode: modeSlug, maxPlayers: 4)
-            )
-            createRoom(mode: mode, ownUsername: ownUsername)
-            backendRoomId = room.id
-            wsClient.connect(roomId: room.id)
-            observeWS()
-        } catch {
-            createRoom(mode: mode, ownUsername: ownUsername)
-        }
+        struct Body: Encodable { let mode: String; let maxPlayers: Int }
+        let room: RoomResponse = try await APIClient.shared.post(
+            "ws/rooms",
+            body: Body(mode: modeSlug, maxPlayers: 4)
+        )
+        createRoom(mode: mode, ownUsername: ownUsername)
+        backendRoomId = room.id
+        wsClient.connect(roomId: room.id)
+        observeWS()
     }
 
     /// Joins an existing room by code.
