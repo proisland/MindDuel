@@ -23,6 +23,7 @@ final class WebSocketClient: NSObject, ObservableObject {
     #endif
 
     func connect(roomId: String) {
+        pingTask?.cancel()
         guard let token = AuthTokenStore.shared.accessToken else { return }
         var components = URLComponents(string: "\(wsBase)/\(roomId)/ws")!
         components.queryItems = [URLQueryItem(name: "token", value: token)]
@@ -31,7 +32,6 @@ final class WebSocketClient: NSObject, ObservableObject {
         state = .connecting
         task = URLSession.shared.webSocketTask(with: url)
         task?.resume()
-        state = .connected
         scheduleReceive()
         schedulePing()
     }
@@ -57,6 +57,7 @@ final class WebSocketClient: NSObject, ObservableObject {
                 guard let self else { return }
                 switch result {
                 case .success(let msg):
+                    if self.state != .connected { self.state = .connected }
                     self.handleRaw(msg)
                     self.scheduleReceive()
                 case .failure:

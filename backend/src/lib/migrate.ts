@@ -1,11 +1,19 @@
 import type { PrismaClient } from '@prisma/client'
 
-/**
- * Idempotent schema migrations run at startup.
- * Each statement uses IF NOT EXISTS / IF column NOT EXISTS so they're safe
- * to run on every boot without a migration history file.
- */
+// Distinctive bigint constant used as a PostgreSQL advisory lock key to
+// serialize startup migrations across rolling-deploy instances.
+const MIGRATION_LOCK_KEY = BigInt('8675309001')
+
 export async function runStartupMigrations(prisma: PrismaClient) {
+  await prisma.$executeRaw`SELECT pg_advisory_lock(${MIGRATION_LOCK_KEY})`
+  try {
+    await runMigrationsInternal(prisma)
+  } finally {
+    await prisma.$executeRaw`SELECT pg_advisory_unlock(${MIGRATION_LOCK_KEY})`
+  }
+}
+
+async function runMigrationsInternal(prisma: PrismaClient) {
   await prisma.$executeRawUnsafe(`
     ALTER TABLE "User"
       ADD COLUMN IF NOT EXISTS "locale" TEXT

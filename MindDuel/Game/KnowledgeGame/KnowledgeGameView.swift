@@ -20,6 +20,8 @@ struct KnowledgeGameView: View {
     @State private var roundResult:          ProgressionStore.RoundResult? = nil
     @State private var startLevel:           Int
     @State private var seenCorrectIds:       Set<String> = []
+    @State private var feedbackTask:         Task<Void, Never>? = nil
+    @State private var sessionEnded         = false
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var sessionService  = GameSessionService()
@@ -81,8 +83,9 @@ struct KnowledgeGameView: View {
             currentQuestion = Self.pickQuestion(slug: serverMode.slug, level: lvl)
         }
         .onDisappear {
+            feedbackTask?.cancel()
             autoSaveIfInProgress()
-            Task { try? await sessionService.endSession() }
+            endSessionOnce()
         }
         .onReceive(timer) { _ in handleTimerTick() }
         .onChange(of: engine.isRoundOver) { over in
@@ -205,7 +208,7 @@ struct KnowledgeGameView: View {
         let answeredAt = ISO8601DateFormatter.ms.string(from: Date())
         Task { try? await sessionService.submitAnswer(answeredAt: answeredAt, questionId: q.id, answer: q.options[index], isCorrect: correct) }
 
-        Task {
+        feedbackTask = Task {
             try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
             if correct {
                 seenCorrectIds.insert(q.id)
@@ -231,6 +234,7 @@ struct KnowledgeGameView: View {
     }
 
     private func handleTimerTick() {
+        guard !showQuitModal else { return }
         guard !engine.isRoundOver, !engine.isWaitingAfterSkip,
               feedbackIsCorrect == nil, !progression.isQuotaExhausted else { return }
         elapsedSeconds = min(elapsedSeconds + 0.1, 10.0)
@@ -244,9 +248,15 @@ struct KnowledgeGameView: View {
         elapsedSeconds = 0
     }
 
+    private func endSessionOnce() {
+        guard !sessionEnded else { return }
+        sessionEnded = true
+        Task { try? await sessionService.endSession() }
+    }
+
     private func saveAndExit() {
         guard roundResult == nil else { return }
-        Task { try? await sessionService.endSession() }
+        endSessionOnce()
         _ = MultiplayerStore.shared.saveStandaloneSoloKnowledge(
             slug: serverMode.slug,
             name: serverMode.name,
@@ -289,7 +299,7 @@ struct KnowledgeGameView: View {
 
     private func finaliseRound(won: Bool) {
         guard roundResult == nil else { return }
-        Task { try? await sessionService.endSession() }
+        endSessionOnce()
         roundResult = progression.applyGenericRound(
             slug: serverMode.slug,
             correctCount: engine.correctCount,
@@ -315,7 +325,6 @@ struct KnowledgeGameView: View {
         let pool     = atLevel.isEmpty ? all : atLevel
         let eligible = pool.filter { !excludeIds.contains($0.id) }
         let source   = eligible.isEmpty ? pool : eligible
-        guard let q  = source.randomElement() else { return nil }
-        return q.shufflingOptions()
+        return source.randomElement()?.shufflingOptions()
     }
 }

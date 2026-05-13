@@ -208,6 +208,16 @@ export default async function wsRoutes(app: FastifyInstance) {
       socket.close(4001, 'Invalid token'); return
     }
 
+    // Verify user is not suspended before allowing connection
+    const user = await app.prisma.user.findUnique({
+      where: { id: userId },
+      select: { isSuspended: true, username: true, avatarEmoji: true },
+    })
+    if (!user || user.isSuspended || !user.username) {
+      socket.close(4003, 'Unauthorized')
+      return
+    }
+
     const { roomId } = request.params as { roomId: string }
     const state = await getRoomState(app.redis, roomId)
     if (!state) { socket.close(4004, 'Room not found'); return }
@@ -219,11 +229,6 @@ export default async function wsRoutes(app: FastifyInstance) {
     // Add participant if not already in room
     if (!state.participants.find(p => p.userId === userId)) {
       if (state.participants.length >= 8) { socket.close(4008, 'Room full'); return }
-      const user = await app.prisma.user.findUnique({
-        where: { id: userId },
-        select: { username: true, avatarEmoji: true },
-      })
-      if (!user?.username) { socket.close(4003, 'Username required'); return }
       state.participants.push({
         userId, username: user.username, avatarEmoji: user.avatarEmoji,
         lives: 5, skips: 5, isActive: true, score: 0,
@@ -232,6 +237,7 @@ export default async function wsRoutes(app: FastifyInstance) {
     } else {
       const p = state.participants.find(p => p.userId === userId)!
       p.isActive = true
+      await app.redis.del(`disconnect:${roomId}:${userId}`)
       await setRoomState(app.redis, state)
     }
 
@@ -330,10 +336,13 @@ export default async function wsRoutes(app: FastifyInstance) {
     // ── Disconnect handling ────────────────────────────────────────────────────
     socket.on('close', async () => {
       connections.get(roomId)?.delete(userId)
+      await app.redis.set(`disconnect:${roomId}:${userId}`, '1', 'PX', DISCONNECT_GRACE_MS + 5000)
 
       // Grace period: wait before treating as left
       setTimeout(async () => {
-        if (connections.get(roomId)?.has(userId)) return // reconnected
+        if (connections.get(roomId)?.has(userId)) return // reconnected locally
+        const stillDisconnected = await app.redis.exists(`disconnect:${roomId}:${userId}`)
+        if (!stillDisconnected) return // reconnected on another instance
 
         await withRoomLock(app.redis, roomId, async () => {
           const s = await getRoomState(app.redis, roomId)
@@ -343,6 +352,7 @@ export default async function wsRoutes(app: FastifyInstance) {
           if (!p) return
 
           p.isActive = false
+          await app.redis.del(`disconnect:${roomId}:${userId}`)
           await publish(app.redis, roomId, { type: 'player_disconnected', userId })
           advanceTurn(s)
           await setRoomState(app.redis, s)
