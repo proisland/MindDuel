@@ -1,4 +1,4 @@
-const K = 100 // calibration constant — adjustable via admin in future
+const K = 10 // calibration constant — adjustable via admin in future
 
 interface Answer {
   isCorrect: boolean

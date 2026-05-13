@@ -1496,13 +1496,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ready for a new challenge?"
+            "value" : "Are you ready for a new challenge?"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Klar for en ny utfordring?"
+            "value" : "Er du klar for en ny utfordring?"
           }
         }
       }

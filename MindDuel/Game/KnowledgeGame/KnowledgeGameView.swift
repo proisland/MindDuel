@@ -19,6 +19,7 @@ struct KnowledgeGameView: View {
     @State private var showQuitModal         = false
     @State private var roundResult:          ProgressionStore.RoundResult? = nil
     @State private var startLevel:           Int
+    @State private var seenCorrectIds:       Set<String> = []
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var sessionService  = GameSessionService()
@@ -207,6 +208,7 @@ struct KnowledgeGameView: View {
         Task {
             try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
             if correct {
+                seenCorrectIds.insert(q.id)
                 totalAnswerTime += elapsedSeconds
                 progression.recordCorrectAnswerTime(elapsedSeconds)
                 engine.recordCorrect()
@@ -237,7 +239,7 @@ struct KnowledgeGameView: View {
 
     private func loadNextQuestion() {
         let lvl = progression.level(forSlug: serverMode.slug)
-        currentQuestion = Self.pickQuestion(slug: serverMode.slug, level: lvl)
+        currentQuestion = Self.pickQuestion(slug: serverMode.slug, level: lvl, excludeIds: seenCorrectIds)
         problemCount += 1
         elapsedSeconds = 0
     }
@@ -300,16 +302,20 @@ struct KnowledgeGameView: View {
     private func resetRound() {
         let lvl = progression.level(forSlug: serverMode.slug)
         startLevel      = lvl
+        seenCorrectIds  = []
         currentQuestion = Self.pickQuestion(slug: serverMode.slug, level: lvl)
         problemCount = 1; elapsedSeconds = 0; totalAnswerTime = 0
         feedbackIsCorrect = nil; selectedIndex = nil; roundResult = nil
         engine.restart()
     }
 
-    private static func pickQuestion(slug: String, level: Int) -> APIQuestion? {
-        let all       = QuestionPackCache.shared.questions(for: slug) ?? []
-        let atLevel   = all.filter { $0.level == level }
-        let pool      = atLevel.isEmpty ? all : atLevel
-        return pool.randomElement()
+    private static func pickQuestion(slug: String, level: Int, excludeIds: Set<String> = []) -> APIQuestion? {
+        let all      = QuestionPackCache.shared.questions(for: slug) ?? []
+        let atLevel  = all.filter { $0.level == level }
+        let pool     = atLevel.isEmpty ? all : atLevel
+        let eligible = pool.filter { !excludeIds.contains($0.id) }
+        let source   = eligible.isEmpty ? pool : eligible
+        guard let q  = source.randomElement() else { return nil }
+        return q.shufflingOptions()
     }
 }
