@@ -3,7 +3,8 @@ import { z } from 'zod'
 
 const createBody = z.object({
   slug:        z.string().min(1).regex(/^[a-z0-9_]+$/, 'Slug must be lowercase alphanumeric + underscores'),
-  name:        z.string().min(1),
+  nameNo:      z.string().min(1),
+  nameEn:      z.string().default(''),
   isActive:    z.boolean().default(false),
   iconSymbol:  z.string().min(1).default('questionmark'),
   colorHex:    z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a 6-digit hex color').default('#6366F1'),
@@ -13,7 +14,8 @@ const createBody = z.object({
 })
 
 const patchBody = z.object({
-  name:        z.string().min(1).optional(),
+  nameNo:      z.string().min(1).optional(),
+  nameEn:      z.string().optional(),
   isActive:    z.boolean().optional(),
   iconSymbol:  z.string().min(1).optional(),
   colorHex:    z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a 6-digit hex color').optional(),
@@ -43,10 +45,13 @@ export default async function adminModesRoutes(app: FastifyInstance) {
       sortOrder = (last?.sortOrder ?? -1) + 1
     }
 
-    const { startsAt, endsAt, sortOrder: _so, ...rest } = body.data
+    const { startsAt, endsAt, sortOrder: _so, nameNo, nameEn, ...rest } = body.data
     const mode = await app.prisma.gameMode.create({
       data: {
         ...rest,
+        name: nameNo,
+        nameNo,
+        nameEn,
         sortOrder,
         ...(startsAt != null && { startsAt: new Date(startsAt) }),
         ...(endsAt != null && { endsAt: new Date(endsAt) }),
@@ -87,7 +92,8 @@ export default async function adminModesRoutes(app: FastifyInstance) {
     const mode = await app.prisma.gameMode.update({
       where: { id },
       data: {
-        ...(body.data.name        !== undefined && { name: body.data.name }),
+        ...(body.data.nameNo      !== undefined && { nameNo: body.data.nameNo, name: body.data.nameNo }),
+        ...(body.data.nameEn      !== undefined && { nameEn: body.data.nameEn }),
         ...(body.data.isActive    !== undefined && { isActive: body.data.isActive }),
         ...(body.data.iconSymbol  !== undefined && { iconSymbol: body.data.iconSymbol }),
         ...(body.data.colorHex    !== undefined && { colorHex: body.data.colorHex }),

@@ -10,9 +10,14 @@
         class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 w-36">
     </div>
     <div>
-      <label class="block text-xs text-gray-400 mb-1">Name</label>
-      <input name="name" placeholder="e.g. Trivia" required
-        class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 w-40">
+      <label class="block text-xs text-gray-400 mb-1">Navn (norsk)</label>
+      <input name="nameNo" placeholder="f.eks. Trivia" required
+        class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 w-36">
+    </div>
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">Name (English)</label>
+      <input name="nameEn" placeholder="e.g. Trivia"
+        class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 w-36">
     </div>
     <div>
       <label class="block text-xs text-gray-400 mb-1">Icon (SF Symbol)</label>
@@ -63,10 +68,19 @@
         <tr id="mode-<%= m.id %>" data-id="<%= m.id %>" class="hover:bg-gray-850">
           <td class="px-2 py-3 text-gray-500 drag-handle cursor-grab select-none text-center text-base">⠿</td>
           <td class="px-4 py-3">
-            <span id="name-display-<%= m.id %>" class="font-medium"><%= m.name %></span>
-            <span class="text-gray-500 text-xs ml-1">(<%= m.slug %>)</span>
-            <input id="name-input-<%= m.id %>" value="<%= m.name %>"
-              class="hidden bg-gray-800 border border-gray-600 rounded px-2 py-0.5 text-sm text-white w-36 focus:outline-none focus:border-indigo-500">
+            <div id="name-display-<%= m.id %>">
+              <span class="font-medium"><%= m.nameNo || m.name %></span>
+              <% if (m.nameEn) { %>
+                <span class="text-gray-500 text-xs ml-1">/ <%= m.nameEn %></span>
+              <% } %>
+              <span class="text-gray-500 text-xs ml-1">(<%= m.slug %>)</span>
+            </div>
+            <div id="name-edit-<%= m.id %>" class="hidden flex flex-col gap-1">
+              <input id="nameNo-input-<%= m.id %>" value="<%= m.nameNo || m.name %>" placeholder="Norsk"
+                class="bg-gray-800 border border-gray-600 rounded px-2 py-0.5 text-sm text-white w-36 focus:outline-none focus:border-indigo-500">
+              <input id="nameEn-input-<%= m.id %>" value="<%= m.nameEn %>" placeholder="English"
+                class="bg-gray-800 border border-gray-600 rounded px-2 py-0.5 text-sm text-white w-36 focus:outline-none focus:border-indigo-500">
+            </div>
           </td>
           <td class="px-4 py-3">
             <div id="icon-display-<%= m.id %>" class="flex items-center gap-2">
@@ -115,7 +129,7 @@
                 class="hidden text-xs px-3 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white">
                 Save
               </button>
-              <button onclick="deleteMode('<%= m.id %>', '<%= m.name %>')"
+              <button onclick="deleteMode('<%= m.id %>', '<%= m.nameNo || m.name %>')"
                 class="text-xs px-3 py-1 rounded bg-gray-700 hover:bg-red-900 text-red-400">
                 Delete
               </button>
@@ -161,7 +175,8 @@ async function createMode(e) {
   const colorHex = form.colorHexText.value.trim() || form.colorHex.value
   const data = {
     slug:        form.slug.value.trim(),
-    name:        form.name.value.trim(),
+    nameNo:      form.nameNo.value.trim(),
+    nameEn:      form.nameEn.value.trim(),
     iconSymbol:  form.iconSymbol.value.trim() || 'questionmark',
     colorHex:    colorHex,
     startsAt:    toISO(form.startsAt.value),
@@ -182,7 +197,7 @@ async function createMode(e) {
 
 function startEdit(id) {
   document.getElementById('name-display-' + id).classList.add('hidden')
-  document.getElementById('name-input-' + id).classList.remove('hidden')
+  document.getElementById('name-edit-' + id).classList.remove('hidden')
   document.getElementById('icon-display-' + id).classList.add('hidden')
   document.getElementById('icon-edit-' + id).classList.remove('hidden')
   document.getElementById('startsAt-display-' + id).classList.add('hidden')
@@ -194,14 +209,16 @@ function startEdit(id) {
 }
 
 async function saveEdit(id) {
-  const name = document.getElementById('name-input-' + id).value.trim()
-  if (!name) return
+  const nameNo = document.getElementById('nameNo-input-' + id).value.trim()
+  if (!nameNo) return
+  const nameEn = document.getElementById('nameEn-input-' + id).value.trim()
   const colorHex = document.getElementById('colorHex-input-' + id).value.trim()
   const res = await fetch('/admin/modes/' + id, {
     method: 'PATCH',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({
-      name,
+      nameNo,
+      nameEn,
       iconSymbol: document.getElementById('iconSymbol-input-' + id).value.trim(),
       colorHex:   /^#[0-9A-Fa-f]{6}$/.test(colorHex) ? colorHex : undefined,
       startsAt:   toISO(document.getElementById('startsAt-input-' + id).value),

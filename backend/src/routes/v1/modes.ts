@@ -29,7 +29,7 @@ export default async function modesRoutes(app: FastifyInstance) {
         ],
       },
       orderBy: { sortOrder: 'asc' },
-      select: { slug: true, name: true, iconSymbol: true, colorHex: true, startsAt: true, endsAt: true, sortOrder: true },
+      select: { slug: true, nameNo: true, nameEn: true, iconSymbol: true, colorHex: true, startsAt: true, endsAt: true, sortOrder: true },
     })
 
     const payload = { modes, fetchedAt: new Date().toISOString() }

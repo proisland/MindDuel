@@ -25,7 +25,7 @@ struct MultiplayerLobbyView: View {
                         if let room = store.currentRoom {
                             nameSection(room: room, editable: isHost(room))
                             modeSection(room: room, editable: isHost(room))
-                            if isHost(room) && (room.mode == .math || room.mode == .chemistry || room.mode == .geography || room.mode == .brainTraining || room.mode == .science || room.mode == .history || room.mode == .physics || room.mode == .sport || room.mode == .grammar) {
+                            if isHost(room) && (room.serverModeSlug != nil || room.mode != .pi) {
                                 startLevelSection(room: room)
                             }
                             if isHost(room) {
@@ -144,13 +144,15 @@ struct MultiplayerLobbyView: View {
     @ViewBuilder
     private func modeSection(room: MultiplayerRoom, editable: Bool) -> some View {
         sectionLabel(String(localized: "multiplayer_mode_label"))
-        // Horizontally scrollable pills, mirroring the Home screen's
-        // "Hurtig tilgang" layout so the host can pick from every mode
-        // without crowding the lobby (per Claude Design iteration).
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(modePrefs.activeOrder) { mode in
-                    modeButton(mode, room: room, editable: editable)
+                ForEach(modePrefs.activeCombinedOrder) { anyMode in
+                    switch anyMode {
+                    case .known(let mode):
+                        modeButton(mode, room: room, editable: editable)
+                    case .server(let sm):
+                        serverModeButton(sm, room: room, editable: editable)
+                    }
                 }
             }
             .padding(.vertical, 2)
@@ -158,10 +160,14 @@ struct MultiplayerLobbyView: View {
     }
 
     private func modeButton(_ mode: GameMode, room: MultiplayerRoom, editable: Bool) -> some View {
-        let isActive = room.mode == mode
+        let isActive = room.serverModeSlug == nil && room.mode == mode
         let color = mode.accentColor
         return Button {
-            if editable { store.currentRoom?.mode = mode }
+            if editable {
+                store.currentRoom?.mode = mode
+                store.currentRoom?.serverModeSlug = nil
+                store.currentRoom?.serverModeName = nil
+            }
         } label: {
             VStack(spacing: 5) {
                 ZStack {
@@ -181,6 +187,42 @@ struct MultiplayerLobbyView: View {
             .padding(.vertical, 10)
             .frame(width: 78)
             .background(isActive ? mode.deepBg : Color.white.opacity(0.05))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14)
+                        .stroke(isActive ? color.opacity(0.7) : Color.white.opacity(0.08),
+                                lineWidth: isActive ? 1.5 : 1))
+        }
+        .buttonStyle(.plain)
+        .disabled(!editable && !isActive)
+    }
+
+    private func serverModeButton(_ sm: ServerMode, room: MultiplayerRoom, editable: Bool) -> some View {
+        let isActive = room.serverModeSlug == sm.slug
+        let color = sm.accentColor
+        return Button {
+            if editable {
+                store.currentRoom?.serverModeSlug = sm.slug
+                store.currentRoom?.serverModeName = sm.name
+            }
+        } label: {
+            VStack(spacing: 5) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(color.opacity(isActive ? 0.15 : 0.09))
+                    ServerModeGlyph(iconSymbol: sm.iconSymbol, size: 16, color: color)
+                }
+                .frame(width: 34, height: 34)
+                Text(sm.name)
+                    .font(.system(size: 10, weight: isActive ? .heavy : .medium))
+                    .foregroundStyle(isActive ? Color.mdText : Color.mdText3)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2, reservesSpace: true)
+                    .minimumScaleFactor(0.85)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 10)
+            .frame(width: 78)
+            .background(isActive ? Color(hex: sm.colorHex)?.opacity(0.12) ?? Color.white.opacity(0.05) : Color.white.opacity(0.05))
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay(RoundedRectangle(cornerRadius: 14)
                         .stroke(isActive ? color.opacity(0.7) : Color.white.opacity(0.08),
@@ -308,20 +350,26 @@ struct MultiplayerLobbyView: View {
     }
 
     private func playerRow(_ player: MultiplayerPlayer) -> some View {
-        let mode = store.currentRoom?.mode ?? .pi
+        let room = store.currentRoom
         let level: Int
         let score: Int
-        switch mode {
-        case .pi:            level = player.piLevel;    score = player.piBestScore
-        case .math:          level = player.mathLevel;  score = player.mathBestScore
-        case .chemistry:     level = player.chemLevel;  score = player.chemBestScore
-        case .geography:     level = player.geoLevel;   score = player.geoBestScore
-        case .brainTraining: level = player.brainLevel; score = player.brainBestScore
-        case .science:       level = player.scienceLevel; score = player.scienceBestScore
-        case .history:       level = player.historyLevel; score = player.historyBestScore
-        case .physics:       level = player.physicsLevel; score = player.physicsBestScore
-        case .sport:         level = player.sportLevel;   score = player.sportBestScore
-        case .grammar:       level = player.grammarLevel; score = player.grammarBestScore
+        if let slug = room?.serverModeSlug {
+            // Server-only mode: use slug-based progression for the current user only.
+            level = player.isYou ? progression.level(forSlug: slug) : 1
+            score = player.isYou ? progression.bestScore(forSlug: slug) : 0
+        } else {
+            switch room?.mode ?? .pi {
+            case .pi:            level = player.piLevel;    score = player.piBestScore
+            case .math:          level = player.mathLevel;  score = player.mathBestScore
+            case .chemistry:     level = player.chemLevel;  score = player.chemBestScore
+            case .geography:     level = player.geoLevel;   score = player.geoBestScore
+            case .brainTraining: level = player.brainLevel; score = player.brainBestScore
+            case .science:       level = player.scienceLevel; score = player.scienceBestScore
+            case .history:       level = player.historyLevel; score = player.historyBestScore
+            case .physics:       level = player.physicsLevel; score = player.physicsBestScore
+            case .sport:         level = player.sportLevel;   score = player.sportBestScore
+            case .grammar:       level = player.grammarLevel; score = player.grammarBestScore
+            }
         }
         return HStack(spacing: MDSpacing.sm) {
             MDAvatar(username: player.username, size: .sm)
@@ -403,7 +451,7 @@ struct MultiplayerLobbyView: View {
     private var friendPickerSheet: some View {
         let inRoom = store.currentRoom?.players.map(\.username) ?? []
         let available = social.friends.filter { !inRoom.contains($0.username) }
-        let mode = store.currentRoom?.mode ?? .pi
+        let room = store.currentRoom
         return ZStack {
             Color.mdBg.ignoresSafeArea()
             VStack(spacing: 0) {
@@ -424,7 +472,7 @@ struct MultiplayerLobbyView: View {
                     ScrollView {
                         LazyVStack(spacing: MDSpacing.xs) {
                             ForEach(available) { friend in
-                                pickerRow(friend: friend, mode: mode)
+                                pickerRow(friend: friend, room: room)
                             }
                         }
                         .padding(MDSpacing.md)
@@ -469,9 +517,18 @@ struct MultiplayerLobbyView: View {
         }
     }
 
-    private func pickerRow(friend: UserProfile, mode: GameMode) -> some View {
+    private func pickerRow(friend: UserProfile, room: MultiplayerRoom?) -> some View {
         let isSelected = pickerSelection.contains(friend.username)
-        let level = friend.level(for: mode)
+        let modeName: String
+        let level: Int
+        if room?.serverModeSlug != nil, let modeName_ = room?.serverModeName {
+            modeName = modeName_
+            level = 1  // friend server-mode stats not tracked yet
+        } else {
+            let mode = room?.mode ?? .pi
+            modeName = mode.localizedTitle
+            level = friend.level(for: mode)
+        }
         return Button {
             if isSelected { pickerSelection.remove(friend.username) }
             else          { pickerSelection.insert(friend.username) }
@@ -484,7 +541,7 @@ struct MultiplayerLobbyView: View {
                         .foregroundStyle(Color.mdText)
                     HStack(spacing: 4) {
                         Text(String(format: String(localized: "multiplayer_invite_level_format"),
-                                    mode.localizedTitle, level))
+                                    modeName, level))
                             .mdStyle(.micro)
                             .foregroundStyle(Color.mdText3)
                         Text("·").mdStyle(.micro).foregroundStyle(Color.mdText3)

@@ -6,23 +6,23 @@ const prisma = new PrismaClient()
 async function main() {
   // Seed game modes
   const modes = [
-    { slug: 'pi',       name: 'Pi-modus',      sortOrder: 0 },
-    { slug: 'math',     name: 'Regning',        sortOrder: 1 },
-    { slug: 'chem',     name: 'Kjemi',          sortOrder: 2 },
-    { slug: 'geo',      name: 'Geografi',       sortOrder: 3 },
-    { slug: 'brain',    name: 'Hjernetrim',     sortOrder: 4 },
-    { slug: 'science',  name: 'Naturvitenskap', sortOrder: 5 },
-    { slug: 'history',  name: 'Historie',       sortOrder: 6 },
-    { slug: 'physics',  name: 'Fysikk',         sortOrder: 7 },
-    { slug: 'sport',    name: 'Sport',          sortOrder: 8 },
-    { slug: 'grammar',  name: 'Grammatikk',     sortOrder: 9 },
+    { slug: 'pi',      nameNo: 'Pi',             nameEn: 'Pi Mode',         sortOrder: 0 },
+    { slug: 'math',    nameNo: 'Regning',         nameEn: 'Math',            sortOrder: 1 },
+    { slug: 'chem',    nameNo: 'Kjemi',           nameEn: 'Chemistry',       sortOrder: 2 },
+    { slug: 'geo',     nameNo: 'Geografi',        nameEn: 'Geography',       sortOrder: 3 },
+    { slug: 'brain',   nameNo: 'Hjernetrim',      nameEn: 'Brain Training',  sortOrder: 4 },
+    { slug: 'science', nameNo: 'Naturvitenskap',  nameEn: 'Science',         sortOrder: 5 },
+    { slug: 'history', nameNo: 'Historie',        nameEn: 'History',         sortOrder: 6 },
+    { slug: 'physics', nameNo: 'Fysikk',          nameEn: 'Physics',         sortOrder: 7 },
+    { slug: 'sport',   nameNo: 'Sport',           nameEn: 'Sports',          sortOrder: 8 },
+    { slug: 'grammar', nameNo: 'Grammatikk',      nameEn: 'Grammar',         sortOrder: 9 },
   ]
 
   for (const mode of modes) {
     await prisma.gameMode.upsert({
       where: { slug: mode.slug },
-      update: { name: mode.name, sortOrder: mode.sortOrder },
-      create: { ...mode, isActive: true },
+      update: { name: mode.nameNo, nameNo: mode.nameNo, nameEn: mode.nameEn, sortOrder: mode.sortOrder },
+      create: { ...mode, name: mode.nameNo, isActive: true },
     })
   }
 

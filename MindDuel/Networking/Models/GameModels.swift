@@ -81,12 +81,33 @@ struct APIQuestion: Codable {
 /// match a `GameMode` enum case are "server-only" — shown in the UI using
 /// `iconSymbol` and `colorHex` from the server.
 struct ServerMode: Codable, Identifiable, Equatable {
+    // New bilingual fields (backend v2+)
+    let nameNo: String?
+    let nameEn: String?
+    // Legacy single-language field (old backend)
+    private let legacyName: String?
+
     let slug: String
-    let name: String
     let iconSymbol: String
     let colorHex: String
 
+    enum CodingKeys: String, CodingKey {
+        case slug, nameNo, nameEn, iconSymbol, colorHex
+        case legacyName = "name"
+    }
+
     var id: String { slug }
+
+    /// Picks the Norwegian or English name based on the device's preferred language,
+    /// falling back to the legacy `name` field for old backend responses.
+    var name: String {
+        if let no = nameNo, let en = nameEn {
+            let lang = Bundle.main.preferredLocalizations.first ?? "no"
+            if lang.hasPrefix("en") && !en.isEmpty { return en }
+            return no.isEmpty ? en : no
+        }
+        return legacyName ?? ""
+    }
 
     var accentColor: Color {
         Color(hex: colorHex) ?? .mdAccent

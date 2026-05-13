@@ -180,10 +180,19 @@ struct AllModesSheet: View {
                 .font(.system(size: 12, weight: .heavy))
                 .foregroundStyle(serverMode.accentColor)
 
-            // Server-only modes cannot be favorited (no enum case to persist)
-            Image(systemName: "star")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.mdText3.opacity(0.18))
+            let isFav = prefs.isFavoriteServer(slug: serverMode.slug)
+            let canStar = isFav || !prefs.isAtFavoriteCap
+            Button {
+                prefs.toggleFavoriteServer(slug: serverMode.slug)
+            } label: {
+                Image(systemName: isFav ? "star.fill" : "star")
+                    .font(.system(size: 14))
+                    .foregroundStyle(isFav
+                                     ? Color.mdAmber
+                                     : Color.mdText3.opacity(canStar ? 0.4 : 0.18))
+            }
+            .buttonStyle(.plain)
+            .disabled(!canStar)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)

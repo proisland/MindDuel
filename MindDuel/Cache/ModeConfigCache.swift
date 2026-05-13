@@ -15,7 +15,7 @@ final class ModeConfigCache: ObservableObject {
         serverModes.filter { $0.gameMode == nil }
     }
 
-    private let cacheKey = "cachedServerModes_v2"
+    private let cacheKey = "cachedServerModes_v3"
     private init() { loadFromDisk() }
 
     func refresh() async {
