@@ -75,6 +75,10 @@ struct APIQuestion: Codable {
     let options: [String]
     let answer: String
     let level: Int
+
+    func shufflingOptions() -> APIQuestion {
+        APIQuestion(id: id, prompt: prompt, options: options.shuffled(), answer: answer, level: level)
+    }
 }
 
 /// A game mode as returned by `GET /v1/modes`. Modes whose `slug` does not
