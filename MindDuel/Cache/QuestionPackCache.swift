@@ -61,10 +61,12 @@ actor QuestionPackCache {
     }
 
     /// Returns cached questions for a mode in the current app language, or nil
-    /// if not yet downloaded.
+    /// if not yet downloaded. Falls back to English if no pack exists for the
+    /// app language (e.g. a mode that only has English questions).
     nonisolated func questions(for mode: String) -> [APIQuestion]? {
         let lang = QuestionPackCache.appLanguage
-        return questions(for: mode, language: lang)
+        if let qs = questions(for: mode, language: lang) { return qs }
+        return lang == "en" ? nil : questions(for: mode, language: "en")
     }
 
     /// Returns cached questions for a specific mode and language, or nil if not

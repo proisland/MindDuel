@@ -5,12 +5,14 @@ import SwiftUI
 /// that propagates back to ModePreferences (used by the favorites grid and
 /// quick-access row on the home screen).
 struct AllModesSheet: View {
-    @ObservedObject private var prefs = ModePreferences.shared
+    @ObservedObject private var prefs      = ModePreferences.shared
     @ObservedObject private var progression = ProgressionStore.shared
+    @ObservedObject private var modeCache  = ModeConfigCache.shared
     @Environment(\.dismiss) private var dismiss
     @State private var search: String = ""
 
     var onPlay: (GameMode) -> Void
+    var onPlayServerMode: ((ServerMode) -> Void)?
 
     var body: some View {
         ZStack {
@@ -25,7 +27,7 @@ struct AllModesSheet: View {
                     .padding(.top, MDSpacing.xs)
 
                 HStack {
-                    Text("\(displayed.count) " + String(localized: "all_modes_count_suffix"))
+                    Text("\(displayedCombined.count) " + String(localized: "all_modes_count_suffix"))
                         .font(.system(size: 11, weight: .regular))
                         .foregroundStyle(Color.mdText3)
                     Spacer()
@@ -40,15 +42,15 @@ struct AllModesSheet: View {
                 .padding(.bottom, MDSpacing.xs)
 
                 List {
-                    ForEach(displayed, id: \.self) { mode in
-                        modeRow(mode)
+                    ForEach(displayedCombined) { mode in
+                        anyModeRow(mode)
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
                             .listRowInsets(EdgeInsets(top: 4, leading: MDSpacing.md, bottom: 4, trailing: MDSpacing.md))
                     }
                     .onMove { source, destination in
-                        guard search.isEmpty, let from = source.first else { return }
-                        prefs.move(from: from, to: destination)
+                        guard search.isEmpty else { return }
+                        prefs.moveCombined(fromOffsets: source, toOffset: destination)
                     }
                 }
                 .listStyle(.plain)
@@ -59,10 +61,15 @@ struct AllModesSheet: View {
         }
     }
 
-    private var displayed: [GameMode] {
-        guard !search.isEmpty else { return prefs.activeOrder }
+    private var displayedCombined: [AnyMode] {
+        guard !search.isEmpty else { return prefs.activeCombinedOrder }
         let q = search.lowercased()
-        return prefs.activeOrder.filter { $0.localizedTitle.lowercased().contains(q) }
+        return prefs.activeCombinedOrder.filter { mode in
+            switch mode {
+            case .known(let gm):  return gm.localizedTitle.lowercased().contains(q)
+            case .server(let sm): return sm.name.lowercased().contains(q)
+            }
+        }
     }
 
     private var searchBar: some View {
@@ -90,7 +97,15 @@ struct AllModesSheet: View {
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
-    private func modeRow(_ mode: GameMode) -> some View {
+    @ViewBuilder
+    private func anyModeRow(_ mode: AnyMode) -> some View {
+        switch mode {
+        case .known(let gm):  knownModeRow(gm)
+        case .server(let sm): serverModeRow(sm)
+        }
+    }
+
+    private func knownModeRow(_ mode: GameMode) -> some View {
         HStack(spacing: 10) {
             ZStack {
                 RoundedRectangle(cornerRadius: 10).fill(mode.accentColor.opacity(0.12))
@@ -117,8 +132,6 @@ struct AllModesSheet: View {
                 .font(.system(size: 12, weight: .heavy))
                 .foregroundStyle(mode.accentColor)
 
-            // #124: cap favorites at 4 — disable the star when the user is
-            // at the cap and this mode isn't already starred.
             let isFav = prefs.isFavorite(mode)
             let canStar = isFav || !prefs.isAtFavoriteCap
             Button {
@@ -132,6 +145,45 @@ struct AllModesSheet: View {
             }
             .buttonStyle(.plain)
             .disabled(!canStar)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(Color.white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func serverModeRow(_ serverMode: ServerMode) -> some View {
+        HStack(spacing: 10) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10).fill(serverMode.accentColor.opacity(0.12))
+                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(serverMode.accentColor.opacity(0.21), lineWidth: 1.5))
+                ServerModeGlyph(iconSymbol: serverMode.iconSymbol, size: 15,
+                                color: serverMode.accentColor)
+            }
+            .frame(width: 36, height: 36)
+            .onTapGesture { onPlayServerMode?(serverMode); dismiss() }
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(serverMode.name)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.mdText)
+                Text(String(format: String(localized: "level_of_format"),
+                            progression.level(forSlug: serverMode.slug), 20))
+                    .font(.system(size: 10))
+                    .foregroundStyle(Color.mdText3)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .onTapGesture { onPlayServerMode?(serverMode); dismiss() }
+
+            Text(formatPoints(progression.bestScore(forSlug: serverMode.slug)))
+                .font(.system(size: 12, weight: .heavy))
+                .foregroundStyle(serverMode.accentColor)
+
+            // Server-only modes cannot be favorited (no enum case to persist)
+            Image(systemName: "star")
+                .font(.system(size: 14))
+                .foregroundStyle(Color.mdText3.opacity(0.18))
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)

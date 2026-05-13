@@ -5,34 +5,47 @@ import Foundation
 final class ModeConfigCache: ObservableObject {
     static let shared = ModeConfigCache()
 
-    @Published private(set) var activeSlugs: Set<String> = []
+    @Published private(set) var serverModes: [ServerMode] = []
 
-    private let cacheKey = "cachedActiveSlugs"
+    /// Set of active slugs — used by ModePreferences.activeOrder filtering.
+    var activeSlugs: Set<String> { Set(serverModes.map(\.slug)) }
+
+    /// Server-only modes: active modes that have no matching `GameMode` enum case.
+    var serverOnlyModes: [ServerMode] {
+        serverModes.filter { $0.gameMode == nil }
+    }
+
+    private let cacheKey = "cachedServerModes_v2"
     private init() { loadFromDisk() }
 
     func refresh() async {
         do {
-            struct SlimMode: Decodable { let slug: String }
-            struct Envelope: Decodable { let modes: [SlimMode] }
+            struct Envelope: Decodable { let modes: [ServerMode] }
             let envelope: Envelope = try await APIClient.shared.get("modes")
-            activeSlugs = Set(envelope.modes.map(\.slug))
-            saveToDisk(Array(activeSlugs))
+            serverModes = envelope.modes
+            saveToDisk(envelope.modes)
         } catch {
-            // Keep existing cached slugs on network failure
+            // Keep existing cached modes on network failure
         }
     }
 
     func isActive(slug: String) -> Bool {
-        guard !activeSlugs.isEmpty else { return true }
-        return activeSlugs.contains(slug)
+        guard !serverModes.isEmpty else { return true }
+        return serverModes.contains { $0.slug == slug }
     }
 
-    private func saveToDisk(_ slugs: [String]) {
-        UserDefaults.standard.set(slugs, forKey: cacheKey)
+    func serverMode(for slug: String) -> ServerMode? {
+        serverModes.first { $0.slug == slug }
+    }
+
+    private func saveToDisk(_ modes: [ServerMode]) {
+        guard let data = try? JSONEncoder().encode(modes) else { return }
+        UserDefaults.standard.set(data, forKey: cacheKey)
     }
 
     private func loadFromDisk() {
-        guard let stored = UserDefaults.standard.array(forKey: cacheKey) as? [String] else { return }
-        activeSlugs = Set(stored)
+        guard let data = UserDefaults.standard.data(forKey: cacheKey),
+              let modes = try? JSONDecoder().decode([ServerMode].self, from: data) else { return }
+        serverModes = modes
     }
 }

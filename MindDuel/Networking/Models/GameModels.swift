@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 struct GameSessionResponse: Decodable {
     let sessionToken: String
@@ -74,4 +75,22 @@ struct APIQuestion: Codable {
     let options: [String]
     let answer: String
     let level: Int
+}
+
+/// A game mode as returned by `GET /v1/modes`. Modes whose `slug` does not
+/// match a `GameMode` enum case are "server-only" — shown in the UI using
+/// `iconSymbol` and `colorHex` from the server.
+struct ServerMode: Codable, Identifiable, Equatable {
+    let slug: String
+    let name: String
+    let iconSymbol: String
+    let colorHex: String
+
+    var id: String { slug }
+
+    var accentColor: Color {
+        Color(hex: colorHex) ?? .mdAccent
+    }
+
+    var gameMode: GameMode? { GameMode(slug: slug) }
 }

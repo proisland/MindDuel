@@ -77,26 +77,43 @@ export async function runStartupMigrations(prisma: PrismaClient) {
       ON "QuestionPack"("mode", "language", "isActive")
   `)
 
-  // Seed the 10 built-in game modes as active if they don't already exist.
-  // Uses ON CONFLICT DO NOTHING so re-runs are safe and admin edits are preserved.
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "GameMode"
+      ADD COLUMN IF NOT EXISTS "iconSymbol" TEXT NOT NULL DEFAULT 'questionmark'
+  `)
+
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "GameMode"
+      ADD COLUMN IF NOT EXISTS "colorHex" TEXT NOT NULL DEFAULT '#6366F1'
+  `)
+
+  // Seed the built-in game modes with icon and color. ON CONFLICT updates icon/color
+  // so existing rows get the canonical values even if they were inserted before this migration.
   const defaultModes = [
-    { slug: 'pi',      name: 'Pi',            sortOrder: 1 },
-    { slug: 'math',    name: 'Matte',         sortOrder: 2 },
-    { slug: 'chem',    name: 'Kjemi',         sortOrder: 3 },
-    { slug: 'geo',     name: 'Geografi',      sortOrder: 4 },
-    { slug: 'brain',   name: 'Hjerne',        sortOrder: 5 },
-    { slug: 'science', name: 'Vitenskap',     sortOrder: 6 },
-    { slug: 'history', name: 'Historie',      sortOrder: 7 },
-    { slug: 'physics', name: 'Fysikk',        sortOrder: 8 },
-    { slug: 'sport',   name: 'Sport',         sortOrder: 9 },
-    { slug: 'grammar', name: 'Grammatikk',    sortOrder: 10 },
+    { slug: 'pi',           name: 'Pi',            sortOrder: 1,  iconSymbol: 'text.cursor',              colorHex: '#6366F1' },
+    { slug: 'math',         name: 'Matte',         sortOrder: 2,  iconSymbol: 'function',                 colorHex: '#EC4899' },
+    { slug: 'chem',         name: 'Kjemi',         sortOrder: 3,  iconSymbol: 'flask.fill',               colorHex: '#22C55E' },
+    { slug: 'geo',          name: 'Geografi',      sortOrder: 4,  iconSymbol: 'globe.europe.africa.fill', colorHex: '#F59E0B' },
+    { slug: 'brain',        name: 'Hjerne',        sortOrder: 5,  iconSymbol: 'brain.head.profile',       colorHex: '#EF4444' },
+    { slug: 'science',      name: 'Vitenskap',     sortOrder: 6,  iconSymbol: 'atom',                     colorHex: '#6366F1' },
+    { slug: 'history',      name: 'Historie',      sortOrder: 7,  iconSymbol: 'scroll.fill',              colorHex: '#F59E0B' },
+    { slug: 'physics',      name: 'Fysikk',        sortOrder: 8,  iconSymbol: 'bolt.fill',                colorHex: '#EC4899' },
+    { slug: 'sport',        name: 'Sport',         sortOrder: 9,  iconSymbol: 'figure.run',               colorHex: '#22C55E' },
+    { slug: 'grammar',      name: 'Grammatikk',    sortOrder: 10, iconSymbol: 'text.book.closed.fill',    colorHex: '#6366F1' },
+    { slug: 'sci_computer', name: 'Informatikk',   sortOrder: 11, iconSymbol: 'desktopcomputer',          colorHex: '#0EA5E9' },
   ]
   for (const m of defaultModes) {
     await prisma.$executeRawUnsafe(
-      `INSERT INTO "GameMode" (id, slug, name, "isActive", "sortOrder", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, $2, true, $3, NOW(), NOW())
+      `INSERT INTO "GameMode" (id, slug, name, "isActive", "iconSymbol", "colorHex", "sortOrder", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, true, $3, $4, $5, NOW(), NOW())
        ON CONFLICT (slug) DO NOTHING`,
-      m.slug, m.name, m.sortOrder,
+      m.slug, m.name, m.iconSymbol, m.colorHex, m.sortOrder,
+    )
+    // Backfill icon/color only for rows that still carry the column default — preserves admin edits.
+    await prisma.$executeRawUnsafe(
+      `UPDATE "GameMode" SET "iconSymbol" = $1, "colorHex" = $2
+       WHERE slug = $3 AND "iconSymbol" = 'questionmark' AND "colorHex" = '#6366F1'`,
+      m.iconSymbol, m.colorHex, m.slug,
     )
   }
 

@@ -138,7 +138,7 @@ struct ScoreboardView: View {
         // accent-color border when selected.
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(modePrefs.order) { mode in
+                ForEach(modePrefs.activeOrder) { mode in
                     let selected = scoreMode == mode
                     Button {
                         withAnimation(.easeInOut(duration: 0.15)) { scoreMode = mode }

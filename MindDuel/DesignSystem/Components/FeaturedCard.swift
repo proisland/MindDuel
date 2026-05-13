@@ -118,6 +118,43 @@ struct MDQuickPill: View {
     }
 }
 
+/// Quick-access pill for a server-only mode (no GameMode enum case).
+struct ServerModeQuickPill: View {
+    let serverMode: ServerMode
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 5) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(serverMode.accentColor.opacity(0.12))
+                    ServerModeGlyph(iconSymbol: serverMode.iconSymbol, size: 16,
+                                    color: serverMode.accentColor)
+                }
+                .frame(width: 34, height: 34)
+
+                Text(serverMode.name)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(Color.mdText3)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2, reservesSpace: true)
+                    .minimumScaleFactor(0.85)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 10)
+            .frame(width: 78)
+            .background(serverMode.accentColor.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(serverMode.accentColor.opacity(0.15), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 /// Breaks "Naturvitenskap" between "Natur" and "vitenskap" on the two-line
 /// pill labels so the science card matches the height of the others without
 /// shrinking text. English ("Science") stays on one line.

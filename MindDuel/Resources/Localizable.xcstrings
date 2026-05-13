@@ -3230,6 +3230,23 @@
         }
       }
     },
+    "save_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lagre"
+          }
+        }
+      }
+    },
     "science_level_problem" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3553,23 +3570,6 @@
         }
       }
     },
-    "save_action" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lagre"
-          }
-        }
-      }
-    },
     "search_username_placeholder" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3604,40 +3604,6 @@
         }
       }
     },
-    "settings_branch_format" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "branch: %@"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "branch: %@"
-          }
-        }
-      }
-    },
-    "settings_branch_unknown" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "branch: unknown"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "branch: ukjent"
-          }
-        }
-      }
-    },
     "settings_birthdate_label" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3668,6 +3634,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ikke angitt"
+          }
+        }
+      }
+    },
+    "settings_branch_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "branch: %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "branch: %@"
+          }
+        }
+      }
+    },
+    "settings_branch_unknown" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "branch: unknown"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "branch: ukjent"
           }
         }
       }
@@ -4266,6 +4266,9 @@
           }
         }
       }
+    },
+    "Spørsmål lastes ned…" : {
+
     },
     "sport_level_problem" : {
       "extractionState" : "manual",

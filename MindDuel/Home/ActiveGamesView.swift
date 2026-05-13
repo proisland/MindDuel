@@ -3,10 +3,13 @@ import SwiftUI
 struct ActiveGamesView: View {
     let ownUsername: String
     @ObservedObject private var store = MultiplayerStore.shared
+    @ObservedObject private var modeCache = ModeConfigCache.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showGame = false
     @State private var resumeSoloMode: GameMode? = nil
     @State private var resumeSoloRoomID: String? = nil
+    @State private var resumeServerMode: ServerMode? = nil
+    @State private var resumeServerRoomID: String? = nil
 
     var body: some View {
         ZStack {
@@ -65,29 +68,48 @@ struct ActiveGamesView: View {
             case .grammar:       GrammarGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
             }
         }
+        .fullScreenCover(item: $resumeServerMode) { serverMode in
+            KnowledgeGameView(serverMode: serverMode, username: ownUsername,
+                              resumeRoomID: resumeServerRoomID)
+        }
+        .onChange(of: resumeServerMode) { mode in
+            if mode == nil { resumeServerRoomID = nil }
+        }
     }
 
     private func roomRow(_ room: MultiplayerRoom) -> some View {
+        // Server-only modes use the cached ServerMode for colors/icons.
+        let cachedServerMode: ServerMode? = room.serverModeSlug.flatMap { slug in
+            modeCache.serverOnlyModes.first { $0.slug == slug }
+        }
         let modeColor: Color
         let modeBgSoft: Color
-        switch room.mode {
-        case .pi:            modeColor = .mdAccent; modeBgSoft = .mdAccentSoft
-        case .math:          modeColor = .mdPink;   modeBgSoft = .mdPinkSoft
-        case .chemistry:     modeColor = .mdGreen;  modeBgSoft = .mdGreenSoft
-        case .geography:     modeColor = .mdAmber;  modeBgSoft = .mdAmberSoft
-        case .brainTraining: modeColor = .mdRed;    modeBgSoft = .mdRedSoft
-        case .science:       modeColor = .mdAccent; modeBgSoft = .mdAccentSoft
-        case .history:       modeColor = .mdAmber;  modeBgSoft = .mdAmberSoft
-        case .physics:       modeColor = .mdPink;   modeBgSoft = .mdPinkSoft
-        case .sport:         modeColor = .mdGreen;  modeBgSoft = .mdGreenSoft
-        case .grammar:       modeColor = .mdAccent; modeBgSoft = .mdAccentSoft
+        if let sm = cachedServerMode {
+            modeColor  = sm.accentColor
+            modeBgSoft = sm.accentColor.opacity(0.12)
+        } else {
+            switch room.mode {
+            case .pi:            modeColor = .mdAccent; modeBgSoft = .mdAccentSoft
+            case .math:          modeColor = .mdPink;   modeBgSoft = .mdPinkSoft
+            case .chemistry:     modeColor = .mdGreen;  modeBgSoft = .mdGreenSoft
+            case .geography:     modeColor = .mdAmber;  modeBgSoft = .mdAmberSoft
+            case .brainTraining: modeColor = .mdRed;    modeBgSoft = .mdRedSoft
+            case .science:       modeColor = .mdAccent; modeBgSoft = .mdAccentSoft
+            case .history:       modeColor = .mdAmber;  modeBgSoft = .mdAmberSoft
+            case .physics:       modeColor = .mdPink;   modeBgSoft = .mdPinkSoft
+            case .sport:         modeColor = .mdGreen;  modeBgSoft = .mdGreenSoft
+            case .grammar:       modeColor = .mdAccent; modeBgSoft = .mdAccentSoft
+            }
         }
         let isMyTurn = room.isMyTurn
 
         return HStack(spacing: MDSpacing.sm) {
             // Tappable main area: rejoin / resume
             Button {
-                if room.isStandaloneSolo {
+                if room.isStandaloneSolo, let sm = cachedServerMode {
+                    resumeServerRoomID = room.id
+                    resumeServerMode   = sm
+                } else if room.isStandaloneSolo {
                     resumeSoloRoomID = room.id
                     resumeSoloMode = room.mode
                 } else {
@@ -102,10 +124,21 @@ struct ActiveGamesView: View {
                         Circle()
                             .fill(modeBgSoft)
                             .frame(width: 32, height: 32)
-                        ModeGlyph(mode: room.mode, size: 15, color: modeColor)
+                        if let sm = cachedServerMode {
+                            ServerModeGlyph(iconSymbol: sm.iconSymbol, size: 15, color: modeColor)
+                        } else {
+                            ModeGlyph(mode: room.mode, size: 15, color: modeColor)
+                        }
                     }
                     VStack(alignment: .leading, spacing: 2) {
-                        if room.isStandaloneSolo {
+                        if room.isStandaloneSolo, let sm = cachedServerMode {
+                            Text(sm.name)
+                                .mdStyle(.bodyMd)
+                                .foregroundStyle(Color.mdText)
+                            Text(String(localized: "solo_session_subtitle"))
+                                .mdStyle(.caption)
+                                .foregroundStyle(Color.mdText3)
+                        } else if room.isStandaloneSolo {
                             Text(room.mode.localizedTitle)
                                 .mdStyle(.bodyMd)
                                 .foregroundStyle(Color.mdText)

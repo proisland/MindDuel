@@ -122,6 +122,12 @@ import SwiftUI
     @Published private(set) var grammarLevelProgress: Int
     @Published private(set) var grammarBestScore: Int
 
+    // MARK: – Generic / server-only mode progression
+
+    @Published private(set) var genericLevels: [String: Int] = [:]
+    @Published private(set) var genericLevelProgress: [String: Int] = [:]
+    @Published private(set) var genericBestScores: [String: Int] = [:]
+
     @Published private(set) var dailyUsed: Int
     @Published private(set) var totalRoundsPlayed: Int
     @Published private(set) var isFlagged: Bool
@@ -185,6 +191,18 @@ import SwiftUI
         grammarLevel       = storedGramLvl < 1 ? 1 : storedGramLvl
         grammarLevelProgress = d.integer(forKey: "grammarLevelProgress")
         grammarBestScore   = d.integer(forKey: "grammarBestScore")
+        if let data = d.data(forKey: "generic.levels"),
+           let dict = try? JSONDecoder().decode([String: Int].self, from: data) {
+            genericLevels = dict.mapValues { max(1, $0) }
+        }
+        if let data = d.data(forKey: "generic.levelProgress"),
+           let dict = try? JSONDecoder().decode([String: Int].self, from: data) {
+            genericLevelProgress = dict
+        }
+        if let data = d.data(forKey: "generic.bestScores"),
+           let dict = try? JSONDecoder().decode([String: Int].self, from: data) {
+            genericBestScores = dict
+        }
         dailyUsed         = d.integer(forKey: "dailyUsed")
         quotaResetEpoch   = d.double(forKey: "quotaResetEpoch")
         totalRoundsPlayed = d.integer(forKey: "totalRoundsPlayed")
@@ -289,6 +307,63 @@ import SwiftUI
         }
     }
 
+    // MARK: – Generic mode helpers (for server-only slugs)
+
+    func bestScore(forSlug slug: String) -> Int {
+        if let mode = GameMode(slug: slug) { return bestScore(for: mode) }
+        return genericBestScores[slug] ?? 0
+    }
+
+    func level(forSlug slug: String) -> Int {
+        if let mode = GameMode(slug: slug) { return level(for: mode) }
+        return genericLevels[slug] ?? 1
+    }
+
+    func advanceGenericLevel(slug: String) {
+        var prog = (genericLevelProgress[slug] ?? 0) + 1
+        var lvl  = genericLevels[slug] ?? 1
+        if prog >= Self.mathLevelUpThreshold {
+            prog = 0
+            lvl  = min(20, lvl + 1)
+        }
+        genericLevels[slug]        = lvl
+        genericLevelProgress[slug] = prog
+        persistGeneric()
+    }
+
+    func applyGenericRound(slug: String, correctCount: Int, level startLevel: Int, avgTime: Double, won: Bool) -> RoundResult {
+        guard !isFlagged, correctCount > 0, avgTime > 0.2 else {
+            incrementRounds()
+            return RoundResult(score: 0, isPersonalBest: false)
+        }
+        let pts   = Double(correctCount) * Self.levelMultiplier(startLevel)
+        let score = max(0, Int(pts * (Self.K / avgTime)))
+
+        if !won {
+            let rollback    = max(0, Int(Double(correctCount) * Self.rollbackRate))
+            let lvl         = genericLevels[slug] ?? 1
+            let prog        = genericLevelProgress[slug] ?? 0
+            var total       = (lvl - 1) * Self.mathLevelUpThreshold + prog
+            total           = max(0, total - rollback)
+            genericLevels[slug]        = min(20, max(1, total / Self.mathLevelUpThreshold + 1))
+            genericLevelProgress[slug] = total % Self.mathLevelUpThreshold
+        }
+
+        let pb = score > 0
+        if pb { genericBestScores[slug] = (genericBestScores[slug] ?? 0) + score }
+        persistGeneric()
+        incrementRounds()
+        checkAntiCheat(avgTime: avgTime, correctCount: correctCount)
+        return RoundResult(score: score, isPersonalBest: pb)
+    }
+
+    private func persistGeneric() {
+        let d = UserDefaults.standard
+        if let data = try? JSONEncoder().encode(genericLevels)        { d.set(data, forKey: "generic.levels") }
+        if let data = try? JSONEncoder().encode(genericLevelProgress) { d.set(data, forKey: "generic.levelProgress") }
+        if let data = try? JSONEncoder().encode(genericBestScores)    { d.set(data, forKey: "generic.bestScores") }
+    }
+
     func resetDailyQuota() {
         set(dailyUsed: 0)
         quotaResetEpoch = Date().timeIntervalSince1970
@@ -353,7 +428,13 @@ import SwiftUI
             case "grammar":
                 let lvl = max(1, Int(p.position))
                 if lvl > grammarLevel { set(grammarLevel: lvl, grammarLevelProgress: 0) }
-            default: break
+            default:
+                let lvl = max(1, Int(p.position))
+                if lvl > (genericLevels[p.mode] ?? 1) {
+                    genericLevels[p.mode] = lvl
+                    genericLevelProgress[p.mode] = 0
+                    persistGeneric()
+                }
             }
         }
     }

@@ -1,5 +1,19 @@
 import SwiftUI
 
+/// Renders the icon for a server-only mode using its SF Symbol name.
+struct ServerModeGlyph: View {
+    let iconSymbol: String
+    let size: CGFloat
+    var weight: Font.Weight = .heavy
+    let color: Color
+
+    var body: some View {
+        Image(systemName: iconSymbol)
+            .font(.system(size: size, weight: weight))
+            .foregroundStyle(color)
+    }
+}
+
 /// Renders the visual glyph for a `GameMode`. Math/Pi/Chemistry use text
 /// characters (π/∑/⚗︎); geography uses an SF Symbol because the globe
 /// emoji 🌍 fails to render in some contexts (#62).
