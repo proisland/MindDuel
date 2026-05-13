@@ -35,6 +35,9 @@ struct UserProfile: Identifiable {
     var isPremium: Bool = false
     /// Average answer time in seconds (#57). 0 = unknown / no data.
     var avgAnswerTime: Double = 0
+    /// Score from the scoreboard API (avgScore). Used for server-only modes
+    /// where scores aren't stored locally in ProgressionStore.
+    var apiScore: Int = 0
 
     var totalScore: Int { piScore + mathScore + chemScore + geoScore + brainScore + scienceScore + historyScore + physicsScore + sportScore + grammarScore }
     var initials: String { String(username.prefix(2)).uppercased() }

@@ -12,22 +12,22 @@ final class ScoreboardStore: ObservableObject {
 
     private init() {}
 
-    func refresh(mode: GameMode) async {
-        guard mode.slug != lastMode || globalEntries.isEmpty else { return }
+    func refresh(slug: String) async {
+        guard slug != lastMode || globalEntries.isEmpty else { return }
         isLoading = true
-        lastMode = mode.slug
+        lastMode = slug
         async let globalTask: [ScoreboardEntry] = (try? APIClient.shared.get(
-            "scoreboard/global", query: ["mode": mode.slug]
+            "scoreboard/global", query: ["mode": slug]
         )) ?? []
         async let friendTask: [ScoreboardEntry] = (try? APIClient.shared.get(
-            "scoreboard/friends", query: ["mode": mode.slug]
+            "scoreboard/friends", query: ["mode": slug]
         )) ?? []
         (globalEntries, friendEntries) = await (globalTask, friendTask)
         isLoading = false
     }
 
     func userProfile(for entry: ScoreboardEntry) -> UserProfile {
-        UserProfile(
+        var profile = UserProfile(
             id: entry.userId,
             username: entry.username,
             avatarEmoji: entry.avatarEmoji,
@@ -37,5 +37,7 @@ final class ScoreboardStore: ObservableObject {
             isFriend: SocialStore.shared.friendUsernames.contains(entry.username),
             isFlagged: false
         )
+        profile.apiScore = entry.avgScore
+        return profile
     }
 }
