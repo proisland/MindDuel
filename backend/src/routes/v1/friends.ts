@@ -89,13 +89,14 @@ export default async function friendsRoutes(app: FastifyInstance) {
     })
     if (!req) return reply.status(404).send({ error: 'Request not found' })
 
-    await app.prisma.friendRequest.delete({ where: { id: req.id } })
-
-    if (body.data.action === 'accept') {
-      await app.prisma.friendship.create({
-        data: { senderId: body.data.fromUserId, receiverId: request.userId },
-      })
-    }
+    await app.prisma.$transaction(async (tx) => {
+      await tx.friendRequest.delete({ where: { id: req.id } })
+      if (body.data.action === 'accept') {
+        await tx.friendship.create({
+          data: { senderId: body.data.fromUserId, receiverId: request.userId },
+        })
+      }
+    })
 
     return reply.send({ accepted: body.data.action === 'accept' })
   })

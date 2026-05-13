@@ -20,6 +20,7 @@ import adminRoutes from './routes/admin/index'
 
 export async function buildApp() {
   const app = Fastify({
+    trustProxy: true,
     logger: {
       level: config.isDev ? 'debug' : 'info',
       transport: config.isDev
@@ -37,7 +38,7 @@ export async function buildApp() {
   await app.register(fastifyRateLimit, {
     max: 120,
     timeWindow: '1 minute',
-    keyGenerator: (req) => req.headers['x-forwarded-for']?.toString() ?? req.ip,
+    keyGenerator: (req) => req.ip,
   })
 
   await app.register(fastifyJwt, {

@@ -24,6 +24,19 @@ async function getJWT(): Promise<string> {
   return token
 }
 
+// Persistent HTTP/2 session — reused across pushes, reconnected on error/close.
+let h2Session: http2.ClientHttp2Session | null = null
+
+function getH2Session(): http2.ClientHttp2Session {
+  const host = config.isDev ? 'api.sandbox.push.apple.com' : 'api.push.apple.com'
+  if (h2Session && !h2Session.destroyed && !h2Session.closed) return h2Session
+
+  h2Session = http2.connect(`https://${host}`)
+  h2Session.on('error', () => { h2Session?.destroy(); h2Session = null })
+  h2Session.on('close', () => { h2Session = null })
+  return h2Session
+}
+
 export async function sendPush(deviceToken: string, title: string, body: string): Promise<void> {
   if (!config.apns.keyId || !config.apns.teamId || !config.apns.privateKeyBase64 || !config.apns.bundleId) return
 
@@ -32,8 +45,12 @@ export async function sendPush(deviceToken: string, title: string, body: string)
   const payload = JSON.stringify({ aps: { alert: { title, body }, sound: 'default' } })
 
   return new Promise((resolve, reject) => {
-    const client = http2.connect(`https://${host}`)
-    client.on('error', reject)
+    let client: http2.ClientHttp2Session
+    try {
+      client = getH2Session()
+    } catch (err) {
+      return reject(err)
+    }
 
     const req = client.request({
       ':method': 'POST',
@@ -50,11 +67,10 @@ export async function sendPush(deviceToken: string, title: string, body: string)
 
     req.on('response', (headers) => {
       const status = headers[':status']
-      client.close()
       if (status === 200) resolve()
-      else reject(new Error(`APNs error: status ${status}`))
+      else reject(new Error(`APNs error: status ${status} for ${host}`))
     })
 
-    req.on('error', (err) => { client.close(); reject(err) })
+    req.on('error', reject)
   })
 }

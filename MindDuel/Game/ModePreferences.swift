@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 
 /// Wraps either a known (GameMode enum) or server-only mode for unified ordering.
-enum AnyMode: Identifiable {
+enum AnyMode: Identifiable, Equatable {
     case known(GameMode)
     case server(ServerMode)
 

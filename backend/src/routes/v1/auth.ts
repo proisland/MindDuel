@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { verifyAppleIdToken } from '../../lib/apple'
-import { generateRefreshToken, storeRefreshToken, consumeRefreshToken } from '../../lib/tokens'
+import { generateRefreshToken, storeRefreshToken, consumeRefreshToken, revokeAllRefreshTokens } from '../../lib/tokens'
 import { config } from '../../config'
 
 const appleSignInBody = z.object({
@@ -83,6 +83,7 @@ export default async function authRoutes(app: FastifyInstance) {
       return reply.status(403).send({ error: 'Account suspended' })
     }
 
+    await revokeAllRefreshTokens(app.redis, user.id)
     const accessToken = app.jwt.sign(
       { sub: user.id },
       { expiresIn: config.jwt.accessTtlSeconds },

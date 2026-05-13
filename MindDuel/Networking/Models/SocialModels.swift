@@ -28,7 +28,7 @@ struct ScoreboardEntry: Decodable {
     let userId: String
     let username: String
     let avatarEmoji: String
-    let score: Double
+    let avgScore: Int
 }
 
 struct UserSearchResult: Decodable {

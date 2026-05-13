@@ -6,24 +6,6 @@ const versionCheckQuery = z.object({
   lang:  z.string().optional(),
 })
 
-// Returns the best available language pack for a mode given a requested language.
-// Falls back: requested lang → "en" → "no".
-async function findActivePack(
-  prisma: FastifyInstance['prisma'],
-  mode: string,
-  requestedLang: string,
-) {
-  const langs = [...new Set([requestedLang, 'en', 'no'])]
-  for (const lang of langs) {
-    const pack = await prisma.questionPack.findFirst({
-      where: { mode, language: lang, isActive: true },
-      orderBy: { version: 'desc' },
-    })
-    if (pack) return pack
-  }
-  return null
-}
-
 export default async function questionsRoutes(app: FastifyInstance) {
   // GET /v1/questions/versions — check latest version per mode
   // Optional ?lang=xx selects the language to check; falls back en → no.
@@ -32,12 +14,24 @@ export default async function questionsRoutes(app: FastifyInstance) {
     if (!query.success) return reply.status(400).send({ error: 'Missing ?modes= parameter' })
 
     const slugs = query.data.modes.split(',').map(s => s.trim()).filter(Boolean)
-    const lang = query.data.lang ?? 'no'
+    const requestedLang = query.data.lang ?? 'no'
 
+    // Single query for all active packs across the requested modes
+    const packs = await app.prisma.questionPack.findMany({
+      where: { mode: { in: slugs }, isActive: true },
+      orderBy: { version: 'desc' },
+      select: { mode: true, language: true, version: true },
+    })
+
+    // For each slug, pick best language: requested → en → no
+    const langPriority = [...new Set([requestedLang, 'en', 'no'])]
     const versions: Record<string, { version: number; language: string }> = {}
     for (const slug of slugs) {
-      const pack = await findActivePack(app.prisma, slug, lang)
-      if (pack) versions[slug] = { version: pack.version, language: pack.language }
+      const modePacks = packs.filter(p => p.mode === slug)
+      for (const lang of langPriority) {
+        const pack = modePacks.find(p => p.language === lang)
+        if (pack) { versions[slug] = { version: pack.version, language: pack.language }; break }
+      }
     }
 
     return reply.send({ versions })
@@ -48,8 +42,19 @@ export default async function questionsRoutes(app: FastifyInstance) {
   app.get('/:mode', async (request, reply) => {
     const { mode } = request.params as { mode: string }
     const { lang } = request.query as { lang?: string }
+    const requestedLang = lang ?? 'no'
 
-    const pack = await findActivePack(app.prisma, mode, lang ?? 'no')
+    const packs = await app.prisma.questionPack.findMany({
+      where: { mode, isActive: true },
+      orderBy: { version: 'desc' },
+    })
+
+    const langPriority = [...new Set([requestedLang, 'en', 'no'])]
+    let pack = null
+    for (const l of langPriority) {
+      pack = packs.find(p => p.language === l) ?? null
+      if (pack) break
+    }
 
     if (!pack) return reply.status(404).send({ error: 'No active question pack for this mode' })
 

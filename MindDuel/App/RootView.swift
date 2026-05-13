@@ -1,5 +1,5 @@
 import SwiftUI
-import UIKit
+import UserNotifications
 
 struct RootView: View {
     @EnvironmentObject private var authState: AuthState
@@ -56,6 +56,8 @@ struct RootView: View {
         let total = social.pendingRequests.count
                   + multiplayer.pendingInvites.count
                   + myTurnCount
-        UIApplication.shared.applicationIconBadgeNumber = total
+        Task {
+            try? await UNUserNotificationCenter.current().setBadgeCount(total)
+        }
     }
 }

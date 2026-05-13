@@ -31,8 +31,10 @@ function parseCsv(csv: string): z.infer<typeof questionSchema>[] {
     let cur = '', inQuote = false
     for (let ci = 0; ci < line.length; ci++) {
       const ch = line[ci]
-      if (ch === '"') { inQuote = !inQuote }
-      else if (ch === ',' && !inQuote) { cols.push(cur); cur = '' }
+      if (ch === '"') {
+        if (inQuote && line[ci + 1] === '"') { cur += '"'; ci++ }
+        else { inQuote = !inQuote }
+      } else if (ch === ',' && !inQuote) { cols.push(cur); cur = '' }
       else { cur += ch }
     }
     cols.push(cur)
@@ -134,7 +136,7 @@ export default async function adminQuestionsRoutes(app: FastifyInstance) {
     const rows = questions.map(q => {
       const distractors = q.options.filter(o => o !== q.answer)
       const esc = (s: string) => `"${s.replace(/"/g, '""')}"`
-      return [q.level, esc(q.prompt), esc(q.answer), esc(distractors[0] ?? ''), esc(distractors[1] ?? ''), esc(distractors[2] ?? '')].join(',')
+      return [esc(q.id), q.level, esc(q.prompt), esc(q.answer), esc(distractors[0] ?? ''), esc(distractors[1] ?? ''), esc(distractors[2] ?? '')].join(',')
     })
 
     const csv = `id,level,prompt,correct,distractor1,distractor2,distractor3\n` + rows.join('\n')

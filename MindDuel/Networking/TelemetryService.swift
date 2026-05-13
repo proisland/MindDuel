@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 /// Batches telemetry events and flushes them to the backend.
 /// Events are accumulated in memory; a flush is triggered automatically
@@ -9,7 +10,14 @@ actor TelemetryService {
     private var buffer: [[String: AnyCodable]] = []
     private let batchSize = 20
 
-    private init() {}
+    private init() {
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.willResignActiveNotification,
+            object: nil, queue: nil
+        ) { [weak self] _ in
+            Task { await self?.flush() }
+        }
+    }
 
     func track(_ eventName: String, properties: [String: AnyCodable] = [:]) async {
         var event: [String: AnyCodable] = [
