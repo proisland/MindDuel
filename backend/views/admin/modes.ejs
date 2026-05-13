@@ -15,9 +15,18 @@
         class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 w-40">
     </div>
     <div>
-      <label class="block text-xs text-gray-400 mb-1">Sort order</label>
-      <input name="sortOrder" type="number" value="99"
-        class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 w-24">
+      <label class="block text-xs text-gray-400 mb-1">Icon (SF Symbol)</label>
+      <input name="iconSymbol" placeholder="e.g. star.fill" value="questionmark"
+        class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 w-40">
+    </div>
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">Color (hex)</label>
+      <div class="flex items-center gap-1">
+        <input name="colorHex" type="color" value="#6366F1"
+          class="h-8 w-10 rounded border border-gray-700 bg-gray-800 cursor-pointer p-0.5">
+        <input name="colorHexText" placeholder="#6366F1" value="#6366F1"
+          class="bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 w-24">
+      </div>
     </div>
     <div>
       <label class="block text-xs text-gray-400 mb-1">Starts at (UTC)</label>
@@ -36,26 +45,44 @@
   </form>
 </div>
 
-<div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-  <table class="w-full text-sm">
+<div class="bg-gray-900 border border-gray-800 rounded-xl overflow-x-auto">
+  <table class="min-w-full text-sm">
     <thead class="bg-gray-800 text-gray-400">
       <tr>
+        <th class="px-2 py-3 w-8"></th>
         <th class="text-left px-4 py-3">Mode</th>
+        <th class="text-left px-4 py-3">Icon / Color</th>
         <th class="text-left px-4 py-3">Status</th>
         <th class="text-left px-4 py-3">Starts at</th>
         <th class="text-left px-4 py-3">Ends at</th>
-        <th class="text-left px-4 py-3">Sort</th>
-        <th class="text-left px-4 py-3">Actions</th>
+        <th class="text-left px-4 py-3 sticky right-0 bg-gray-800 shadow-[-4px_0_6px_rgba(0,0,0,0.4)]">Actions</th>
       </tr>
     </thead>
-    <tbody class="divide-y divide-gray-800">
+    <tbody id="modes-tbody" class="divide-y divide-gray-800">
       <% modes.forEach(function(m) { %>
-        <tr id="mode-<%= m.id %>" class="hover:bg-gray-850">
+        <tr id="mode-<%= m.id %>" data-id="<%= m.id %>" class="hover:bg-gray-850">
+          <td class="px-2 py-3 text-gray-500 drag-handle cursor-grab select-none text-center text-base">⠿</td>
           <td class="px-4 py-3">
             <span id="name-display-<%= m.id %>" class="font-medium"><%= m.name %></span>
             <span class="text-gray-500 text-xs ml-1">(<%= m.slug %>)</span>
             <input id="name-input-<%= m.id %>" value="<%= m.name %>"
               class="hidden bg-gray-800 border border-gray-600 rounded px-2 py-0.5 text-sm text-white w-36 focus:outline-none focus:border-indigo-500">
+          </td>
+          <td class="px-4 py-3">
+            <div id="icon-display-<%= m.id %>" class="flex items-center gap-2">
+              <span class="w-5 h-5 rounded-sm inline-block" style="background:<%= m.colorHex %>"></span>
+              <span class="text-gray-300 text-xs font-mono"><%= m.iconSymbol %></span>
+            </div>
+            <div id="icon-edit-<%= m.id %>" class="hidden flex items-center gap-1">
+              <input id="iconSymbol-input-<%= m.id %>" value="<%= m.iconSymbol %>"
+                class="bg-gray-800 border border-gray-600 rounded px-2 py-0.5 text-sm text-white w-36 focus:outline-none focus:border-indigo-500">
+              <input id="colorHex-picker-<%= m.id %>" type="color" value="<%= m.colorHex %>"
+                onchange="document.getElementById('colorHex-input-<%= m.id %>').value = this.value"
+                class="h-7 w-8 rounded border border-gray-700 bg-gray-800 cursor-pointer p-0.5">
+              <input id="colorHex-input-<%= m.id %>" value="<%= m.colorHex %>"
+                oninput="document.getElementById('colorHex-picker-<%= m.id %>').value = this.value"
+                class="bg-gray-800 border border-gray-600 rounded px-2 py-0.5 text-sm text-white w-24 focus:outline-none focus:border-indigo-500">
+            </div>
           </td>
           <td class="px-4 py-3">
             <span class="<%= m.isActive ? 'text-green-400' : 'text-gray-500' %> text-xs font-medium">
@@ -74,24 +101,25 @@
               value="<%= m.endsAt ? new Date(m.endsAt).toISOString().slice(0, 16) : '' %>"
               class="hidden bg-gray-800 border border-gray-600 rounded px-2 py-0.5 text-sm text-white w-44 focus:outline-none focus:border-indigo-500">
           </td>
-          <td class="px-4 py-3 text-gray-500 text-xs"><%= m.sortOrder %></td>
-          <td class="px-4 py-3 flex gap-2">
-            <button onclick="toggleMode('<%= m.id %>', <%= m.isActive %>)"
-              class="text-xs px-3 py-1 rounded <%= m.isActive ? 'bg-gray-700 hover:bg-red-800' : 'bg-gray-700 hover:bg-green-800' %>">
-              <%= m.isActive ? 'Hide' : 'Show' %>
-            </button>
-            <button id="edit-btn-<%= m.id %>" onclick="startEdit('<%= m.id %>')"
-              class="text-xs px-3 py-1 rounded bg-gray-700 hover:bg-indigo-800">
-              Edit
-            </button>
-            <button id="save-btn-<%= m.id %>" onclick="saveEdit('<%= m.id %>')"
-              class="hidden text-xs px-3 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white">
-              Save
-            </button>
-            <button onclick="deleteMode('<%= m.id %>', '<%= m.name %>')"
-              class="text-xs px-3 py-1 rounded bg-gray-700 hover:bg-red-900 text-red-400">
-              Delete
-            </button>
+          <td class="px-4 py-3 sticky right-0 bg-gray-900 shadow-[-4px_0_6px_rgba(0,0,0,0.4)]">
+            <div class="flex gap-2 whitespace-nowrap">
+              <button onclick="toggleMode('<%= m.id %>', <%= m.isActive %>)"
+                class="text-xs px-3 py-1 rounded <%= m.isActive ? 'bg-gray-700 hover:bg-red-800' : 'bg-gray-700 hover:bg-green-800' %>">
+                <%= m.isActive ? 'Hide' : 'Show' %>
+              </button>
+              <button id="edit-btn-<%= m.id %>" onclick="startEdit('<%= m.id %>')"
+                class="text-xs px-3 py-1 rounded bg-gray-700 hover:bg-indigo-800">
+                Edit
+              </button>
+              <button id="save-btn-<%= m.id %>" onclick="saveEdit('<%= m.id %>')"
+                class="hidden text-xs px-3 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white">
+                Save
+              </button>
+              <button onclick="deleteMode('<%= m.id %>', '<%= m.name %>')"
+                class="text-xs px-3 py-1 rounded bg-gray-700 hover:bg-red-900 text-red-400">
+                Delete
+              </button>
+            </div>
           </td>
         </tr>
       <% }) %>
@@ -99,6 +127,7 @@
   </table>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"></script>
 <script>
 function toISO(v) {
   if (!v) return null
@@ -106,6 +135,15 @@ function toISO(v) {
   if (v.length >= 19)  return v.slice(0, 19) + '.000Z'
   return null
 }
+
+document.querySelector('input[name="colorHex"]').addEventListener('input', function() {
+  document.querySelector('input[name="colorHexText"]').value = this.value
+})
+document.querySelector('input[name="colorHexText"]').addEventListener('input', function() {
+  if (/^#[0-9A-Fa-f]{6}$/.test(this.value)) {
+    document.querySelector('input[name="colorHex"]').value = this.value
+  }
+})
 
 async function toggleMode(id, isActive) {
   const res = await fetch('/admin/modes/' + id, {
@@ -120,12 +158,14 @@ async function toggleMode(id, isActive) {
 async function createMode(e) {
   e.preventDefault()
   const form = e.target
+  const colorHex = form.colorHexText.value.trim() || form.colorHex.value
   const data = {
-    slug:      form.slug.value.trim(),
-    name:      form.name.value.trim(),
-    sortOrder: parseInt(form.sortOrder.value, 10) || 99,
-    startsAt:  toISO(form.startsAt.value),
-    endsAt:    toISO(form.endsAt.value),
+    slug:        form.slug.value.trim(),
+    name:        form.name.value.trim(),
+    iconSymbol:  form.iconSymbol.value.trim() || 'questionmark',
+    colorHex:    colorHex,
+    startsAt:    toISO(form.startsAt.value),
+    endsAt:      toISO(form.endsAt.value),
   }
   const res = await fetch('/admin/modes', {
     method: 'POST',
@@ -143,6 +183,8 @@ async function createMode(e) {
 function startEdit(id) {
   document.getElementById('name-display-' + id).classList.add('hidden')
   document.getElementById('name-input-' + id).classList.remove('hidden')
+  document.getElementById('icon-display-' + id).classList.add('hidden')
+  document.getElementById('icon-edit-' + id).classList.remove('hidden')
   document.getElementById('startsAt-display-' + id).classList.add('hidden')
   document.getElementById('startsAt-input-' + id).classList.remove('hidden')
   document.getElementById('endsAt-display-' + id).classList.add('hidden')
@@ -154,13 +196,16 @@ function startEdit(id) {
 async function saveEdit(id) {
   const name = document.getElementById('name-input-' + id).value.trim()
   if (!name) return
+  const colorHex = document.getElementById('colorHex-input-' + id).value.trim()
   const res = await fetch('/admin/modes/' + id, {
     method: 'PATCH',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({
       name,
-      startsAt: toISO(document.getElementById('startsAt-input-' + id).value),
-      endsAt:   toISO(document.getElementById('endsAt-input-' + id).value),
+      iconSymbol: document.getElementById('iconSymbol-input-' + id).value.trim(),
+      colorHex:   /^#[0-9A-Fa-f]{6}$/.test(colorHex) ? colorHex : undefined,
+      startsAt:   toISO(document.getElementById('startsAt-input-' + id).value),
+      endsAt:     toISO(document.getElementById('endsAt-input-' + id).value),
     })
   })
   if (!res.ok) { const e = await res.json().catch(()=>({})); alert('Feil: ' + (e.error || res.status)); return }
@@ -173,4 +218,18 @@ async function deleteMode(id, name) {
   if (!res.ok) { const e = await res.json().catch(()=>({})); alert('Feil: ' + (e.error || res.status)); return }
   location.reload()
 }
+
+Sortable.create(document.getElementById('modes-tbody'), {
+  handle: '.drag-handle',
+  animation: 150,
+  onEnd: async function() {
+    const ids = [...document.querySelectorAll('#modes-tbody tr[data-id]')].map(r => r.dataset.id)
+    const res = await fetch('/admin/modes/reorder', {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ ids })
+    })
+    if (!res.ok) alert('Feil ved lagring av rekkefølge')
+  }
+})
 </script>

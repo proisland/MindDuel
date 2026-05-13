@@ -159,6 +159,11 @@ struct MultiplayerRoom: Identifiable, Codable {
     /// Round number, starting at 1. Bumped after every full pass through
     /// the active players.
     var currentRoundIndex: Int = 1
+    /// Set on standalone-solo rooms for server-only modes (no GameMode enum case).
+    /// When non-nil, `mode` is a placeholder value and should not be used for
+    /// display or routing — use this slug + serverModeName instead.
+    var serverModeSlug: String? = nil
+    var serverModeName: String? = nil
 
     var activePlayers: [MultiplayerPlayer] { players.filter { !$0.isEliminated } }
 

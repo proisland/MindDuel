@@ -32,8 +32,13 @@ struct MindDuelApp: App {
 
     private func onLaunch() async {
         await modeCache.refresh()
-        let allModes = ["pi", "math", "chem", "geo", "brain", "science", "history", "physics", "sport", "grammar"]
-        await QuestionPackCache.shared.syncIfNeeded(modes: allModes)
+        // Sync question packs for all active modes returned by the server, so
+        // newly-added modes become playable without an app update.
+        let allSlugs = modeCache.serverModes.map(\.slug)
+        let syncSlugs = allSlugs.isEmpty
+            ? ["pi", "math", "chem", "geo", "brain", "science", "history", "physics", "sport", "grammar"]
+            : allSlugs
+        await QuestionPackCache.shared.syncIfNeeded(modes: syncSlugs)
         requestPushPermission()
     }
 

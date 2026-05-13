@@ -32,9 +32,12 @@ struct HomeView: View {
     @ObservedObject private var social      = SocialStore.shared
     @ObservedObject private var multiplayer = MultiplayerStore.shared
     @ObservedObject private var prefs       = ModePreferences.shared
+    @ObservedObject private var modeCache   = ModeConfigCache.shared
     @State private var activeMode: GameMode? = nil
+    @State private var activeServerMode: ServerMode? = nil
     @State private var activeDestination: HomeDestination? = nil
     @State private var resumeSoloRoomID: String? = nil
+    @State private var resumeServerRoomID: String? = nil
 
     private var pendingBadge: Int { social.totalPendingCount }
     private var inviteBadge: Int  { multiplayer.pendingInviteCount }
@@ -117,6 +120,13 @@ struct HomeView: View {
         .onChange(of: activeMode) { mode in
             if mode == nil { resumeSoloRoomID = nil }
         }
+        .fullScreenCover(item: $activeServerMode) { serverMode in
+            KnowledgeGameView(serverMode: serverMode, username: username,
+                              resumeRoomID: resumeServerRoomID)
+        }
+        .onChange(of: activeServerMode) { mode in
+            if mode == nil { resumeServerRoomID = nil }
+        }
         .fullScreenCover(item: $activeDestination) { dest in
             switch dest {
             case .profile:         ProfileView(username: username, onSignOut: { authState.signOut() })
@@ -131,7 +141,11 @@ struct HomeView: View {
             case .activityList:    ActivityListView()
             case .multiplayerGame: MultiplayerGameView(ownUsername: username)
             case .activeGames:     ActiveGamesView(ownUsername: username)
-            case .allModes:        AllModesSheet(onPlay: { startOrResume($0) })
+            case .allModes:
+                AllModesSheet(
+                    onPlay: { startOrResume($0) },
+                    onPlayServerMode: { mode in activeServerMode = mode }
+                )
             }
         }
     }
@@ -214,6 +228,11 @@ struct HomeView: View {
                     ForEach(prefs.activeOrder, id: \.self) { mode in
                         MDQuickPill(mode: mode) { startOrResume(mode) }
                     }
+                    ForEach(modeCache.serverOnlyModes) { serverMode in
+                        ServerModeQuickPill(serverMode: serverMode) {
+                            activeServerMode = serverMode
+                        }
+                    }
                 }
                 .padding(.horizontal, MDSpacing.md)
                 .padding(.vertical, 2)
@@ -228,7 +247,10 @@ struct HomeView: View {
         return Button {
             if playingRooms.count == 1 {
                 let room = playingRooms[0]
-                if room.isStandaloneSolo {
+                if room.isStandaloneSolo, let slug = room.serverModeSlug {
+                    resumeServerRoomID = room.id
+                    activeServerMode = modeCache.serverOnlyModes.first { $0.slug == slug }
+                } else if room.isStandaloneSolo {
                     resumeSoloRoomID = room.id
                     activeMode = room.mode
                 } else {
