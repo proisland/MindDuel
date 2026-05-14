@@ -4,6 +4,6 @@ dockerBuildTarget = "runner"
 
 [deploy]
 startCommand = "node_modules/.bin/prisma migrate deploy && node dist/server.js"
-healthcheckPath = "/health"
+healthcheckPath = "/v1/health"
 healthcheckTimeout = 60
 restartPolicyType = "on_failure"
