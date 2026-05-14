@@ -1,11 +1,15 @@
 /**
- * Translate question packs from English to Norwegian using the Claude API.
+ * Translate question packs between Norwegian and English using the Claude API.
  *
- * Usage:
+ * Usage (EN → NO, legacy — reads from ~/Downloads/Spørsmålsfiler/):
  *   ANTHROPIC_API_KEY=sk-ant-... npx tsx scripts/translate-questions.ts
  *
- * Input:   ~/Downloads/Spørsmålsfiler/*.csv  (eksportert fra admin-UI)
- * Output:  scripts/csv/no/                   (last opp via admin-UI)
+ * Usage (NO → EN, supply input CSV files explicitly):
+ *   ANTHROPIC_API_KEY=sk-ant-... npx tsx scripts/translate-questions.ts --to en scripts/csv/chem.csv scripts/csv/physics.csv
+ *
+ * Output:
+ *   --to no  →  scripts/csv/no/<filename>
+ *   --to en  →  scripts/csv/en/<filename>
  */
 
 import fs from 'node:fs'
@@ -15,10 +19,16 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+// ── CLI args ──────────────────────────────────────────────────────────────────
+const argv = process.argv.slice(2)
+const toIdx = argv.indexOf('--to')
+const TARGET_LANG: 'no' | 'en' = toIdx !== -1 && argv[toIdx + 1] === 'en' ? 'en' : 'no'
+const inputArgs = argv.filter((a, i) => !a.startsWith('--') && argv[i - 1] !== '--to')
+
 const API_KEY    = process.env.ANTHROPIC_API_KEY ?? ''
 const MODEL      = 'claude-haiku-4-5-20251001'
 const INPUT_DIR  = path.join(os.homedir(), 'Downloads/Spørsmålsfiler')
-const OUTPUT_DIR = path.join(__dirname, 'csv/no')
+const OUTPUT_DIR = path.join(__dirname, `csv/${TARGET_LANG}`)
 const BATCH_SIZE   = 20
 const CONCURRENCY  = 1
 const MAX_RETRIES  = 5
@@ -87,15 +97,29 @@ function toCsvLine(q: Question): string {
 
 // ── Claude API ────────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `Du er en norsk trivia-oversetter. Oversett engelske triviaspørsmål til norsk.
+const SYSTEM_PROMPTS = {
+  no: `Du er en norsk trivia-oversetter. Oversett engelske triviaspørsmål til norsk.
 
 Regler:
 - Oversett alt tekst naturlig til norsk bokmål
 - Behold egennavn (personers navn, titler på filmer/bøker/sanger) i den formen som er mest kjent i Norge — ofte engelsk (f.eks. "Top Gun", "The Beatles"), men norsk der det er etablert (f.eks. "Ringenes herre")
 - Informatikk: bruk norske termer der de finnes (f.eks. "datamaskin", "nettleser", "minne"), men behold universelt brukte engelske termer (f.eks. "RAM", "CPU", "cache", "kernel", "byte")
-- Returner KUN et gyldig JSON-array. Ingen markdown, ingen forklaring.`
+- Returner KUN et gyldig JSON-array. Ingen markdown, ingen forklaring.`,
+
+  en: `You are a trivia translator. Translate Norwegian trivia questions into natural English.
+
+Rules:
+- Translate all text into natural, clear English
+- Keep proper nouns (people's names, movie/book/song titles) in their most internationally recognised form
+- Science/tech: use standard English terms (e.g. "gravity", "electron", "nucleus")
+- Return ONLY a valid JSON array. No markdown, no explanation.`,
+}
 
 async function callClaude(items: TranslationItem[], mode: string, attempt: number): Promise<TranslationItem[]> {
+  const userMsg = TARGET_LANG === 'en'
+    ? `Translate these ${mode} trivia questions into English. Return a JSON array with the same structure.\n\n${JSON.stringify(items)}`
+    : `Oversett disse ${mode}-triviaspørsmålene til norsk. Returner et JSON-array med samme struktur.\n\n${JSON.stringify(items)}`
+
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -106,11 +130,8 @@ async function callClaude(items: TranslationItem[], mode: string, attempt: numbe
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 4096,
-      system: SYSTEM_PROMPT,
-      messages: [{
-        role: 'user',
-        content: `Oversett disse ${mode}-triviaspørsmålene til norsk. Returner et JSON-array med samme struktur.\n\n${JSON.stringify(items)}`,
-      }],
+      system: SYSTEM_PROMPTS[TARGET_LANG],
+      messages: [{ role: 'user', content: userMsg }],
     }),
   })
 
@@ -176,13 +197,13 @@ async function translateBatch(questions: Question[], mode: string): Promise<Ques
 
 async function processFile(csvFile: string): Promise<void> {
   const filename = path.basename(csvFile)
-  const mode = filename.replace(/-en-v\d+\.csv$/, '')
-  const outFilename = filename.replace('-en-', '-no-')
-  const outPath = path.join(OUTPUT_DIR, outFilename)
+  // Mode label: strip known suffixes like -en-v1, -no-v1, or just use stem
+  const mode = filename.replace(/(-(?:en|no)-v\d+)?\.csv$/, '')
+  const outPath = path.join(OUTPUT_DIR, filename)
 
   process.stdout.write(`\n── ${mode} ──\n`)
   const questions = parseCsv(fs.readFileSync(csvFile, 'utf-8'))
-  process.stdout.write(`  ${questions.length} spørsmål å oversette\n`)
+  process.stdout.write(`  ${questions.length} questions to translate\n`)
 
   // Split into batches
   const batches: Question[][] = []
@@ -205,17 +226,17 @@ async function processFile(csvFile: string): Promise<void> {
       for (let j = 0; j < r.length; j++) translated[offset + j] = r[j]
       done += r.length
     }
-    process.stdout.write(`\r  ${done}/${questions.length} oversatt...`)
+    process.stdout.write(`\r  ${done}/${questions.length} translated...`)
     if (i + CONCURRENCY < batches.length) {
       await new Promise(r => setTimeout(r, BATCH_DELAY_MS))
     }
   }
 
-  process.stdout.write(`\r  ✓ ${done} spørsmål oversatt til norsk\n`)
+  process.stdout.write(`\r  ✓ ${done} questions translated to ${TARGET_LANG}\n`)
 
   const csv = `id,level,prompt,correct,distractor1,distractor2,distractor3\n` + translated.map(toCsvLine).join('\n')
   fs.writeFileSync(outPath, csv, 'utf-8')
-  process.stdout.write(`  → scripts/csv/no/${outFilename}\n`)
+  process.stdout.write(`  → scripts/csv/${TARGET_LANG}/${filename}\n`)
 }
 
 // ── Entry point ───────────────────────────────────────────────────────────────
@@ -223,17 +244,22 @@ async function processFile(csvFile: string): Promise<void> {
 async function main() {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true })
 
-  const files = fs.readdirSync(INPUT_DIR)
-    .filter(f => f.endsWith('.csv'))
-    .sort()
-    .map(f => path.join(INPUT_DIR, f))
+  // Use explicit file args if given; fall back to INPUT_DIR for legacy EN→NO flow
+  const files: string[] = inputArgs.length > 0
+    ? inputArgs.map(f => path.resolve(f))
+    : fs.readdirSync(INPUT_DIR)
+        .filter(f => f.endsWith('.csv'))
+        .sort()
+        .map(f => path.join(INPUT_DIR, f))
 
   if (files.length === 0) {
-    console.error(`Ingen CSV-filer funnet i ${INPUT_DIR}`)
+    console.error(inputArgs.length > 0
+      ? `No input files found.`
+      : `Ingen CSV-filer funnet i ${INPUT_DIR}`)
     process.exit(1)
   }
 
-  console.log(`Oversetter ${files.length} filer til norsk med ${MODEL}...`)
+  console.log(`Translating ${files.length} file(s) → ${TARGET_LANG.toUpperCase()} with ${MODEL}...`)
   const start = Date.now()
 
   for (const file of files) {
@@ -241,8 +267,8 @@ async function main() {
   }
 
   const elapsed = ((Date.now() - start) / 1000).toFixed(1)
-  console.log(`\n✓ Ferdig på ${elapsed}s.`)
-  console.log(`  Last opp CSV-filene fra scripts/csv/no/ via admin-grensesnittet (language: no).`)
+  console.log(`\n✓ Done in ${elapsed}s.`)
+  console.log(`  Upload CSV files from scripts/csv/${TARGET_LANG}/ via the admin UI (language: ${TARGET_LANG}).`)
 }
 
 main().catch(err => { console.error(err); process.exit(1) })
