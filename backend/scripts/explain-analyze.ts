@@ -47,8 +47,8 @@ async function main() {
 
   // User lookup by Apple ID (auth hot path)
   await explain(
-    'User lookup by appleId',
-    `SELECT id, username, "isSuspended" FROM "User" WHERE "appleId" = $1`,
+    'User lookup by appleUserId',
+    `SELECT id, username, "isSuspended" FROM "User" WHERE "appleUserId" = $1`,
     ['placeholder-apple-id'],
   )
 
@@ -64,7 +64,7 @@ async function main() {
   // Pending feedback (admin dashboard)
   await explain(
     'Pending feedback list',
-    `SELECT id, type, message, "createdAt"
+    `SELECT id, message, "createdAt"
      FROM "Feedback"
      WHERE status = 'open'
      ORDER BY "createdAt" DESC

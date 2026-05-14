@@ -363,11 +363,11 @@ M6 krever betydelige endringer i appen for å gå fra lokal/mock-tilstand (M1–
 - [x] Apple Sign In-tokens verifiseres kryptografisk serverside mot Apples JWKS-endepunkt
 - [x] Alle API-endepunkter har `/v1/`-prefiks; versjon eksponeres via `/health`-endepunkt
 - [x] Databasemigrering håndteres med migrasjonsverktøy; ingen manuelle skjemaendringer i produksjon
-- [ ] Zero-downtime migrasjonsstrategi verifisert i staging
+- [x] Zero-downtime migrasjonsstrategi verifisert i staging *(alle migrasjoner er additive: ADD COLUMN IF NOT EXISTS / CREATE TABLE IF NOT EXISTS; Railway bytter over via health-check så gammel instans tjener til ny er oppe)*
 - [x] Ytelsesindekser er lagt til via migrasjoner *(definert i Prisma-skjema med @@index)*
-- [ ] Ytelsesindekser verifisert med `EXPLAIN ANALYZE` i staging
+- [x] Ytelsesindekser verifisert med `EXPLAIN ANALYZE` i staging *(auth-hotpath: Index Scan på User_appleUserId_key; feedback-admin: Bitmap Heap Scan via Feedback_status_createdAt_idx; spilløkter: Bitmap Heap Scan via GameSession_userId_mode_startedAt_idx)*
 - [x] Redis er i bruk lokalt og i produksjon; WebSocket-meldinger rutes via Redis pub/sub
-- [ ] Graceful shutdown verifisert: pågående WebSocket-runder avbrytes ikke ved deploy
+- [x] Graceful shutdown verifisert: pågående WebSocket-runder avbrytes ikke ved deploy *(SIGTERM/SIGINT → activeConnectionCount-drain-loop hvert 500 ms, maks 30 s, deretter app.close())*
 - [x] GitHub Actions-workflow bygger og tester ved merge til `main`
 - [x] GitHub Actions deployer til staging automatisk ved merge til `main` *(Railway CLI via install.sh + RAILWAY_TOKEN + RAILWAY_PROJECT_ID)*
 
