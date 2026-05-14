@@ -87,8 +87,10 @@ jobs:
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
         run: |
           npm install -g @railway/cli
-          railway --version
-          railway whoami || true
+          railway --version 2>&1 || echo "version failed"
+          echo "Token length: ${#RAILWAY_TOKEN}"
+          echo "Token prefix: ${RAILWAY_TOKEN:0:6}..."
+          railway whoami 2>&1 || echo "whoami failed"
           railway up --service mindduel-api --environment staging --detach
 
     env:
