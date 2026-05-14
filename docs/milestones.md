@@ -454,38 +454,37 @@ Kun mørk modus støttes i v1. Color Assets implementeres uten light-variant. Ly
 ---
 
 ## M9 – Skymigrering
-**Mål:** Backend flyttes fra lokal Docker-utvikling til Railway i produksjon. iOS-appen peker på ekte produksjons-API.
+**Mål:** Backend-staging på Railway er allerede operativt. M9 handler om å løfte staging til produksjon og koble iOS-appen til produksjons-API.
 
-### Railway-oppsett
-- Railway-prosjekt opprettet med to tjenester: `api` og `admin`
-- Railway Managed PostgreSQL provisjonert i EU/Frankfurt
-- Miljøvariabler separert for lokalt og produksjon (`.env.local` vs. Railway environment variables)
+### Status før M9
+- Railway-prosjekt eksisterer med to tjenester: `api` og `admin`
+- Railway Managed PostgreSQL og Redis er provisjonert i EU/Frankfurt
+- Staging-miljø er oppe og nås automatisk ved merge til `main` (GitHub Actions)
+- Miljøvariabler er separert: `.env.local` for lokal Docker, Railway environment variables for staging/produksjon
 
 ### Objektlagring
-- Cloudflare R2-bucket opprettet (EU-region)
+- Cloudflare R2-bucket opprettes (EU-region) for bilder og andre store filer
 - MinIO i Docker erstattes av R2 i produksjonskonfigurasjonen
-- Bilder og spørsmålspakker migrert til R2
+- Eksisterende bilder (f.eks. flagg brukt i geografi-modus) migrert til R2
 
-### Domener og tilkobling
-- Subdomener konfigurert (f.eks. `api.mindduel.no` og `admin.mindduel.no`)
-- HTTPS/WSS bekreftet i produksjon
+### Produksjonsmiljø
+- Produksjonsmiljø opprettes som separat Railway-miljø (eller eget prosjekt) med egne miljøvariabler
+- Manuelt deploy-steg i GitHub Actions aktiveres for produksjon (godkjenning kreves)
 - APNs push-sertifikat registrert i produksjonsmiljøet
 
 ### iOS-app
-- API-base-URL byttet fra `localhost` til produksjons-URL
+- API-base-URL byttet fra staging-URL til produksjons-URL
 - Appen bygget og verifisert mot ekte produksjons-backend
 - WebSocket-tilkobling (WSS) verifisert i produksjon
 
 ### Verifisering
-- Alle M6-leveransekrav verifisert i produksjon (ikke bare lokalt)
-- Staging-miljø på Railway satt opp for fremtidig testing
+- Alle M6-leveransekrav verifisert i produksjon (ikke bare staging)
 
 ### Leveransekrav
-- [ ] API og admin kjøres på Railway i EU-region
-- [ ] PostgreSQL og Cloudflare R2 er i bruk i produksjon
+- [ ] Produksjonsmiljø er live og separat fra staging
+- [ ] Cloudflare R2 er i bruk for bilder i produksjon
 - [ ] iOS-appen kommuniserer med produksjons-API over HTTPS/WSS
 - [ ] Push-notifikasjoner fungerer via APNs i produksjon
-- [ ] Staging-miljø er tilgjengelig
 
 ---
 
