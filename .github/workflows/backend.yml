@@ -7,6 +7,8 @@ on:
       - "backend/**"
       - "docker-compose.yml"
       - ".github/workflows/backend.yml"
+      - "railway.toml"
+      - "nixpacks.toml"
   pull_request:
     branches: [main]
     paths:
