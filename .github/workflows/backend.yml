@@ -89,9 +89,8 @@ jobs:
           curl -fsSL https://railway.app/install.sh | bash
           export PATH="$HOME/.railway/bin:$PATH"
           railway --version 2>&1
-          railway service list 2>&1 || echo "service list result above"
           railway up \
-            --service mindduel-api \
+            --service MindDuel \
             --environment staging \
             --project "$RAILWAY_PROJECT_ID" \
             --detach
