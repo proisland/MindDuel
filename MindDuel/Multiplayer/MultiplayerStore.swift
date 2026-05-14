@@ -516,6 +516,15 @@ import UserNotifications
                                   correctCount: correctCount, startLevel: startLevel)
     }
 
+    func saveStandaloneSolo(mode: GameMode, ownUsername: String,
+                            lives: Int, skips: Int,
+                            score: Int, correctCount: Int,
+                            startLevel: Int) -> String {
+        saveStandaloneSoloFeature(mode: mode, ownUsername: ownUsername,
+                                  lives: lives, skips: skips, score: score,
+                                  correctCount: correctCount, startLevel: startLevel)
+    }
+
     private func saveStandaloneSoloFeature(mode: GameMode, ownUsername: String,
                                            lives: Int, skips: Int,
                                            score: Int, correctCount: Int,

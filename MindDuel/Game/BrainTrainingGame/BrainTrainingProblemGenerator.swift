@@ -14,6 +14,8 @@ enum BrainTrainingProblemGenerator {
         case workingMemory            // antall sifre i 4-1-7-2-9
     }
 
+    static func resetRoundHistory() {}
+
     static func generate(level: Int = 1) -> BrainTrainingProblem {
         let clampedLevel = max(1, min(20, level))
         // Level scales the difficulty band a kind produces, but every kind

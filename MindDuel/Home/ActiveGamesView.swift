@@ -56,16 +56,9 @@ struct ActiveGamesView: View {
         }
         .fullScreenCover(item: $resumeSoloMode) { mode in
             switch mode {
-            case .pi:            PiGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
-            case .math:          MathGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
-            case .chemistry:     ChemistryGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
-            case .geography:     GeographyGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
-            case .brainTraining: BrainTrainingGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
-            case .science:       ScienceGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
-            case .history:       HistoryGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
-            case .physics:       PhysicsGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
-            case .sport:         SportGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
-            case .grammar:       GrammarGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .pi:   PiGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            case .math: MathGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
+            default:    StandardGameView(mode: mode, username: ownUsername, resumeRoomID: resumeSoloRoomID)
             }
         }
         .fullScreenCover(item: $resumeServerMode) { serverMode in

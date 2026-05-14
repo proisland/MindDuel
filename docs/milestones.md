@@ -446,10 +446,10 @@ Kun mørk modus støttes i v1. Color Assets implementeres uten light-variant. Ly
 - Edge cases: langt brukernavn, offline-modus, 0 venner, høyt progresjonsnivå
 
 ### Leveransekrav
-- [ ] Alle animasjoner fra Design.md er implementert
-- [ ] Haptics fungerer og respekterer systeminnstilling
-- [ ] Onboarding vises ved første innlogging
-- [ ] Treningsrunde fungerer uten å påvirke progresjon eller kvote
+- [x] Alle animasjoner fra Design.md er implementert
+- [x] Haptics fungerer og respekterer systeminnstilling
+- [x] Onboarding vises ved første innlogging
+- [x] Treningsrunde fungerer uten å påvirke progresjon eller kvote
 
 ---
 

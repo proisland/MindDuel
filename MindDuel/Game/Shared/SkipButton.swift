@@ -8,7 +8,10 @@ struct SkipButton: View {
     let onSkip: () -> Void
 
     var body: some View {
-        Button(action: onSkip) {
+        Button {
+            Haptics.trigger(.skip)
+            onSkip()
+        } label: {
             Image(systemName: "forward.fill")
                 .font(.system(size: 20, weight: .bold))
                 .foregroundStyle(Color.mdText2)

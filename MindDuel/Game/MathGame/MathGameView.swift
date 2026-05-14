@@ -3,6 +3,8 @@ import SwiftUI
 struct MathGameView: View {
     let username: String
     let resumeRoomID: String?
+    let isPractice: Bool
+    let practiceStartLevel: Int
 
     @StateObject private var engine      = GameEngine()
     @ObservedObject private var progression = ProgressionStore.shared
@@ -12,22 +14,24 @@ struct MathGameView: View {
     @State private var totalAnswerTime:  Double = 0
     @State private var selectedIndex:    Int?   = nil
     @State private var feedbackIsCorrect: Bool? = nil
+    @State private var revealCorrectIndex: Int? = nil
     @State private var showQuitModal     = false
     @State private var roundResult:      ProgressionStore.RoundResult? = nil
-    // Snapshot of the user's mathLevel at round start. The score multiplier uses
-    // this fixed value so a player who levels up mid-round doesn't retroactively
-    // boost the score for digits they answered at lower difficulty.
     @State private var startLevel:       Int
 
     @Environment(\.dismiss) private var dismiss
 
     @StateObject private var sessionService = GameSessionService()
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(username: String, resumeRoomID: String? = nil) {
+    init(username: String, resumeRoomID: String? = nil,
+         isPractice: Bool = false, practiceStartLevel: Int = 1) {
         self.username = username
         self.resumeRoomID = resumeRoomID
-        let lvl = ProgressionStore.shared.mathLevel
+        self.isPractice = isPractice
+        self.practiceStartLevel = practiceStartLevel
+        let lvl = isPractice ? practiceStartLevel : ProgressionStore.shared.mathLevel
         _startLevel = State(initialValue: lvl)
         _problem    = State(initialValue: MathProblemGenerator.generate(level: lvl))
     }
@@ -65,15 +69,23 @@ struct MathGameView: View {
                     onContinue: {
                         showQuitModal = false
                     },
-                    onSave: {
+                    onSave: isPractice ? nil : {
                         showQuitModal = false
                         saveSessionAndExit()
                     }
                 )
             }
         }
-        .onAppear { restoreSavedSessionIfNeeded(); Task { try? await sessionService.startSession(mode: "math", startPosition: startLevel) } }
-        .onDisappear { autoSaveIfInProgress(); Task { try? await sessionService.endSession() } }
+        .onAppear {
+            guard !isPractice else { return }
+            restoreSavedSessionIfNeeded()
+            Task { try? await sessionService.startSession(mode: "math", startPosition: startLevel) }
+        }
+        .onDisappear {
+            guard !isPractice else { return }
+            autoSaveIfInProgress()
+            Task { try? await sessionService.endSession() }
+        }
         .onReceive(timer) { _ in handleTimerTick() }
         .animation(.easeInOut(duration: 0.2), value: showQuitModal)
         .onChange(of: engine.isRoundOver, perform: { over in
@@ -125,7 +137,15 @@ struct MathGameView: View {
 
     private var gameContent: some View {
         VStack(spacing: 0) {
-            MDTopBar(title: String(localized: "mode_math"), leadingAction: { showQuitModal = true }) {
+            MDTopBar(
+                title: isPractice
+                    ? String(localized: "practice_mode_title")
+                    : String(localized: "mode_math"),
+                leadingAction: {
+                    Haptics.trigger(.modalOpen)
+                    showQuitModal = true
+                }
+            ) {
                 MDAvatar(username: username, size: .sm)
             }
 
@@ -150,11 +170,12 @@ struct MathGameView: View {
                 .disabled(isInteractionBlocked)
                 .padding(.bottom, MDSpacing.xl)
         }
+        .animation(.easeOut(duration: 0.2), value: problemCount)
         .overlay {
             if engine.isWaitingAfterSkip { waitingOverlay }
         }
         .overlay(alignment: .top) {
-            if progression.isQuotaExhausted {
+            if !isPractice && progression.isQuotaExhausted {
                 quotaExhaustedBanner
                     .padding(.top, 60)
                     .padding(.horizontal, MDSpacing.md)
@@ -166,7 +187,7 @@ struct MathGameView: View {
         MDPrimaryCard {
             VStack(spacing: MDSpacing.xs) {
                 Text(String(format: String(localized: "math_level_problem"),
-                            progression.mathLevel, problemCount))
+                            isPractice ? startLevel : progression.mathLevel, problemCount))
                     .mdStyle(.caption)
                     .foregroundStyle(Color.mdText2)
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -177,6 +198,11 @@ struct MathGameView: View {
             }
             .padding(.vertical, MDSpacing.sm)
         }
+        .id(problemCount)
+        .transition(reduceMotion ? .opacity : .asymmetric(
+            insertion: .move(edge: .trailing).combined(with: .opacity),
+            removal: .move(edge: .leading).combined(with: .opacity)
+        ))
     }
 
     private var answerGrid: some View {
@@ -189,7 +215,7 @@ struct MathGameView: View {
                 ) {
                     handleAnswerTap(index)
                 }
-                .disabled(isInteractionBlocked || progression.isQuotaExhausted)
+                .disabled(isInteractionBlocked || (!isPractice && progression.isQuotaExhausted))
             }
         }
     }
@@ -238,6 +264,7 @@ struct MathGameView: View {
     }
 
     private func answerFeedbackState(for index: Int) -> AnswerFeedbackState {
+        if let revealIdx = revealCorrectIndex, index == revealIdx { return .reveal }
         guard let sel = selectedIndex, sel == index else { return .idle }
         switch feedbackIsCorrect {
         case true:  return .correct
@@ -250,33 +277,49 @@ struct MathGameView: View {
 
     private func handleAnswerTap(_ index: Int) {
         guard !engine.isRoundOver, !engine.isWaitingAfterSkip,
-              feedbackIsCorrect == nil, !progression.isQuotaExhausted else { return }
-        progression.consumeQuestion()
+              feedbackIsCorrect == nil,
+              isPractice || !progression.isQuotaExhausted else { return }
+        if !isPractice { progression.consumeQuestion() }
         selectedIndex     = index
         let correct       = problem.options[index] == problem.correctAnswer
         feedbackIsCorrect = correct
-        let answeredAt = ISO8601DateFormatter.ms.string(from: Date())
-        Task { try? await sessionService.submitAnswer(answeredAt: answeredAt, questionId: "math-\(problemCount)", answer: "\(problem.options[index])", isCorrect: correct) }
+
+        if !isPractice {
+            let answeredAt = ISO8601DateFormatter.ms.string(from: Date())
+            Task { try? await sessionService.submitAnswer(answeredAt: answeredAt,
+                                                         questionId: "math-\(problemCount)",
+                                                         answer: "\(problem.options[index])",
+                                                         isCorrect: correct) }
+        }
 
         Task {
-            try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
             if correct {
-                totalAnswerTime += elapsedSeconds
-                progression.recordCorrectAnswerTime(elapsedSeconds, mode: .math)
+                try? await Task.sleep(nanoseconds: 250_000_000)
+                if !isPractice {
+                    totalAnswerTime += elapsedSeconds
+                    progression.recordCorrectAnswerTime(elapsedSeconds, mode: .math)
+                    progression.advanceMathLevel()
+                }
                 engine.recordCorrect()
-                progression.advanceMathLevel()   // may increment level
             } else {
-                progression.recordWrongAnswer(mode: .math)
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                if !isPractice {
+                    progression.recordWrongAnswer(mode: .math)
+                }
                 engine.recordWrong()
+                if isPractice {
+                    // reveal correct answer for 1.5 s
+                    let correctIdx = problem.options.firstIndex(of: problem.correctAnswer)
+                    revealCorrectIndex = correctIdx
+                    try? await Task.sleep(nanoseconds: 1_500_000_000)
+                    revealCorrectIndex = nil
+                }
             }
             guard !engine.isRoundOver else {
-                selectedIndex     = nil
-                feedbackIsCorrect = nil
-                return
+                selectedIndex = nil; feedbackIsCorrect = nil; return
             }
             nextProblem()
-            selectedIndex     = nil
-            feedbackIsCorrect = nil
+            selectedIndex = nil; feedbackIsCorrect = nil
         }
     }
 
@@ -288,30 +331,35 @@ struct MathGameView: View {
 
     private func handleTimerTick() {
         guard !engine.isRoundOver, !engine.isWaitingAfterSkip,
-              feedbackIsCorrect == nil, !progression.isQuotaExhausted else { return }
+              feedbackIsCorrect == nil, isPractice || !progression.isQuotaExhausted else { return }
         elapsedSeconds = min(elapsedSeconds + 0.1, 10.0)
-        if elapsedSeconds >= 10.0 { handleSkip() }
+        if !isPractice, elapsedSeconds >= 10.0 { handleSkip() }
     }
 
     private func nextProblem() {
-        problem        = MathProblemGenerator.generate(level: progression.mathLevel)
+        let lvl = isPractice ? startLevel : progression.mathLevel
+        problem        = MathProblemGenerator.generate(level: lvl)
         problemCount  += 1
         elapsedSeconds = 0
     }
 
     private func finaliseRound(won: Bool) {
         guard roundResult == nil else { return }
-        Task { try? await sessionService.endSession() }
-        roundResult = progression.applyMathRound(
-            correctCount: engine.correctCount,
-            level: startLevel,
-            avgTime: avgTime,
-            won: won
-        )
+        if !isPractice {
+            Task { try? await sessionService.endSession() }
+            roundResult = progression.applyMathRound(
+                correctCount: engine.correctCount,
+                level: startLevel,
+                avgTime: avgTime,
+                won: won
+            )
+        } else {
+            roundResult = ProgressionStore.RoundResult(score: 0, isPersonalBest: false)
+        }
     }
 
     private func resetRound() {
-        let lvl    = progression.mathLevel
+        let lvl    = isPractice ? practiceStartLevel : progression.mathLevel
         startLevel = lvl
         problem    = MathProblemGenerator.generate(level: lvl)
         problemCount      = 1
@@ -319,6 +367,7 @@ struct MathGameView: View {
         totalAnswerTime   = 0
         feedbackIsCorrect = nil
         selectedIndex     = nil
+        revealCorrectIndex = nil
         roundResult       = nil
         engine.restart()
     }
@@ -326,12 +375,15 @@ struct MathGameView: View {
 
 // MARK: – Answer button
 
-enum AnswerFeedbackState: Equatable { case idle, correct, wrong }
+enum AnswerFeedbackState: Equatable { case idle, correct, wrong, reveal }
 
 struct AnswerButton: View {
     let label: String
     let feedbackState: AnswerFeedbackState
     let action: () -> Void
+
+    @State private var shakeAttempts = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Button(action: action) {
@@ -348,28 +400,57 @@ struct AnswerButton: View {
                 )
         }
         .buttonStyle(.plain)
+        .scaleEffect(feedbackState == .correct && !reduceMotion ? 1.05 : 1.0)
+        .modifier(ShakeEffect(animatableData: CGFloat(shakeAttempts)))
+        .animation(.spring(response: 0.22, dampingFraction: 0.45), value: feedbackState == .correct)
         .animation(.easeInOut(duration: 0.15), value: feedbackState)
+        .onChange(of: feedbackState) { state in
+            switch state {
+            case .correct:
+                Haptics.trigger(.correct)
+            case .wrong:
+                Haptics.trigger(.wrong)
+                if !reduceMotion {
+                    withAnimation(.linear(duration: 0.3)) { shakeAttempts += 1 }
+                }
+            case .reveal, .idle:
+                break
+            }
+        }
     }
 
     private var bgColor: Color {
         switch feedbackState {
-        case .idle:    return .mdSurface2
-        case .correct: return .mdGreenSoft
-        case .wrong:   return .mdRedSoft
+        case .idle:           return .mdSurface2
+        case .correct, .reveal: return .mdGreenSoft
+        case .wrong:          return .mdRedSoft
         }
     }
     private var borderColor: Color {
         switch feedbackState {
-        case .idle:    return .clear
-        case .correct: return .mdGreen
-        case .wrong:   return .mdRed
+        case .idle:           return .clear
+        case .correct, .reveal: return .mdGreen
+        case .wrong:          return .mdRed
         }
     }
     private var textColor: Color {
         switch feedbackState {
-        case .idle:    return .mdText
-        case .correct: return .mdGreen
-        case .wrong:   return .mdRed
+        case .idle:           return .mdText
+        case .correct, .reveal: return .mdGreen
+        case .wrong:          return .mdRed
         }
+    }
+}
+
+// MARK: – Shake animation
+
+struct ShakeEffect: GeometryEffect {
+    var amount: CGFloat = 5
+    var shakesPerUnit = 3
+    var animatableData: CGFloat
+
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        let x = amount * sin(animatableData * .pi * CGFloat(shakesPerUnit))
+        return ProjectionTransform(CGAffineTransform(translationX: x, y: 0))
     }
 }

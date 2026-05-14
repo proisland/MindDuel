@@ -84,7 +84,7 @@ struct APIQuestion: Codable {
 /// A game mode as returned by `GET /v1/modes`. Modes whose `slug` does not
 /// match a `GameMode` enum case are "server-only" — shown in the UI using
 /// `iconSymbol` and `colorHex` from the server.
-struct ServerMode: Codable, Identifiable, Equatable {
+struct ServerMode: Codable, Identifiable, Equatable, Hashable {
     // New bilingual fields (backend v2+)
     let nameNo: String?
     let nameEn: String?

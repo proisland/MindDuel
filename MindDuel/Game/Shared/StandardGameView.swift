@@ -1,35 +1,38 @@
 import SwiftUI
 
-/// #116: solo brain-training round. Mirrors MathGameView structure, minus
-/// session restore/save (deferred — same default as the chemistry mode at
-/// launch) so the surface area lands quickly without dragging more state
-/// management into the round.
-struct BrainTrainingGameView: View {
+/// Unified game view for all multiple-choice modes (chemistry, geography,
+/// brain training, science, history, physics, sport, grammar). Replaces the
+/// 8 near-identical per-mode views that previously lived in their own folders.
+struct StandardGameView: View {
+    let mode: GameMode
     let username: String
-    var resumeRoomID: String? = nil
+    let resumeRoomID: String?
 
-    @StateObject private var engine          = GameEngine()
-    @ObservedObject private var progression  = ProgressionStore.shared
-    @State private var problem:               BrainTrainingProblem
-    @State private var problemCount         = 1
-    @State private var elapsedSeconds:      Double = 0
-    @State private var totalAnswerTime:     Double = 0
-    @State private var selectedIndex:       Int?   = nil
-    @State private var feedbackIsCorrect:   Bool?  = nil
-    @State private var showQuitModal        = false
-    @State private var roundResult:         ProgressionStore.RoundResult? = nil
-    @State private var startLevel:          Int
+    @StateObject private var engine      = GameEngine()
+    @ObservedObject private var progression = ProgressionStore.shared
+    @State private var problem:           any GameProblem
+    @State private var problemCount      = 1
+    @State private var elapsedSeconds:   Double = 0
+    @State private var totalAnswerTime:  Double = 0
+    @State private var selectedIndex:    Int?   = nil
+    @State private var feedbackIsCorrect: Bool? = nil
+    @State private var showQuitModal     = false
+    @State private var roundResult:      ProgressionStore.RoundResult? = nil
+    @State private var startLevel:       Int
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var sessionService = GameSessionService()
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(username: String, resumeRoomID: String? = nil) {
+    init(mode: GameMode, username: String, resumeRoomID: String? = nil) {
+        self.mode = mode
         self.username = username
         self.resumeRoomID = resumeRoomID
-        let lvl = ProgressionStore.shared.brainLevel
+        let lvl = ProgressionStore.shared.level(for: mode)
         _startLevel = State(initialValue: lvl)
-        _problem    = State(initialValue: BrainTrainingProblemGenerator.generate(level: lvl))
+        Self.resetRoundHistory(mode: mode)
+        _problem = State(initialValue: Self.generate(mode: mode, level: lvl))
     }
 
     private var avgTime: Double {
@@ -62,7 +65,9 @@ struct BrainTrainingGameView: View {
                         finaliseRound(won: false)
                         engine.quit()
                     },
-                    onContinue: { showQuitModal = false },
+                    onContinue: {
+                        showQuitModal = false
+                    },
                     onSave: {
                         showQuitModal = false
                         saveSessionAndExit()
@@ -70,34 +75,38 @@ struct BrainTrainingGameView: View {
                 )
             }
         }
-        .onAppear { restoreSavedSessionIfNeeded(); Task { try? await sessionService.startSession(mode: "brain", startPosition: startLevel) } }
-        .onDisappear { autoSaveIfInProgress(); Task { try? await sessionService.endSession() } }
-        .onReceive(timer) { _ in handleTimerTick() }
-        .onChange(of: engine.isRoundOver) { over in
-            if over && roundResult == nil { finaliseRound(won: false) }
+        .onAppear {
+            restoreSavedSessionIfNeeded()
+            Task { try? await sessionService.startSession(mode: mode.slug, startPosition: startLevel) }
         }
+        .onDisappear {
+            autoSaveIfInProgress()
+            Task { try? await sessionService.endSession() }
+        }
+        .onReceive(timer) { _ in handleTimerTick() }
+        .animation(.easeInOut(duration: 0.2), value: showQuitModal)
+        .onChange(of: engine.isRoundOver, perform: { over in
+            if over && roundResult == nil { finaliseRound(won: false) }
+        })
     }
 
-    // MARK: – Session restore / save (#133)
+    // MARK: – Session restore / save
 
     private func restoreSavedSessionIfNeeded() {
         guard let id = resumeRoomID,
               let room = MultiplayerStore.shared.popStandaloneSolo(roomID: id),
               let me = room.players.first(where: { $0.isYou }) else { return }
-        startLevel = max(1, room.startLevel)
-        problem    = BrainTrainingProblemGenerator.generate(level: progression.brainLevel)
+        startLevel   = max(1, room.startLevel)
+        problem      = Self.generate(mode: mode, level: progression.level(for: mode))
         problemCount = max(1, me.correctCount + 1)
         engine.restoreState(lives: me.lives, skips: me.skips, correctCount: me.correctCount)
     }
 
     private func saveSessionAndExit() {
-        _ = MultiplayerStore.shared.saveStandaloneSoloBrainTraining(
-            ownUsername: username,
-            lives: engine.lives,
-            skips: engine.skips,
-            score: 0,
-            correctCount: engine.correctCount,
-            startLevel: startLevel
+        _ = MultiplayerStore.shared.saveStandaloneSolo(
+            mode: mode, ownUsername: username,
+            lives: engine.lives, skips: engine.skips, score: 0,
+            correctCount: engine.correctCount, startLevel: startLevel
         )
         roundResult = ProgressionStore.RoundResult(score: 0, isPersonalBest: false)
         engine.quit()
@@ -107,13 +116,10 @@ struct BrainTrainingGameView: View {
     private func autoSaveIfInProgress() {
         guard !engine.isRoundOver, roundResult == nil,
               engine.correctCount > 0 || engine.lives < 5 || engine.skips < 5 else { return }
-        _ = MultiplayerStore.shared.saveStandaloneSoloBrainTraining(
-            ownUsername: username,
-            lives: engine.lives,
-            skips: engine.skips,
-            score: 0,
-            correctCount: engine.correctCount,
-            startLevel: startLevel
+        _ = MultiplayerStore.shared.saveStandaloneSolo(
+            mode: mode, ownUsername: username,
+            lives: engine.lives, skips: engine.skips, score: 0,
+            correctCount: engine.correctCount, startLevel: startLevel
         )
     }
 
@@ -121,8 +127,10 @@ struct BrainTrainingGameView: View {
 
     private var gameContent: some View {
         VStack(spacing: 0) {
-            MDTopBar(title: String(localized: "mode_brain_training"),
-                     leadingAction: { showQuitModal = true }) {
+            MDTopBar(title: String(localized: String.LocalizationValue(mode.titleKey)), leadingAction: {
+                Haptics.trigger(.modalOpen)
+                showQuitModal = true
+            }) {
                 MDAvatar(username: username, size: .sm)
             }
 
@@ -147,20 +155,32 @@ struct BrainTrainingGameView: View {
                 .disabled(isInteractionBlocked)
                 .padding(.bottom, MDSpacing.xl)
         }
+        .animation(.easeOut(duration: 0.2), value: problemCount)
         .overlay {
             if engine.isWaitingAfterSkip { waitingOverlay }
+        }
+        .overlay(alignment: .top) {
+            if progression.isQuotaExhausted {
+                quotaExhaustedBanner
+                    .padding(.top, 60)
+                    .padding(.horizontal, MDSpacing.md)
+            }
         }
     }
 
     private var problemCard: some View {
         MDPrimaryCard {
             VStack(spacing: MDSpacing.xs) {
-                Text(String(format: String(localized: "brain_training_level_problem"),
-                            progression.brainLevel, problemCount))
+                Text(String(format: String(localized: "game_level_problem"),
+                            progression.level(for: mode), problemCount))
                     .mdStyle(.caption)
                     .foregroundStyle(Color.mdText2)
                     .frame(maxWidth: .infinity, alignment: .center)
-                Text(problem.prompt)
+                if let flag = problem.flag {
+                    FlagView(emoji: flag, size: 72)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
+                Text(verbatim: problem.prompt)
                     .font(.system(size: 18, weight: .heavy))
                     .foregroundStyle(Color.mdText)
                     .multilineTextAlignment(.center)
@@ -168,6 +188,11 @@ struct BrainTrainingGameView: View {
             }
             .padding(.vertical, MDSpacing.sm)
         }
+        .id(problemCount)
+        .transition(reduceMotion ? .opacity : .asymmetric(
+            insertion: .move(edge: .trailing).combined(with: .opacity),
+            removal: .move(edge: .leading).combined(with: .opacity)
+        ))
     }
 
     private var answerGrid: some View {
@@ -177,7 +202,9 @@ struct BrainTrainingGameView: View {
                 AnswerButton(
                     label: problem.options[index],
                     feedbackState: answerFeedbackState(for: index)
-                ) { handleAnswerTap(index) }
+                ) {
+                    handleAnswerTap(index)
+                }
                 .disabled(isInteractionBlocked || progression.isQuotaExhausted)
             }
         }
@@ -190,7 +217,7 @@ struct BrainTrainingGameView: View {
                 VStack(spacing: MDSpacing.sm) {
                     Image(systemName: "hand.tap.fill")
                         .font(.system(size: 32))
-                        .foregroundStyle(Color.mdRed)
+                        .foregroundStyle(Color.mdAccent)
                     Text(String(localized: "tap_to_continue_hint"))
                         .mdStyle(.heading)
                         .foregroundStyle(Color.mdText2)
@@ -200,6 +227,24 @@ struct BrainTrainingGameView: View {
                 nextProblem()
                 engine.resumeAfterSkip()
             }
+    }
+
+    private var quotaExhaustedBanner: some View {
+        HStack(spacing: MDSpacing.sm) {
+            Image(systemName: "lock.fill")
+                .foregroundStyle(Color.mdAmber)
+            Text(String(localized: "quota_exhausted_message"))
+                .mdStyle(.bodyMd)
+            Spacer()
+            MDButton(.ghost, title: String(localized: "back_to_home_action")) {
+                finaliseRound(won: true)
+                dismiss()
+            }
+            .frame(width: 80)
+        }
+        .padding(MDSpacing.md)
+        .background(Color.mdAmberSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
     // MARK: – State helpers
@@ -217,6 +262,8 @@ struct BrainTrainingGameView: View {
         }
     }
 
+    // MARK: – Actions
+
     private func handleAnswerTap(_ index: Int) {
         guard !engine.isRoundOver, !engine.isWaitingAfterSkip,
               feedbackIsCorrect == nil, !progression.isQuotaExhausted else { return }
@@ -224,22 +271,22 @@ struct BrainTrainingGameView: View {
         selectedIndex     = index
         let correct       = problem.options[index] == problem.correctAnswer
         feedbackIsCorrect = correct
-        let answeredAt = ISO8601DateFormatter.ms.string(from: Date())
-        Task { try? await sessionService.submitAnswer(answeredAt: answeredAt, questionId: "brain-\(problemCount)", answer: problem.options[index], isCorrect: correct) }
+        let answeredAt    = ISO8601DateFormatter.ms.string(from: Date())
+        Task { try? await sessionService.submitAnswer(answeredAt: answeredAt, questionId: "\(mode.slug)-\(problemCount)", answer: problem.options[index], isCorrect: correct) }
 
         Task {
             try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
             if correct {
                 totalAnswerTime += elapsedSeconds
-                progression.recordCorrectAnswerTime(elapsedSeconds, mode: .brainTraining)
+                progression.recordCorrectAnswerTime(elapsedSeconds, mode: mode)
                 engine.recordCorrect()
-                progression.advanceBrainLevel()
+                progression.advance(mode: mode)
             } else {
-                progression.recordWrongAnswer(mode: .brainTraining)
+                progression.recordWrongAnswer(mode: mode)
                 engine.recordWrong()
             }
             guard !engine.isRoundOver else {
-                selectedIndex = nil
+                selectedIndex     = nil
                 feedbackIsCorrect = nil
                 return
             }
@@ -263,15 +310,16 @@ struct BrainTrainingGameView: View {
     }
 
     private func nextProblem() {
-        problem = BrainTrainingProblemGenerator.generate(level: progression.brainLevel)
-        problemCount += 1
+        problem        = Self.generate(mode: mode, level: progression.level(for: mode))
+        problemCount  += 1
         elapsedSeconds = 0
     }
 
     private func finaliseRound(won: Bool) {
         guard roundResult == nil else { return }
         Task { try? await sessionService.endSession() }
-        roundResult = progression.applyBrainRound(
+        roundResult = progression.applyRound(
+            mode: mode,
             correctCount: engine.correctCount,
             level: startLevel,
             avgTime: avgTime,
@@ -280,9 +328,10 @@ struct BrainTrainingGameView: View {
     }
 
     private func resetRound() {
-        let lvl    = progression.brainLevel
+        let lvl    = progression.level(for: mode)
         startLevel = lvl
-        problem    = BrainTrainingProblemGenerator.generate(level: lvl)
+        Self.resetRoundHistory(mode: mode)
+        problem    = Self.generate(mode: mode, level: lvl)
         problemCount      = 1
         elapsedSeconds    = 0
         totalAnswerTime   = 0
@@ -290,5 +339,35 @@ struct BrainTrainingGameView: View {
         selectedIndex     = nil
         roundResult       = nil
         engine.restart()
+    }
+
+    // MARK: – Generator dispatch
+
+    private static func generate(mode: GameMode, level: Int) -> any GameProblem {
+        switch mode {
+        case .chemistry:     return ChemistryProblemGenerator.generate(level: level)
+        case .geography:     return GeographyProblemGenerator.generate(level: level)
+        case .brainTraining: return BrainTrainingProblemGenerator.generate(level: level)
+        case .science:       return ScienceProblemGenerator.generate(level: level)
+        case .history:       return HistoryProblemGenerator.generate(level: level)
+        case .physics:       return PhysicsProblemGenerator.generate(level: level)
+        case .sport:         return SportProblemGenerator.generate(level: level)
+        case .grammar:       return GrammarProblemGenerator.generate(level: level)
+        case .pi, .math:     return ChemistryProblemGenerator.generate(level: level)
+        }
+    }
+
+    private static func resetRoundHistory(mode: GameMode) {
+        switch mode {
+        case .chemistry:     ChemistryProblemGenerator.resetRoundHistory()
+        case .geography:     GeographyProblemGenerator.resetRoundHistory()
+        case .brainTraining: BrainTrainingProblemGenerator.resetRoundHistory()
+        case .science:       ScienceProblemGenerator.resetRoundHistory()
+        case .history:       HistoryProblemGenerator.resetRoundHistory()
+        case .physics:       PhysicsProblemGenerator.resetRoundHistory()
+        case .sport:         SportProblemGenerator.resetRoundHistory()
+        case .grammar:       GrammarProblemGenerator.resetRoundHistory()
+        case .pi, .math:     break
+        }
     }
 }
