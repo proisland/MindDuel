@@ -89,7 +89,7 @@ jobs:
           curl -fsSL https://railway.app/install.sh | bash
           export PATH="$HOME/.railway/bin:$PATH"
           railway --version 2>&1
-          railway whoami 2>&1 || echo "whoami result above"
+          railway service list 2>&1 || echo "service list result above"
           railway up \
             --service mindduel-api \
             --environment staging \
