@@ -369,7 +369,7 @@ M6 krever betydelige endringer i appen for å gå fra lokal/mock-tilstand (M1–
 - [x] Redis er i bruk lokalt og i produksjon; WebSocket-meldinger rutes via Redis pub/sub
 - [ ] Graceful shutdown verifisert: pågående WebSocket-runder avbrytes ikke ved deploy
 - [x] GitHub Actions-workflow bygger og tester ved merge til `main`
-- [ ] GitHub Actions deployer til staging automatisk ved merge til `main`
+- [x] GitHub Actions deployer til staging automatisk ved merge til `main` *(Railway CLI via install.sh + RAILWAY_TOKEN + RAILWAY_PROJECT_ID)*
 
 **iOS-app**
 - [x] All brukerprofil-data, progresjon og scores lagres sentralt og synkroniseres på tvers av enheter

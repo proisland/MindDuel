@@ -87,11 +87,8 @@ jobs:
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
         shell: bash
         run: |
-          set -euo pipefail
           curl -fsSL https://railway.app/install.sh | bash
           export PATH="$HOME/.railway/bin:$PATH"
-          railway --version
-          echo "Project ID is set: ${RAILWAY_PROJECT_ID:+yes}"
           railway up --service MindDuel --environment staging --project "$RAILWAY_PROJECT_ID" --detach
 
     env:
