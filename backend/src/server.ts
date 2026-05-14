@@ -6,7 +6,13 @@ const DRAIN_TIMEOUT_MS = 30_000
 const DRAIN_POLL_MS    = 500
 
 async function start() {
-  const app = await buildApp()
+  let app: Awaited<ReturnType<typeof buildApp>>
+  try {
+    app = await buildApp()
+  } catch (err) {
+    console.error('Fatal: failed to start server', err)
+    process.exit(1)
+  }
 
   const shutdown = async (signal: string) => {
     app.log.info(`${signal} received — starting graceful shutdown`)
@@ -39,4 +45,7 @@ async function start() {
   }
 }
 
-start()
+start().catch(err => {
+  console.error('Fatal: unhandled startup error', err)
+  process.exit(1)
+})
