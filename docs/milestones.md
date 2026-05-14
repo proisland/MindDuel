@@ -356,7 +356,7 @@ M6 krever betydelige endringer i appen for å gå fra lokal/mock-tilstand (M1–
 - [x] All kommunikasjon mellom app og backend er kryptert (HTTPS/WSS) *(Railway + WSS)*
 - [x] Admin-grensesnitt live med rollebasert autentisering *(EJS+Fastify, bcrypt-passordbeskyttet)*
 - [x] Spørsmålsbanker versjonshåndteres og kan oppdateres uten app-release
-- [ ] Bilder hostes sentralt (CDN/object storage) *(R2-plugin finnes, ruter ikke implementert)*
+- [x] Bilder hostes sentralt (CDN/object storage) *(flagbilder via flagcdn.com/AsyncImage; tilbakemeldingsbilder via R2 presigned URLs)*
 - [x] Admin kan aktivere/skjule/sesongsette spillmodi uten app-oppdatering
 - [x] Tilbakemeldingssystem fungerer end-to-end (mottak, svar og lukking)
 - [x] Anti-juks-flagging kjøres serverside *(< 200 ms avvist, avg < 400 ms → fastRoundCount)*

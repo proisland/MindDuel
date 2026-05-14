@@ -43,6 +43,12 @@ type RedisClient = FastifyInstance['redis']
 // In-process map of connected WebSockets per room (local to this instance)
 const connections = new Map<string, Map<string, WebSocket>>() // roomId → userId → ws
 
+export function activeConnectionCount(): number {
+  let n = 0
+  for (const room of connections.values()) n += room.size
+  return n
+}
+
 function roomKey(roomId: string) { return `room:${roomId}` }
 function lockKey(roomId: string) { return `room:${roomId}:lock` }
 function broadcastChannel(roomId: string) { return `room:${roomId}:broadcast` }

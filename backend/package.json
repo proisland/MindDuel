@@ -12,6 +12,7 @@
     "seed": "tsx prisma/seed.ts",
     "migrate:questions": "tsx scripts/migrate-questions.ts",
     "export:questions": "tsx scripts/migrate-questions.ts --csv",
+    "translate:questions": "tsx scripts/translate-questions.ts",
     "test": "node --test dist/**/*.test.js",
     "lint": "tsc --noEmit"
   },
