@@ -2,7 +2,7 @@ import { buildApp } from './app'
 import { config } from './config'
 import { activeConnectionCount } from './routes/v1/ws'
 
-const DRAIN_TIMEOUT_MS = 30_000
+const DRAIN_TIMEOUT_MS = 30_000 // 30 seconds
 const DRAIN_POLL_MS    = 500
 
 async function start() {
