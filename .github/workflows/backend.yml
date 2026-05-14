@@ -86,10 +86,9 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
         run: |
-          curl -fsSL https://railway.app/install.sh | sh
+          curl -fsSL https://railway.app/install.sh | bash
           export PATH="$HOME/.railway/bin:$PATH"
           railway --version 2>&1
-          echo "Token length: ${#RAILWAY_TOKEN}, Project ID length: ${#RAILWAY_PROJECT_ID}"
           railway whoami 2>&1 || echo "whoami result above"
           railway up \
             --service mindduel-api \
