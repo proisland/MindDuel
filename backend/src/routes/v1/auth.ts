@@ -130,8 +130,8 @@ export default async function authRoutes(app: FastifyInstance) {
     })
   })
 
-  // POST /v1/auth/dev  — development only, bypasses Apple verification
-  if (config.nodeEnv === 'development') {
+  // POST /v1/auth/dev  — bypasses Apple verification; requires ENABLE_DEV_AUTH=true
+  if (config.nodeEnv === 'development' || config.enableDevAuth) {
     const devBody = z.object({ username: z.string().min(1) })
     app.post('/dev', async (request, reply) => {
       const body = devBody.safeParse(request.body)

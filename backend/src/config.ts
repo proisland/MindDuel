@@ -35,6 +35,8 @@ export const config = {
     clientId: required('APPLE_CLIENT_ID'),
   },
 
+  enableDevAuth: process.env.ENABLE_DEV_AUTH === 'true',
+
   admin: {
     sessionSecret: process.env.NODE_ENV === 'production'
       ? required('ADMIN_SESSION_SECRET')
