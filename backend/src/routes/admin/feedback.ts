@@ -53,16 +53,19 @@ export default async function adminFeedbackRoutes(app: FastifyInstance) {
     }
 
     const imageUrlById = new Map(rawImageUrls.map(r => [r.id, r.imageUrl]))
-    const commentsByTicket = new Map<string, RawComment[]>()
-    for (const c of rawComments) {
-      if (!commentsByTicket.has(c.feedbackId)) commentsByTicket.set(c.feedbackId, [])
-      commentsByTicket.get(c.feedbackId)!.push(c)
-    }
+    const commentsByTicket = rawComments.reduce<Record<string, RawComment[]>>(
+      (acc, c) => {
+        if (!acc[c.feedbackId]) acc[c.feedbackId] = [] as RawComment[]
+        acc[c.feedbackId].push(c)
+        return acc
+      },
+      {},
+    )
 
     const tickets = ticketsBase.map(t => ({
       ...t,
       imageUrl: imageUrlById.get(t.id) ?? null,
-      comments: commentsByTicket.get(t.id) ?? [],
+      comments: commentsByTicket[t.id] ?? [],
     }))
 
     return reply.view('admin/feedback.ejs', {
