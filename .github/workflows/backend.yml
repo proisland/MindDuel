@@ -93,7 +93,7 @@ jobs:
             --service MindDuel \
             --environment staging \
             --project "$RAILWAY_PROJECT_ID" \
-            --detach
+            --detach 2>&1
 
     env:
       DATABASE_URL: postgresql://mindduel:mindduel@localhost:5432/mindduel_test
