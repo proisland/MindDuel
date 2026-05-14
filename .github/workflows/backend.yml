@@ -13,8 +13,6 @@ on:
     branches: [main]
     paths:
       - "backend/**"
-  workflow_dispatch:
-
 jobs:
   build-and-test:
     name: Build & lint
@@ -75,23 +73,3 @@ jobs:
           DATABASE_URL: postgresql://mindduel:mindduel@localhost:5432/mindduel_test
         run: npx prisma migrate deploy
 
-  deploy-staging:
-    name: Deploy to staging
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/milestone/')) && github.event_name == 'push'
-
-    steps:
-      - name: Deploy to Railway (staging)
-        run: curl -fsSL -X POST "${{ secrets.RAILWAY_DEPLOY_HOOK_STAGING }}"
-
-  deploy-production:
-    name: Deploy to production
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
-    environment: production
-
-    steps:
-      - name: Deploy to Railway (production)
-        run: curl -fsSL -X POST "${{ secrets.RAILWAY_DEPLOY_HOOK_PRODUCTION }}"
