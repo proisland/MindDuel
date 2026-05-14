@@ -82,27 +82,8 @@ jobs:
     if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/milestone/')) && github.event_name == 'push'
 
     steps:
-      - uses: actions/checkout@v4
-
       - name: Deploy to Railway (staging)
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
-        shell: bash
-        run: |
-          curl -fsSL https://railway.app/install.sh | bash
-          export PATH="$HOME/.railway/bin:$PATH"
-          railway up --service MindDuel --environment staging --project "$RAILWAY_PROJECT_ID" --detach
-
-    env:
-      DATABASE_URL: postgresql://mindduel:mindduel@localhost:5432/mindduel_test
-      REDIS_URL: redis://localhost:6379
-      S3_ENDPOINT: http://localhost:9000
-      S3_BUCKET: mindduel
-      S3_ACCESS_KEY: mindduel
-      S3_SECRET_KEY: mindduel123
-      JWT_SECRET: ci-test-secret
-      APPLE_CLIENT_ID: no.mindduel.app
+        run: curl -fsSL -X POST "${{ secrets.RAILWAY_DEPLOY_HOOK_STAGING }}"
 
   deploy-production:
     name: Deploy to production
