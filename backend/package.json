@@ -13,6 +13,7 @@
     "migrate:questions": "tsx scripts/migrate-questions.ts",
     "export:questions": "tsx scripts/migrate-questions.ts --csv",
     "translate:questions": "tsx scripts/translate-questions.ts",
+    "explain:queries": "tsx scripts/explain-analyze.ts",
     "test": "node --test dist/**/*.test.js",
     "lint": "tsc --noEmit"
   },

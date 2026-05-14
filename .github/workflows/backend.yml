@@ -76,7 +76,7 @@ jobs:
     name: Deploy to staging
     needs: build-and-test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/milestone/')) && github.event_name == 'push'
 
     steps:
       - uses: actions/checkout@v4
