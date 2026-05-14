@@ -87,6 +87,8 @@ jobs:
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
         run: |
           npm install -g @railway/cli
+          railway --version
+          railway whoami || true
           railway up --service mindduel-api --environment staging --detach
 
     env:
