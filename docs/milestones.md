@@ -463,28 +463,27 @@ Kun mørk modus støttes i v1. Color Assets implementeres uten light-variant. Ly
 - Miljøvariabler er separert: `.env.local` for lokal Docker, Railway environment variables for staging/produksjon
 
 ### Objektlagring
-- Cloudflare R2-bucket opprettes (EU-region) for bilder og andre store filer
-- MinIO i Docker erstattes av R2 i produksjonskonfigurasjonen
-- Eksisterende bilder (f.eks. flagg brukt i geografi-modus) migrert til R2
+- Eksisterende S3-oppsett beholdes i produksjon (ingen R2-migrering — for få filer til å forsvare det)
+- `S3_FORCE_PATH_STYLE` og `S3_PUBLIC_URL` er gjort konfigurerbare via miljøvariabler
+- Flaggbilder hentes fra `flagcdn.com` (eksternt CDN) — ingen egne bildefiler å migrere
 
 ### Produksjonsmiljø
-- Produksjonsmiljø opprettes som separat Railway-miljø (eller eget prosjekt) med egne miljøvariabler
-- Manuelt deploy-steg i GitHub Actions aktiveres for produksjon (godkjenning kreves)
-- APNs push-sertifikat registrert i produksjonsmiljøet
+- Produksjonsmiljø opprettes som separat Railway-miljø med egne miljøvariabler
+- Railway GitHub-integrasjon: staging auto-deployer på push til `main`, production deployes manuelt via `git push origin main:production`
+- APNs push-sertifikat registreres i produksjonsmiljøet når betalt Apple Developer-konto er klar
 
 ### iOS-app
-- API-base-URL byttet fra staging-URL til produksjons-URL
-- Appen bygget og verifisert mot ekte produksjons-backend
-- WebSocket-tilkobling (WSS) verifisert i produksjon
+- API-base-URL og WSS-URL peker på Railway production-endepunkt i release-bygg
+- Sign in with Apple krever at App ID `no.mindduel.app` er registrert i Apple Developer Portal
 
 ### Verifisering
-- Alle M6-leveransekrav verifisert i produksjon (ikke bare staging)
+- Alle M6-leveransekrav verifiseres i produksjon (ikke bare staging)
 
 ### Leveransekrav
-- [ ] Produksjonsmiljø er live og separat fra staging
-- [ ] Cloudflare R2 er i bruk for bilder i produksjon
-- [ ] iOS-appen kommuniserer med produksjons-API over HTTPS/WSS
-- [ ] Push-notifikasjoner fungerer via APNs i produksjon
+- [x] Produksjonsmiljø er live og separat fra staging
+- [x] iOS-appen kommuniserer med produksjons-API over HTTPS/WSS (URL oppdatert)
+- [ ] Databasedata (spillmodi, spørsmål) migrert fra staging til production
+- [ ] Push-notifikasjoner fungerer via APNs i produksjon (venter på betalt Apple Developer-konto)
 
 ---
 
