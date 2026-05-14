@@ -79,6 +79,34 @@ export default async function adminRoutes(app: FastifyInstance) {
     })
   })
 
+  // ── Settings / change password ─────────────────────────────────────────────
+  const settingsView = (reply: any, data: object = {}) =>
+    reply.view('admin/settings.ejs', { title: 'Settings', ...data })
+
+  app.get('/settings', guard, async (_request, reply) => settingsView(reply))
+
+  app.post('/settings/change-password', guard, async (request: any, reply) => {
+    const body = z.object({
+      currentPassword: z.string().min(1),
+      newPassword:     z.string().min(8),
+      confirmPassword: z.string().min(1),
+    }).safeParse(request.body)
+
+    if (!body.success) return settingsView(reply, { error: 'Alle felt er påkrevd og nytt passord må være minst 8 tegn.' })
+    if (body.data.newPassword !== body.data.confirmPassword) return settingsView(reply, { error: 'Nytt passord og bekreftelse er ikke like.' })
+
+    const admin = await app.prisma.adminUser.findUnique({ where: { id: request.adminId } })
+    if (!admin) return reply.redirect('/admin/login')
+
+    const valid = await bcrypt.compare(body.data.currentPassword, admin.passwordHash)
+    if (!valid) return settingsView(reply, { error: 'Nåværende passord er feil.' })
+
+    const newHash = await bcrypt.hash(body.data.newPassword, 12)
+    await app.prisma.adminUser.update({ where: { id: admin.id }, data: { passwordHash: newHash } })
+
+    return settingsView(reply, { success: 'Passordet er oppdatert.' })
+  })
+
   // ── Sub-sections ───────────────────────────────────────────────────────────
   app.register(async (sub) => {
     sub.addHook('onRequest', requireAdmin(app))
