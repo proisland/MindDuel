@@ -88,7 +88,7 @@ jobs:
       - name: Deploy to Railway (staging)
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --service backend --environment staging --detach --ci
+        run: railway up --service MindDuel --environment staging --detach --ci
         working-directory: backend
 
   deploy-production:
@@ -105,6 +105,6 @@ jobs:
       - name: Deploy to Railway (production)
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --service backend --environment production --detach --ci
+        run: railway up --service MindDuel --environment production --detach --ci
         working-directory: backend
 
