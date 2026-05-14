@@ -19,7 +19,7 @@ final class WebSocketClient: NSObject, ObservableObject {
     #if DEBUG
     private var wsBase: String { AppEnvironment.current.wsBase }
     #else
-    private let wsBase = "wss://api.mindduel.no/v1/ws/rooms"
+    private let wsBase = "wss://mindduel-production-1180.up.railway.app/v1/ws/rooms"
     #endif
 
     func connect(roomId: String) {

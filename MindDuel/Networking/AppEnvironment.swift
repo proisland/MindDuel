@@ -22,7 +22,7 @@ enum AppEnvironment: String, CaseIterable {
         switch self {
         case .local:      return URL(string: "http://localhost:3000/v1")!
         case .staging:    return URL(string: "https://mindduel-staging.up.railway.app/v1")!
-        case .production: return URL(string: "https://api.mindduel.no/v1")!
+        case .production: return URL(string: "https://mindduel-production-1180.up.railway.app/v1")!
         }
     }
 
@@ -30,7 +30,7 @@ enum AppEnvironment: String, CaseIterable {
         switch self {
         case .local:      return "ws://localhost:3000/v1/ws/rooms"
         case .staging:    return "wss://mindduel-staging.up.railway.app/v1/ws/rooms"
-        case .production: return "wss://api.mindduel.no/v1/ws/rooms"
+        case .production: return "wss://mindduel-production-1180.up.railway.app/v1/ws/rooms"
         }
     }
 

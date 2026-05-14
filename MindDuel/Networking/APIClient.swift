@@ -8,7 +8,7 @@ actor APIClient {
     #if DEBUG
     private var baseURL: URL { AppEnvironment.current.apiBaseURL }
     #else
-    private let baseURL = URL(string: "https://api.mindduel.no/v1")!
+    private let baseURL = URL(string: "https://mindduel-production-1180.up.railway.app/v1")!
     #endif
 
     private let session: URLSession
