@@ -85,15 +85,14 @@ jobs:
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+        shell: bash
         run: |
+          set -euo pipefail
           curl -fsSL https://railway.app/install.sh | bash
           export PATH="$HOME/.railway/bin:$PATH"
-          railway --version 2>&1
-          railway up \
-            --service MindDuel \
-            --environment staging \
-            --project "$RAILWAY_PROJECT_ID" \
-            --detach 2>&1
+          railway --version
+          echo "Project ID is set: ${RAILWAY_PROJECT_ID:+yes}"
+          railway up --service MindDuel --environment staging --project "$RAILWAY_PROJECT_ID" --detach
 
     env:
       DATABASE_URL: postgresql://mindduel:mindduel@localhost:5432/mindduel_test
