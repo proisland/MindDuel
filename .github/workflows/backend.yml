@@ -13,6 +13,8 @@ on:
     branches: [main]
     paths:
       - "backend/**"
+  workflow_dispatch:
+
 jobs:
   build-and-test:
     name: Build & lint
@@ -73,4 +75,18 @@ jobs:
           DATABASE_URL: postgresql://mindduel:mindduel@localhost:5432/mindduel_test
         run: npx prisma migrate deploy
 
+  deploy-staging:
+    name: Deploy to staging
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
 
+    steps:
+      - name: Install Railway CLI
+        run: curl -fsSL https://railway.app/install.sh | sh
+      - name: Deploy to Railway (staging)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+        run: railway up --service MindDuel --environment staging --detach --ci
+        working-directory: ${{ github.workspace }}/backend
