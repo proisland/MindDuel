@@ -8,8 +8,10 @@ struct ProfileView: View {
     @ObservedObject private var avatar = AvatarStore.shared
     @ObservedObject private var modeCache = ModeConfigCache.shared
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var showSettings = false
     @State private var showAvatarPicker = false
+    @State private var showOnboarding = false
     @State private var selectedFriend: UserProfile? = nil
     @State private var showFlagExplanation = false
 
@@ -126,6 +128,29 @@ struct ProfileView: View {
                             friendsRow
                         }
 
+                        // ONBOARDING
+                        Button {
+                            showOnboarding = true
+                        } label: {
+                            HStack(spacing: MDSpacing.sm) {
+                                Image(systemName: "graduationcap.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(Color.mdAccent)
+                                Text(String(localized: "show_onboarding_action"))
+                                    .mdStyle(.caption)
+                                    .foregroundStyle(Color.mdText2)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(Color.mdText3)
+                            }
+                            .padding(MDSpacing.md)
+                            .background(Color.mdSurface2)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdBorder2, lineWidth: 0.5))
+                        }
+                        .buttonStyle(.plain)
+
                         Spacer(minLength: MDSpacing.xl)
                     }
                     .padding(.horizontal, MDSpacing.md)
@@ -138,6 +163,12 @@ struct ProfileView: View {
         .animation(.easeInOut(duration: 0.2), value: showFlagExplanation)
         .fullScreenCover(isPresented: $showSettings) {
             SettingsView(onSignOut: onSignOut)
+        }
+        .fullScreenCover(isPresented: $showOnboarding) {
+            OnboardingView {
+                hasSeenOnboarding = true
+                showOnboarding = false
+            }
         }
         .fullScreenCover(isPresented: $showAvatarPicker) {
             AvatarPickerSheet()

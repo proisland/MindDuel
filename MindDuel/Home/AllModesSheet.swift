@@ -13,6 +13,7 @@ struct AllModesSheet: View {
 
     var onPlay: (GameMode) -> Void
     var onPlayServerMode: ((ServerMode) -> Void)?
+    var onPractice: ((GameMode) -> Void)?
 
     var body: some View {
         ZStack {
@@ -114,6 +115,16 @@ struct AllModesSheet: View {
             }
             .frame(width: 36, height: 36)
             .onTapGesture { onPlay(mode); dismiss() }
+            .contextMenu {
+                Button { onPlay(mode); dismiss() } label: {
+                    Label(String(localized: "play_normal_action"), systemImage: "play.fill")
+                }
+                if (mode == .pi || mode == .math), let onPractice {
+                    Button { onPractice(mode); dismiss() } label: {
+                        Label(String(localized: "practice_round_action"), systemImage: "dumbbell.fill")
+                    }
+                }
+            }
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(mode.localizedTitle)

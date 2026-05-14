@@ -3,6 +3,8 @@ import SwiftUI
 struct PiGameView: View {
     let username: String
     var resumeRoomID: String? = nil
+    let isPractice: Bool
+    let practiceStartDigit: Int
 
     @StateObject private var engine      = GameEngine()
     @ObservedObject private var progression = ProgressionStore.shared
@@ -11,6 +13,7 @@ struct PiGameView: View {
     @State private var totalAnswerTime:  Double = 0
     @State private var selectedDigit:    Int?   = nil
     @State private var feedbackIsCorrect: Bool? = nil
+    @State private var revealCorrectDigit: Int? = nil
     @State private var showQuitModal     = false
     @State private var roundResult:      ProgressionStore.RoundResult? = nil
     @State private var sessionStartIndex: Int = 0
@@ -18,8 +21,17 @@ struct PiGameView: View {
     @StateObject private var sessionService = GameSessionService()
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
+
+    init(username: String, resumeRoomID: String? = nil,
+         isPractice: Bool = false, practiceStartDigit: Int = 0) {
+        self.username = username
+        self.resumeRoomID = resumeRoomID
+        self.isPractice = isPractice
+        self.practiceStartDigit = practiceStartDigit
+    }
 
     /// The first digit index of the user's current Pi level (level 1 → 0, level 2 → 50, …).
     /// This ensures starting a Pi game at a given level always begins at that level's boundary,
@@ -76,7 +88,7 @@ struct PiGameView: View {
                     onContinue: {
                         showQuitModal = false
                     },
-                    onSave: {
+                    onSave: isPractice ? nil : {
                         showQuitModal = false
                         saveSessionAndExit()
                     }
@@ -84,10 +96,18 @@ struct PiGameView: View {
             }
         }
         .onAppear {
-            restoreOrStartFresh()
-            Task { try? await sessionService.startSession(mode: "pi") }
+            if isPractice {
+                sessionStartIndex = practiceStartDigit
+            } else {
+                restoreOrStartFresh()
+                Task { try? await sessionService.startSession(mode: "pi") }
+            }
         }
-        .onDisappear { autoSaveIfInProgress(); Task { try? await sessionService.endSession() } }
+        .onDisappear {
+            guard !isPractice else { return }
+            autoSaveIfInProgress()
+            Task { try? await sessionService.endSession() }
+        }
         .onReceive(timer) { _ in handleTimerTick() }
         .animation(.easeInOut(duration: 0.2), value: showQuitModal)
         .onChange(of: engine.isRoundOver, perform: { over in
@@ -154,7 +174,15 @@ struct PiGameView: View {
 
     private var gameScreen: some View {
         VStack(spacing: 0) {
-            MDTopBar(title: String(localized: "mode_pi"), leadingAction: { showQuitModal = true }) {
+            MDTopBar(
+                title: isPractice
+                    ? String(localized: "practice_mode_title")
+                    : String(localized: "mode_pi"),
+                leadingAction: {
+                    Haptics.trigger(.modalOpen)
+                    showQuitModal = true
+                }
+            ) {
                 MDAvatar(username: username, size: .sm)
             }
 
@@ -179,11 +207,12 @@ struct PiGameView: View {
                 .disabled(isInteractionBlocked)
                 .padding(.bottom, MDSpacing.xl)
         }
+        .animation(.easeOut(duration: 0.2), value: currentIndex)
         .overlay {
             if engine.isWaitingAfterSkip { waitingOverlay }
         }
         .overlay(alignment: .top) {
-            if progression.isQuotaExhausted {
+            if !isPractice && progression.isQuotaExhausted {
                 quotaExhaustedBanner
                     .padding(.top, 60)
                     .padding(.horizontal, MDSpacing.md)
@@ -205,6 +234,11 @@ struct PiGameView: View {
             }
             .padding(.vertical, MDSpacing.sm)
         }
+        .id(currentIndex)
+        .transition(reduceMotion ? .opacity : .asymmetric(
+            insertion: .move(edge: .trailing).combined(with: .opacity),
+            removal: .move(edge: .leading).combined(with: .opacity)
+        ))
     }
 
     private var digitGrid: some View {
@@ -215,7 +249,7 @@ struct PiGameView: View {
                 DigitButton(digit: digit, feedbackState: buttonFeedbackState(for: digit)) {
                     handleDigitTap(digit)
                 }
-                .disabled(isInteractionBlocked || progression.isQuotaExhausted)
+                .disabled(isInteractionBlocked || (!isPractice && progression.isQuotaExhausted))
             }
         }
     }
@@ -265,6 +299,7 @@ struct PiGameView: View {
     }
 
     private func buttonFeedbackState(for digit: Int) -> DigitFeedbackState {
+        if let reveal = revealCorrectDigit, digit == reveal { return .reveal }
         guard let sel = selectedDigit, sel == digit else { return .idle }
         switch feedbackIsCorrect {
         case true:  return .correct
@@ -276,28 +311,41 @@ struct PiGameView: View {
     // MARK: – Actions
 
     private func handleDigitTap(_ digit: Int) {
-        guard !isInteractionBlocked, !progression.isQuotaExhausted else { return }
-        progression.consumeQuestion()
+        guard !isInteractionBlocked,
+              isPractice || !progression.isQuotaExhausted else { return }
+        if !isPractice { progression.consumeQuestion() }
         selectedDigit = digit
         let correct   = digit == targetDigit
         feedbackIsCorrect = correct
-        let questionId = "pi-\(startIndex + currentIndex)"
-        let answeredAt = ISO8601DateFormatter.ms.string(from: Date())
 
-        // Fire-and-forget: don't block UI feedback on network latency.
-        Task { try? await sessionService.submitAnswer(answeredAt: answeredAt, questionId: questionId, answer: String(digit), isCorrect: correct) }
+        if !isPractice {
+            let questionId = "pi-\(startIndex + currentIndex)"
+            let answeredAt = ISO8601DateFormatter.ms.string(from: Date())
+            Task { try? await sessionService.submitAnswer(answeredAt: answeredAt,
+                                                         questionId: questionId,
+                                                         answer: String(digit),
+                                                         isCorrect: correct) }
+        }
 
         Task {
-            try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
             if correct {
-                totalAnswerTime += elapsedSeconds
-                progression.recordCorrectAnswerTime(elapsedSeconds)
+                try? await Task.sleep(nanoseconds: 250_000_000)
+                if !isPractice {
+                    totalAnswerTime += elapsedSeconds
+                    progression.recordCorrectAnswerTime(elapsedSeconds)
+                    progression.advancePiPosition(toFrontier: sessionStartIndex + currentIndex + 1)
+                }
                 engine.recordCorrect()
                 currentIndex   += 1
                 elapsedSeconds  = 0
-                progression.advancePiPosition(toFrontier: sessionStartIndex + currentIndex)
             } else {
+                try? await Task.sleep(nanoseconds: 300_000_000)
                 engine.recordWrong()
+                if isPractice {
+                    revealCorrectDigit = targetDigit
+                    try? await Task.sleep(nanoseconds: 1_500_000_000)
+                    revealCorrectDigit = nil
+                }
             }
             selectedDigit     = nil
             feedbackIsCorrect = nil
@@ -312,41 +360,50 @@ struct PiGameView: View {
     }
 
     private func handleTimerTick() {
-        guard !isInteractionBlocked, !progression.isQuotaExhausted else { return }
+        guard !isInteractionBlocked,
+              isPractice || !progression.isQuotaExhausted else { return }
         elapsedSeconds = min(elapsedSeconds + 0.1, 10.0)
-        if elapsedSeconds >= 10.0 { handleSkip() }
+        if !isPractice, elapsedSeconds >= 10.0 { handleSkip() }
     }
 
     private func finaliseRound(won: Bool) {
         guard roundResult == nil else { return }
-        roundResult = progression.applyPiRound(
-            correctCount: engine.correctCount,
-            avgTime: avgTime,
-            won: won
-        )
-        Task { try? await sessionService.endSession() }
+        if !isPractice {
+            roundResult = progression.applyPiRound(
+                correctCount: engine.correctCount,
+                avgTime: avgTime,
+                won: won
+            )
+            Task { try? await sessionService.endSession() }
+        } else {
+            roundResult = ProgressionStore.RoundResult(score: 0, isPersonalBest: false)
+        }
     }
 
     private func resetRound() {
         engine.restart()
-        sessionStartIndex = levelStartIndex
+        sessionStartIndex = isPractice ? practiceStartDigit : levelStartIndex
         currentIndex      = 0
         elapsedSeconds    = 0
         totalAnswerTime   = 0
         feedbackIsCorrect = nil
         selectedDigit     = nil
+        revealCorrectDigit = nil
         roundResult       = nil
     }
 }
 
 // MARK: – Digit button
 
-enum DigitFeedbackState: Equatable { case idle, correct, wrong }
+enum DigitFeedbackState: Equatable { case idle, correct, wrong, reveal }
 
 struct DigitButton: View {
     let digit: Int
     let feedbackState: DigitFeedbackState
     let action: () -> Void
+
+    @State private var shakeAttempts = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Button(action: action) {
@@ -363,28 +420,44 @@ struct DigitButton: View {
                 )
         }
         .buttonStyle(.plain)
+        .scaleEffect(feedbackState == .correct && !reduceMotion ? 1.05 : 1.0)
+        .modifier(ShakeEffect(animatableData: CGFloat(shakeAttempts)))
+        .animation(.spring(response: 0.22, dampingFraction: 0.45), value: feedbackState == .correct)
         .animation(.easeInOut(duration: 0.15), value: feedbackState)
+        .onChange(of: feedbackState) { state in
+            switch state {
+            case .correct:
+                Haptics.trigger(.correct)
+            case .wrong:
+                Haptics.trigger(.wrong)
+                if !reduceMotion {
+                    withAnimation(.linear(duration: 0.3)) { shakeAttempts += 1 }
+                }
+            case .reveal, .idle:
+                break
+            }
+        }
     }
 
     private var bgColor: Color {
         switch feedbackState {
-        case .idle:    return .mdSurface2
-        case .correct: return .mdGreenSoft
-        case .wrong:   return .mdRedSoft
+        case .idle:             return .mdSurface2
+        case .correct, .reveal: return .mdGreenSoft
+        case .wrong:            return .mdRedSoft
         }
     }
     private var borderColor: Color {
         switch feedbackState {
-        case .idle:    return .clear
-        case .correct: return .mdGreen
-        case .wrong:   return .mdRed
+        case .idle:             return .clear
+        case .correct, .reveal: return .mdGreen
+        case .wrong:            return .mdRed
         }
     }
     private var labelColor: Color {
         switch feedbackState {
-        case .idle:    return .mdText
-        case .correct: return .mdGreen
-        case .wrong:   return .mdRed
+        case .idle:             return .mdText
+        case .correct, .reveal: return .mdGreen
+        case .wrong:            return .mdRed
         }
     }
 }

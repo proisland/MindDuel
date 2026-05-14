@@ -1,7 +1,7 @@
 .PHONY: setup generate build test clean
 
 SCHEME       = MindDuel
-DESTINATION  = platform=iOS Simulator,name=iPhone 16,OS=latest
+DESTINATION  = platform=iOS Simulator,name=iPhone 17,OS=26.3.1
 CONFIG       = Debug
 SIGN_FLAGS   = CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO DEVELOPMENT_TEAM=""
 

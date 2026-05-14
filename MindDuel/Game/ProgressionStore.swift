@@ -307,6 +307,38 @@ import SwiftUI
         }
     }
 
+    // MARK: – Unified dispatch for StandardGameView
+
+    func advance(mode: GameMode) {
+        switch mode {
+        case .pi:            break
+        case .math:          advanceMathLevel()
+        case .chemistry:     advanceChemLevel()
+        case .geography:     advanceGeoLevel()
+        case .brainTraining: advanceBrainLevel()
+        case .science:       advanceScienceLevel()
+        case .history:       advanceHistoryLevel()
+        case .physics:       advancePhysicsLevel()
+        case .sport:         advanceSportLevel()
+        case .grammar:       advanceGrammarLevel()
+        }
+    }
+
+    func applyRound(mode: GameMode, correctCount: Int, level: Int, avgTime: Double, won: Bool) -> RoundResult {
+        switch mode {
+        case .pi:            return applyPiRound(correctCount: correctCount, avgTime: avgTime, won: won)
+        case .math:          return applyMathRound(correctCount: correctCount, level: level, avgTime: avgTime, won: won)
+        case .chemistry:     return applyChemRound(correctCount: correctCount, level: level, avgTime: avgTime, won: won)
+        case .geography:     return applyGeoRound(correctCount: correctCount, level: level, avgTime: avgTime, won: won)
+        case .brainTraining: return applyBrainRound(correctCount: correctCount, level: level, avgTime: avgTime, won: won)
+        case .science:       return applyScienceRound(correctCount: correctCount, level: level, avgTime: avgTime, won: won)
+        case .history:       return applyHistoryRound(correctCount: correctCount, level: level, avgTime: avgTime, won: won)
+        case .physics:       return applyPhysicsRound(correctCount: correctCount, level: level, avgTime: avgTime, won: won)
+        case .sport:         return applySportRound(correctCount: correctCount, level: level, avgTime: avgTime, won: won)
+        case .grammar:       return applyGrammarRound(correctCount: correctCount, level: level, avgTime: avgTime, won: won)
+        }
+    }
+
     // MARK: – Generic mode helpers (for server-only slugs)
 
     func bestScore(forSlug slug: String) -> Int {

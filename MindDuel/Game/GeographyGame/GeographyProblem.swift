@@ -1,6 +1,6 @@
 import Foundation
 
-struct GeographyProblem {
+struct GeographyProblem: GameProblem {
     let prompt: String
     /// Optional flag glyph rendered above the prompt for "which country has
     /// this flag?" questions (#63). Kept separate so the view can render it

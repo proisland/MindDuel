@@ -1,5 +1,17 @@
 import SwiftUI
 
+private struct GameModeRoute: Hashable {
+    let mode: GameMode
+    let resumeRoomID: String?
+    var isPractice: Bool = false
+    var practiceStartLevel: Int = 1
+}
+
+private struct ServerModeRoute: Hashable {
+    let serverMode: ServerMode
+    let resumeRoomID: String?
+}
+
 private enum HomeDestination: Identifiable {
     case profile
     case scoreboard
@@ -33,101 +45,81 @@ struct HomeView: View {
     @ObservedObject private var multiplayer = MultiplayerStore.shared
     @ObservedObject private var prefs       = ModePreferences.shared
     @ObservedObject private var modeCache   = ModeConfigCache.shared
-    @State private var activeMode: GameMode? = nil
-    @State private var activeServerMode: ServerMode? = nil
+    @State private var gamePath = NavigationPath()
     @State private var activeDestination: HomeDestination? = nil
-    @State private var resumeSoloRoomID: String? = nil
-    @State private var resumeServerRoomID: String? = nil
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    @State private var showOnboarding = false
+    @State private var practiceMode: GameMode? = nil
 
     private var pendingBadge: Int { social.totalPendingCount }
     private var inviteBadge: Int  { multiplayer.pendingInviteCount }
     private var playingRooms: [MultiplayerRoom] { multiplayer.playingRooms }
 
     var body: some View {
-        ZStack {
-            Color.mdBg.ignoresSafeArea()
+        NavigationStack(path: $gamePath) {
+            ZStack {
+                Color.mdBg.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                centeredHeader
+                VStack(spacing: 0) {
+                    centeredHeader
 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: MDSpacing.lg) {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: MDSpacing.lg) {
 
-                        // Greeting
-                        VStack(alignment: .leading, spacing: MDSpacing.xs) {
-                            HStack(spacing: MDSpacing.xxs) {
-                                Text(String(localized: "welcome_greeting"))
-                                    .mdStyle(.title)
-                                Text("\(username)")
-                                    .mdStyle(.title)
+                            // Greeting
+                            VStack(alignment: .leading, spacing: MDSpacing.xs) {
+                                HStack(spacing: MDSpacing.xxs) {
+                                    Text(String(localized: "welcome_greeting"))
+                                        .mdStyle(.title)
+                                    Text("\(username)")
+                                        .mdStyle(.title)
+                                }
+                                Text(String(localized: "home_subtitle"))
+                                    .mdStyle(.body)
+                                    .foregroundStyle(Color.mdText2)
                             }
-                            Text(String(localized: "home_subtitle"))
-                                .mdStyle(.body)
-                                .foregroundStyle(Color.mdText2)
-                        }
-                        .padding(.horizontal, MDSpacing.md)
-                        .padding(.top, MDSpacing.xs)
-
-                        // Quota warning banner
-                        if progression.isNearQuota {
-                            QuotaBanner(
-                                used: progression.dailyUsed,
-                                total: ProgressionStore.dailyQuota
-                            )
                             .padding(.horizontal, MDSpacing.md)
-                        }
+                            .padding(.top, MDSpacing.xs)
 
-                        favoritesSection
-                        quickAccessSection
+                            // Quota warning banner
+                            if progression.isNearQuota {
+                                QuotaBanner(
+                                    used: progression.dailyUsed,
+                                    total: ProgressionStore.dailyQuota
+                                )
+                                .padding(.horizontal, MDSpacing.md)
+                            }
 
-                        // Rejoin banner (one or multiple active games)
-                        if !playingRooms.isEmpty {
-                            rejoinBanner
+                            favoritesSection
+                            quickAccessSection
+
+                            // Rejoin banner (one or multiple active games)
+                            if !playingRooms.isEmpty {
+                                rejoinBanner
+                                    .padding(.horizontal, MDSpacing.md)
+                            }
+
+                            // Multiplayer card (redesigned: 52px icon, pill buttons)
+                            multiplayerCard
+                                .padding(.horizontal, MDSpacing.md)
+
+                            // Scoreboard shortcut (redesigned)
+                            scoreboardCard
+                                .padding(.horizontal, MDSpacing.md)
+
+                            // Recent activity — always visible
+                            recentActivitySection
                                 .padding(.horizontal, MDSpacing.md)
                         }
-
-                        // Multiplayer card (redesigned: 52px icon, pill buttons)
-                        multiplayerCard
-                            .padding(.horizontal, MDSpacing.md)
-
-                        // Scoreboard shortcut (redesigned)
-                        scoreboardCard
-                            .padding(.horizontal, MDSpacing.md)
-
-                        // Recent activity — always visible
-                        recentActivitySection
-                            .padding(.horizontal, MDSpacing.md)
+                        .padding(.bottom, MDSpacing.xl)
                     }
-                    .padding(.bottom, MDSpacing.xl)
                 }
             }
-        }
-        .onAppear { progression.checkResetQuota() }
-        .fullScreenCover(item: $activeMode) { mode in
-            switch mode {
-            case .pi:            PiGameView(username: username, resumeRoomID: resumeSoloRoomID)
-            case .math:          MathGameView(username: username, resumeRoomID: resumeSoloRoomID)
-            case .chemistry:     ChemistryGameView(username: username, resumeRoomID: resumeSoloRoomID)
-            case .geography:     GeographyGameView(username: username, resumeRoomID: resumeSoloRoomID)
-            case .brainTraining: BrainTrainingGameView(username: username, resumeRoomID: resumeSoloRoomID)
-            case .science:       ScienceGameView(username: username, resumeRoomID: resumeSoloRoomID)
-            case .history:       HistoryGameView(username: username, resumeRoomID: resumeSoloRoomID)
-            case .physics:       PhysicsGameView(username: username, resumeRoomID: resumeSoloRoomID)
-            case .sport:         SportGameView(username: username, resumeRoomID: resumeSoloRoomID)
-            case .grammar:       GrammarGameView(username: username, resumeRoomID: resumeSoloRoomID)
+            .onAppear {
+                progression.checkResetQuota()
+                if !hasSeenOnboarding { showOnboarding = true }
             }
-        }
-        .onChange(of: activeMode) { mode in
-            if mode == nil { resumeSoloRoomID = nil }
-        }
-        .fullScreenCover(item: $activeServerMode) { serverMode in
-            KnowledgeGameView(serverMode: serverMode, username: username,
-                              resumeRoomID: resumeServerRoomID)
-        }
-        .onChange(of: activeServerMode) { mode in
-            if mode == nil { resumeServerRoomID = nil }
-        }
-        .fullScreenCover(item: $activeDestination) { dest in
+            .fullScreenCover(item: $activeDestination) { dest in
             switch dest {
             case .profile:         ProfileView(username: username, onSignOut: { authState.signOut() })
             case .scoreboard:      ScoreboardView(ownUsername: username)
@@ -144,8 +136,31 @@ struct HomeView: View {
             case .allModes:
                 AllModesSheet(
                     onPlay: { startOrResume($0) },
-                    onPlayServerMode: { startOrResumeServer($0) }
+                    onPlayServerMode: { startOrResumeServer($0) },
+                    onPractice: { startPractice($0) }
                 )
+            }
+        }
+        .navigationDestination(for: GameModeRoute.self) { route in
+            soloGameView(route: route)
+                .toolbar(.hidden, for: .navigationBar)
+        }
+        .navigationDestination(for: ServerModeRoute.self) { route in
+            KnowledgeGameView(serverMode: route.serverMode, username: username,
+                              resumeRoomID: route.resumeRoomID)
+                .toolbar(.hidden, for: .navigationBar)
+        }
+        }
+        .fullScreenCover(isPresented: $showOnboarding) {
+            OnboardingView {
+                hasSeenOnboarding = true
+                showOnboarding = false
+            }
+        }
+        .sheet(item: $practiceMode) { mode in
+            PracticeSetupSheet(mode: mode) { startLevel in
+                gamePath.append(GameModeRoute(mode: mode, resumeRoomID: nil,
+                                             isPractice: true, practiceStartLevel: startLevel))
             }
         }
     }
@@ -212,6 +227,16 @@ struct HomeView: View {
                             level: progression.level(for: gm),
                             action: { startOrResume(gm) }
                         )
+                        .contextMenu {
+                            Button { startOrResume(gm) } label: {
+                                Label(String(localized: "play_normal_action"), systemImage: "play.fill")
+                            }
+                            if gm == .pi || gm == .math {
+                                Button { startPractice(gm) } label: {
+                                    Label(String(localized: "practice_round_action"), systemImage: "dumbbell.fill")
+                                }
+                            }
+                        }
                     case .server(let sm):
                         MDServerFeaturedCard(
                             serverMode: sm,
@@ -257,12 +282,12 @@ struct HomeView: View {
         return Button {
             if playingRooms.count == 1 {
                 let room = playingRooms[0]
-                if room.isStandaloneSolo, let slug = room.serverModeSlug {
-                    resumeServerRoomID = room.id
-                    activeServerMode = modeCache.serverOnlyModes.first { $0.slug == slug }
-                } else if room.isStandaloneSolo {
-                    resumeSoloRoomID = room.id
-                    activeMode = room.mode
+                if room.isStandaloneSolo, let slug = room.serverModeSlug,
+                   let serverMode = modeCache.serverOnlyModes.first(where: { $0.slug == slug }) {
+                    gamePath.append(ServerModeRoute(serverMode: serverMode, resumeRoomID: room.id))
+                } else if room.isStandaloneSolo, room.serverModeSlug == nil {
+                    let mode = room.mode
+                    gamePath.append(GameModeRoute(mode: mode, resumeRoomID: room.id))
                 } else {
                     multiplayer.rejoin(roomID: room.id)
                     activeDestination = .multiplayerGame
@@ -433,25 +458,35 @@ struct HomeView: View {
     }
 
     private func startOrResume(_ mode: GameMode) {
-        if let existing = multiplayer.backgroundRooms.first(where: {
+        let resumeRoomID = multiplayer.backgroundRooms.first(where: {
             $0.isStandaloneSolo && $0.mode == mode && $0.status == .playing
-        }) {
-            resumeSoloRoomID = existing.id
-        } else {
-            resumeSoloRoomID = nil
-        }
-        activeMode = mode
+        })?.id
+        gamePath.append(GameModeRoute(mode: mode, resumeRoomID: resumeRoomID))
+    }
+
+    private func startPractice(_ mode: GameMode) {
+        practiceMode = mode
     }
 
     private func startOrResumeServer(_ serverMode: ServerMode) {
-        if let existing = multiplayer.backgroundRooms.first(where: {
+        let resumeRoomID = multiplayer.backgroundRooms.first(where: {
             $0.isStandaloneSolo && $0.serverModeSlug == serverMode.slug && $0.status == .playing
-        }) {
-            resumeServerRoomID = existing.id
-        } else {
-            resumeServerRoomID = nil
+        })?.id
+        gamePath.append(ServerModeRoute(serverMode: serverMode, resumeRoomID: resumeRoomID))
+    }
+
+    @ViewBuilder
+    private func soloGameView(route: GameModeRoute) -> some View {
+        switch route.mode {
+        case .pi:
+            PiGameView(username: username, resumeRoomID: route.resumeRoomID,
+                       isPractice: route.isPractice, practiceStartDigit: route.practiceStartLevel)
+        case .math:
+            MathGameView(username: username, resumeRoomID: route.resumeRoomID,
+                         isPractice: route.isPractice, practiceStartLevel: route.practiceStartLevel)
+        default:
+            StandardGameView(mode: route.mode, username: username, resumeRoomID: route.resumeRoomID)
         }
-        activeServerMode = serverMode
     }
 
     private func modeLabel(for mode: GameMode) -> String {

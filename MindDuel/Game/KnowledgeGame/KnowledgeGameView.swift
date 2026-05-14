@@ -25,6 +25,7 @@ struct KnowledgeGameView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var sessionService  = GameSessionService()
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(serverMode: ServerMode, username: String, resumeRoomID: String? = nil) {
         self.serverMode   = serverMode
@@ -111,7 +112,10 @@ struct KnowledgeGameView: View {
 
     private var gameContent: some View {
         VStack(spacing: 0) {
-            MDTopBar(title: serverMode.name, leadingAction: { showQuitModal = true }) {
+            MDTopBar(title: serverMode.name, leadingAction: {
+                Haptics.trigger(.modalOpen)
+                showQuitModal = true
+            }) {
                 MDAvatar(username: username, size: .sm)
             }
             ResourcePillRow(lives: engine.lives, skips: engine.skips)
@@ -130,6 +134,7 @@ struct KnowledgeGameView: View {
                 .disabled(isInteractionBlocked)
                 .padding(.bottom, MDSpacing.xl)
         }
+        .animation(.easeOut(duration: 0.2), value: problemCount)
         .overlay { if engine.isWaitingAfterSkip { waitingOverlay } }
     }
 
@@ -149,6 +154,11 @@ struct KnowledgeGameView: View {
             }
             .padding(.vertical, MDSpacing.sm)
         }
+        .id(problemCount)
+        .transition(reduceMotion ? .opacity : .asymmetric(
+            insertion: .move(edge: .trailing).combined(with: .opacity),
+            removal: .move(edge: .leading).combined(with: .opacity)
+        ))
     }
 
     private var answerGrid: some View {

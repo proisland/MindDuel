@@ -1,6 +1,6 @@
 import Foundation
 
-struct ChemistryProblem {
+struct ChemistryProblem: GameProblem {
     let prompt: String
     let correctAnswer: String
     let options: [String]
