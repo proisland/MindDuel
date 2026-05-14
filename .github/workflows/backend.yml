@@ -82,8 +82,14 @@ jobs:
     if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/milestone/')) && github.event_name == 'push'
 
     steps:
+      - uses: actions/checkout@v4
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
       - name: Deploy to Railway (staging)
-        run: curl -fsSL -X POST "${{ secrets.RAILWAY_DEPLOY_HOOK_STAGING }}"
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --service backend --environment staging --detach --ci
+        working-directory: backend
 
   deploy-production:
     name: Deploy to production
@@ -93,6 +99,12 @@ jobs:
     environment: production
 
     steps:
+      - uses: actions/checkout@v4
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
       - name: Deploy to Railway (production)
-        run: curl -fsSL -X POST "${{ secrets.RAILWAY_DEPLOY_HOOK_PRODUCTION }}"
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --service backend --environment production --detach --ci
+        working-directory: backend
 
