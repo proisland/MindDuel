@@ -1012,31 +1012,121 @@ import SwiftUI
             if correctCount > 0 { set(piPosition: piPosition + correctCount) }
         case .math:
             if score > 0 { set(mathBestScore: mathBestScore + score) }
-            for _ in 0..<correctCount { advanceMathLevel() }
+            if correctCount > 0 {
+                var prog = mathLevelProgress; var lvl = mathLevel
+                for _ in 0..<correctCount {
+                    prog += 1
+                    if prog >= Self.adaptiveThreshold(avgTime: mathLevelAvgTime, recentWrongs: mathRecentWrongs) {
+                        prog = 0; lvl = min(20, lvl + 1)
+                        mathRecentWrongs = 0; mathLevelTimeSum = 0; mathLevelAnswerCount = 0
+                    }
+                }
+                set(mathLevel: lvl, mathLevelProgress: prog)
+            }
         case .chemistry:
             if score > 0 { set(chemBestScore: chemBestScore + score) }
-            for _ in 0..<correctCount { advanceChemLevel() }
+            if correctCount > 0 {
+                var prog = chemLevelProgress; var lvl = chemLevel
+                for _ in 0..<correctCount {
+                    prog += 1
+                    if prog >= Self.adaptiveThreshold(avgTime: chemLevelAvgTime, recentWrongs: chemRecentWrongs) {
+                        prog = 0; lvl = min(20, lvl + 1)
+                        chemRecentWrongs = 0; chemLevelTimeSum = 0; chemLevelAnswerCount = 0
+                    }
+                }
+                set(chemLevel: lvl, chemLevelProgress: prog)
+            }
         case .geography:
             if score > 0 { set(geoBestScore: geoBestScore + score) }
-            for _ in 0..<correctCount { advanceGeoLevel() }
+            if correctCount > 0 {
+                var prog = geoLevelProgress; var lvl = geoLevel
+                for _ in 0..<correctCount {
+                    prog += 1
+                    if prog >= Self.adaptiveThreshold(avgTime: geoLevelAvgTime, recentWrongs: geoRecentWrongs) {
+                        prog = 0; lvl = min(20, lvl + 1)
+                        geoRecentWrongs = 0; geoLevelTimeSum = 0; geoLevelAnswerCount = 0
+                    }
+                }
+                set(geoLevel: lvl, geoLevelProgress: prog)
+            }
         case .brainTraining:
             if score > 0 { set(brainBestScore: brainBestScore + score) }
-            for _ in 0..<correctCount { advanceBrainLevel() }
+            if correctCount > 0 {
+                var prog = brainLevelProgress; var lvl = brainLevel
+                for _ in 0..<correctCount {
+                    prog += 1
+                    if prog >= Self.adaptiveThreshold(avgTime: brainLevelAvgTime, recentWrongs: brainRecentWrongs) {
+                        prog = 0; lvl = min(20, lvl + 1)
+                        brainRecentWrongs = 0; brainLevelTimeSum = 0; brainLevelAnswerCount = 0
+                    }
+                }
+                set(brainLevel: lvl, brainLevelProgress: prog)
+            }
         case .science:
             if score > 0 { set(scienceBestScore: scienceBestScore + score) }
-            for _ in 0..<correctCount { advanceScienceLevel() }
+            if correctCount > 0 {
+                var prog = scienceLevelProgress; var lvl = scienceLevel
+                for _ in 0..<correctCount {
+                    prog += 1
+                    if prog >= Self.adaptiveThreshold(avgTime: scienceLevelAvgTime, recentWrongs: scienceRecentWrongs) {
+                        prog = 0; lvl = min(20, lvl + 1)
+                        scienceRecentWrongs = 0; scienceLevelTimeSum = 0; scienceLevelAnswerCount = 0
+                    }
+                }
+                set(scienceLevel: lvl, scienceLevelProgress: prog)
+            }
         case .history:
             if score > 0 { set(historyBestScore: historyBestScore + score) }
-            for _ in 0..<correctCount { advanceHistoryLevel() }
+            if correctCount > 0 {
+                var prog = historyLevelProgress; var lvl = historyLevel
+                for _ in 0..<correctCount {
+                    prog += 1
+                    if prog >= Self.adaptiveThreshold(avgTime: historyLevelAvgTime, recentWrongs: historyRecentWrongs) {
+                        prog = 0; lvl = min(20, lvl + 1)
+                        historyRecentWrongs = 0; historyLevelTimeSum = 0; historyLevelAnswerCount = 0
+                    }
+                }
+                set(historyLevel: lvl, historyLevelProgress: prog)
+            }
         case .physics:
             if score > 0 { set(physicsBestScore: physicsBestScore + score) }
-            for _ in 0..<correctCount { advancePhysicsLevel() }
+            if correctCount > 0 {
+                var prog = physicsLevelProgress; var lvl = physicsLevel
+                for _ in 0..<correctCount {
+                    prog += 1
+                    if prog >= Self.adaptiveThreshold(avgTime: physicsLevelAvgTime, recentWrongs: physicsRecentWrongs) {
+                        prog = 0; lvl = min(20, lvl + 1)
+                        physicsRecentWrongs = 0; physicsLevelTimeSum = 0; physicsLevelAnswerCount = 0
+                    }
+                }
+                set(physicsLevel: lvl, physicsLevelProgress: prog)
+            }
         case .sport:
             if score > 0 { set(sportBestScore: sportBestScore + score) }
-            for _ in 0..<correctCount { advanceSportLevel() }
+            if correctCount > 0 {
+                var prog = sportLevelProgress; var lvl = sportLevel
+                for _ in 0..<correctCount {
+                    prog += 1
+                    if prog >= Self.adaptiveThreshold(avgTime: sportLevelAvgTime, recentWrongs: sportRecentWrongs) {
+                        prog = 0; lvl = min(20, lvl + 1)
+                        sportRecentWrongs = 0; sportLevelTimeSum = 0; sportLevelAnswerCount = 0
+                    }
+                }
+                set(sportLevel: lvl, sportLevelProgress: prog)
+            }
         case .grammar:
             if score > 0 { set(grammarBestScore: grammarBestScore + score) }
-            for _ in 0..<correctCount { advanceGrammarLevel() }
+            if correctCount > 0 {
+                var prog = grammarLevelProgress; var lvl = grammarLevel
+                for _ in 0..<correctCount {
+                    prog += 1
+                    if prog >= Self.adaptiveThreshold(avgTime: grammarLevelAvgTime, recentWrongs: grammarRecentWrongs) {
+                        prog = 0; lvl = min(20, lvl + 1)
+                        grammarRecentWrongs = 0; grammarLevelTimeSum = 0; grammarLevelAnswerCount = 0
+                    }
+                }
+                set(grammarLevel: lvl, grammarLevelProgress: prog)
+            }
         }
         incrementRounds()
     }

@@ -18,9 +18,11 @@ const loginBody = z.object({
 
 export function requireAdmin(app: FastifyInstance) {
   return async (request: any, reply: any) => {
-    const token = request.cookies?.[SESSION_KEY]
-    if (!token) return reply.redirect('/admin/login')
-    const adminId = await app.redis.get(`admin_session:${token}`)
+    const raw = request.cookies?.[SESSION_KEY]
+    if (!raw) return reply.redirect('/admin/login')
+    const unsigned = request.unsignCookie(raw)
+    if (!unsigned.valid || !unsigned.value) return reply.redirect('/admin/login')
+    const adminId = await app.redis.get(`admin_session:${unsigned.value}`)
     if (!adminId) return reply.redirect('/admin/login')
     request.adminId = adminId
   }
@@ -45,13 +47,16 @@ export default async function adminRoutes(app: FastifyInstance) {
 
     const token = crypto.randomBytes(32).toString('hex')
     await app.redis.set(`admin_session:${token}`, admin.id, 'EX', SESSION_TTL)
-    reply.setCookie(SESSION_KEY, token, { httpOnly: true, path: '/admin', maxAge: SESSION_TTL })
+    reply.setCookie(SESSION_KEY, token, { httpOnly: true, path: '/admin', maxAge: SESSION_TTL, signed: true })
     return reply.redirect('/admin')
   })
 
   app.get('/logout', async (request: any, reply) => {
-    const token = request.cookies?.[SESSION_KEY]
-    if (token) await app.redis.del(`admin_session:${token}`)
+    const raw = request.cookies?.[SESSION_KEY]
+    if (raw) {
+      const unsigned = request.unsignCookie(raw)
+      if (unsigned.valid && unsigned.value) await app.redis.del(`admin_session:${unsigned.value}`)
+    }
     reply.clearCookie(SESSION_KEY, { path: '/admin' })
     return reply.redirect('/admin/login')
   })

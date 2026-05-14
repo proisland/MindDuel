@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { verifyAppleIdToken } from '../../lib/apple'
-import { generateRefreshToken, storeRefreshToken, consumeRefreshToken } from '../../lib/tokens'
+import { generateRefreshToken, storeRefreshToken, consumeRefreshToken, revokeAllRefreshTokens } from '../../lib/tokens'
 import { config } from '../../config'
 
 const appleSignInBody = z.object({
@@ -83,6 +83,7 @@ export default async function authRoutes(app: FastifyInstance) {
       return reply.status(403).send({ error: 'Account suspended' })
     }
 
+    await revokeAllRefreshTokens(app.redis, user.id)
     const accessToken = app.jwt.sign(
       { sub: user.id },
       { expiresIn: config.jwt.accessTtlSeconds },
@@ -129,8 +130,8 @@ export default async function authRoutes(app: FastifyInstance) {
     })
   })
 
-  // POST /v1/auth/dev  — development only, bypasses Apple verification
-  if (config.nodeEnv === 'development') {
+  // POST /v1/auth/dev  — bypasses Apple verification; requires ENABLE_DEV_AUTH=true
+  if (config.nodeEnv === 'development' || config.enableDevAuth) {
     const devBody = z.object({ username: z.string().min(1) })
     app.post('/dev', async (request, reply) => {
       const body = devBody.safeParse(request.body)

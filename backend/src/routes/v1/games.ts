@@ -35,7 +35,7 @@ const endSessionBody = z.object({
 
 const syncQuotaBody = z.object({
   localDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  localCount: z.number().int().min(0),
+  localCount: z.number().int().min(0).max(config.quota.freeLimit),
 })
 
 async function getOrCreateQuota(
@@ -100,16 +100,17 @@ export default async function gamesRoutes(app: FastifyInstance) {
     const progression = user.progressions[0]
     const startPos = body.data.startPosition ?? progression?.position ?? 0
 
-    const session = await app.prisma.gameSession.create({
-      data: {
-        userId: request.userId,
-        mode: body.data.mode,
-        isTraining: body.data.isTraining,
-      },
+    const session = await app.prisma.$transaction(async (tx) => {
+      const s = await tx.gameSession.create({
+        data: {
+          userId: request.userId,
+          mode: body.data.mode,
+          isTraining: body.data.isTraining,
+        },
+      })
+      await tx.$executeRaw`UPDATE "GameSession" SET "startPosition" = ${startPos} WHERE id = ${s.id}`
+      return s
     })
-
-    // startPosition not in stale Prisma client — write via raw SQL
-    await app.prisma.$executeRaw`UPDATE "GameSession" SET "startPosition" = ${startPos} WHERE id = ${session.id}`
 
     return reply.send({
       sessionToken: session.sessionToken,
@@ -234,70 +235,71 @@ export default async function gamesRoutes(app: FastifyInstance) {
     }))
     const score = session.isTraining ? 0 : calculateScore(scoredAnswers)
 
-    // Anti-cheat: check average response time
-    if (!session.isTraining && correctAnswers.length >= FAST_ROUND_MIN_ANSWERS) {
-      const avgMs = correctAnswers.reduce((s, a) => s + a.answerTimeMs, 0) / correctAnswers.length
-      if (avgMs < FAST_AVG_THRESHOLD_MS) {
-        const user = await app.prisma.user.findUnique({
-          where: { id: request.userId },
-          select: { fastRoundCount: true },
-        })
-        const newCount = (user?.fastRoundCount ?? 0) + 1
-        await app.prisma.user.update({
-          where: { id: request.userId },
-          data: {
-            fastRoundCount: newCount,
-            ...(shouldFlagUser(newCount, FLAG_THRESHOLD) && { isFlagged: true }),
-          },
+    const { updatedProgression, quota } = await app.prisma.$transaction(async (tx) => {
+      // Anti-cheat: check average response time
+      if (!session.isTraining && correctAnswers.length >= FAST_ROUND_MIN_ANSWERS) {
+        const avgMs = correctAnswers.reduce((s, a) => s + a.answerTimeMs, 0) / correctAnswers.length
+        if (avgMs < FAST_AVG_THRESHOLD_MS) {
+          const user = await tx.user.findUnique({
+            where: { id: request.userId },
+            select: { fastRoundCount: true },
+          })
+          const newCount = (user?.fastRoundCount ?? 0) + 1
+          await tx.user.update({
+            where: { id: request.userId },
+            data: {
+              fastRoundCount: newCount,
+              ...(shouldFlagUser(newCount, FLAG_THRESHOLD) && { isFlagged: true }),
+            },
+          })
+        }
+      }
+
+      // Update progression (upsert to ensure row exists, then apply delta)
+      const progression = await tx.progression.upsert({
+        where: { userId_mode: { userId: request.userId, mode: session.mode } },
+        update: {},
+        create: { userId: request.userId, mode: session.mode, position: 0 },
+      })
+
+      const newPosition = session.isTraining
+        ? progression.position
+        : applyProgressionDelta(progression.position, correctCount, isWin)
+
+      const updatedProgression = await tx.progression.update({
+        where: { userId_mode: { userId: request.userId, mode: session.mode } },
+        data: { position: newPosition },
+      })
+
+      if (!session.isTraining && score > 0) {
+        await tx.score.create({
+          data: { userId: request.userId, mode: session.mode, value: score },
         })
       }
-    }
 
-    // Update progression
-    const progression = await app.prisma.progression.upsert({
-      where: { userId_mode: { userId: request.userId, mode: session.mode } },
-      update: {},
-      create: { userId: request.userId, mode: session.mode, position: 0 },
-    })
-
-    const newPosition = session.isTraining
-      ? progression.position
-      : applyProgressionDelta(progression.position, correctCount, isWin)
-
-    const updatedProgression = await app.prisma.progression.update({
-      where: { userId_mode: { userId: request.userId, mode: session.mode } },
-      data: { position: newPosition },
-    })
-
-    // Store score
-    if (!session.isTraining && score > 0) {
-      await app.prisma.score.create({
-        data: { userId: request.userId, mode: session.mode, value: score },
+      await tx.gameSession.update({
+        where: { id: session.id },
+        data: {
+          endedAt: new Date(),
+          score,
+          correctCount,
+          totalCount: session.answers.length,
+        },
       })
-    }
 
-    // Mark session done
-    await app.prisma.gameSession.update({
-      where: { id: session.id },
-      data: {
-        endedAt: new Date(),
-        score,
-        correctCount,
-        totalCount: session.answers.length,
-      },
+      await tx.user.update({
+        where: { id: request.userId },
+        data: {
+          totalRoundsPlayed: { increment: 1 },
+          totalCorrectAnswers: { increment: correctCount },
+          lastActiveAt: new Date(),
+        },
+      })
+
+      const quota = await tx.dailyQuota.findUnique({ where: { userId: request.userId } })
+
+      return { updatedProgression, quota }
     })
-
-    // Update user stats
-    await app.prisma.user.update({
-      where: { id: request.userId },
-      data: {
-        totalRoundsPlayed: { increment: 1 },
-        totalCorrectAnswers: { increment: correctCount },
-        lastActiveAt: new Date(),
-      },
-    })
-
-    const quota = await app.prisma.dailyQuota.findUnique({ where: { userId: request.userId } })
 
     return reply.send({
       score,

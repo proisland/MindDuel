@@ -19,7 +19,8 @@ struct KnowledgeGameView: View {
     @State private var showQuitModal         = false
     @State private var roundResult:          ProgressionStore.RoundResult? = nil
     @State private var startLevel:           Int
-    @State private var seenCorrectIds:       Set<String> = []
+    @State private var feedbackTask:         Task<Void, Never>? = nil
+    @State private var sessionEnded         = false
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var sessionService  = GameSessionService()
@@ -31,7 +32,7 @@ struct KnowledgeGameView: View {
         self.resumeRoomID = resumeRoomID
         let lvl = ProgressionStore.shared.level(forSlug: serverMode.slug)
         _startLevel       = State(initialValue: lvl)
-        _currentQuestion  = State(initialValue: Self.pickQuestion(slug: serverMode.slug, level: lvl))
+        _currentQuestion  = State(initialValue: KnowledgeProblemGenerator.generate(slug: serverMode.slug, level: lvl))
     }
 
     private var avgTime: Double {
@@ -78,11 +79,12 @@ struct KnowledgeGameView: View {
             guard currentQuestion == nil else { return }
             await QuestionPackCache.shared.syncIfNeeded(modes: [serverMode.slug])
             let lvl = progression.level(forSlug: serverMode.slug)
-            currentQuestion = Self.pickQuestion(slug: serverMode.slug, level: lvl)
+            currentQuestion = KnowledgeProblemGenerator.generate(slug: serverMode.slug, level: lvl)
         }
         .onDisappear {
+            feedbackTask?.cancel()
             autoSaveIfInProgress()
-            Task { try? await sessionService.endSession() }
+            endSessionOnce()
         }
         .onReceive(timer) { _ in handleTimerTick() }
         .onChange(of: engine.isRoundOver) { over in
@@ -205,10 +207,10 @@ struct KnowledgeGameView: View {
         let answeredAt = ISO8601DateFormatter.ms.string(from: Date())
         Task { try? await sessionService.submitAnswer(answeredAt: answeredAt, questionId: q.id, answer: q.options[index], isCorrect: correct) }
 
-        Task {
+        feedbackTask = Task {
             try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
             if correct {
-                seenCorrectIds.insert(q.id)
+                KnowledgeProblemGenerator.recordCorrect(slug: serverMode.slug, questionId: q.id)
                 totalAnswerTime += elapsedSeconds
                 progression.recordCorrectAnswerTime(elapsedSeconds)
                 engine.recordCorrect()
@@ -231,6 +233,7 @@ struct KnowledgeGameView: View {
     }
 
     private func handleTimerTick() {
+        guard !showQuitModal else { return }
         guard !engine.isRoundOver, !engine.isWaitingAfterSkip,
               feedbackIsCorrect == nil, !progression.isQuotaExhausted else { return }
         elapsedSeconds = min(elapsedSeconds + 0.1, 10.0)
@@ -239,14 +242,20 @@ struct KnowledgeGameView: View {
 
     private func loadNextQuestion() {
         let lvl = progression.level(forSlug: serverMode.slug)
-        currentQuestion = Self.pickQuestion(slug: serverMode.slug, level: lvl, excludeIds: seenCorrectIds)
+        currentQuestion = KnowledgeProblemGenerator.generate(slug: serverMode.slug, level: lvl)
         problemCount += 1
         elapsedSeconds = 0
     }
 
+    private func endSessionOnce() {
+        guard !sessionEnded else { return }
+        sessionEnded = true
+        Task { try? await sessionService.endSession() }
+    }
+
     private func saveAndExit() {
         guard roundResult == nil else { return }
-        Task { try? await sessionService.endSession() }
+        endSessionOnce()
         _ = MultiplayerStore.shared.saveStandaloneSoloKnowledge(
             slug: serverMode.slug,
             name: serverMode.name,
@@ -267,7 +276,7 @@ struct KnowledgeGameView: View {
               let room = MultiplayerStore.shared.popStandaloneSolo(roomID: id),
               let me = room.players.first(where: { $0.isYou }) else { return }
         startLevel = max(1, room.startLevel)
-        currentQuestion = Self.pickQuestion(slug: serverMode.slug, level: startLevel)
+        currentQuestion = KnowledgeProblemGenerator.generate(slug: serverMode.slug, level: startLevel)
         problemCount = max(1, me.correctCount + 1)
         engine.restoreState(lives: me.lives, skips: me.skips, correctCount: me.correctCount)
     }
@@ -289,7 +298,7 @@ struct KnowledgeGameView: View {
 
     private func finaliseRound(won: Bool) {
         guard roundResult == nil else { return }
-        Task { try? await sessionService.endSession() }
+        endSessionOnce()
         roundResult = progression.applyGenericRound(
             slug: serverMode.slug,
             correctCount: engine.correctCount,
@@ -302,20 +311,11 @@ struct KnowledgeGameView: View {
     private func resetRound() {
         let lvl = progression.level(forSlug: serverMode.slug)
         startLevel      = lvl
-        seenCorrectIds  = []
-        currentQuestion = Self.pickQuestion(slug: serverMode.slug, level: lvl)
+        KnowledgeProblemGenerator.resetRoundHistory(slug: serverMode.slug)
+        currentQuestion = KnowledgeProblemGenerator.generate(slug: serverMode.slug, level: lvl)
         problemCount = 1; elapsedSeconds = 0; totalAnswerTime = 0
         feedbackIsCorrect = nil; selectedIndex = nil; roundResult = nil
         engine.restart()
     }
 
-    private static func pickQuestion(slug: String, level: Int, excludeIds: Set<String> = []) -> APIQuestion? {
-        let all      = QuestionPackCache.shared.questions(for: slug) ?? []
-        let atLevel  = all.filter { $0.level == level }
-        let pool     = atLevel.isEmpty ? all : atLevel
-        let eligible = pool.filter { !excludeIds.contains($0.id) }
-        let source   = eligible.isEmpty ? pool : eligible
-        guard let q  = source.randomElement() else { return nil }
-        return q.shufflingOptions()
-    }
 }

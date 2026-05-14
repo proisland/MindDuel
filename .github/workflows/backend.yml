@@ -7,6 +7,8 @@ on:
       - "backend/**"
       - "docker-compose.yml"
       - ".github/workflows/backend.yml"
+      - "railway.toml"
+      - "nixpacks.toml"
   pull_request:
     branches: [main]
     paths:
@@ -76,7 +78,7 @@ jobs:
     name: Deploy to staging
     needs: build-and-test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/milestone/')) && github.event_name == 'push'
 
     steps:
       - uses: actions/checkout@v4
@@ -84,9 +86,12 @@ jobs:
       - name: Deploy to Railway (staging)
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+        shell: bash
         run: |
-          npm install -g @railway/cli
-          railway up --service mindduel-api --environment staging --detach
+          curl -fsSL https://railway.app/install.sh | bash
+          export PATH="$HOME/.railway/bin:$PATH"
+          railway up --service MindDuel --environment staging --project "$RAILWAY_PROJECT_ID" --detach
 
     env:
       DATABASE_URL: postgresql://mindduel:mindduel@localhost:5432/mindduel_test

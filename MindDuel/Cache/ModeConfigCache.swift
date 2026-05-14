@@ -16,6 +16,8 @@ final class ModeConfigCache: ObservableObject {
     }
 
     private let cacheKey = "cachedServerModes_v3"
+    private let cacheTsKey = "cachedServerModes_v3_ts"
+    private let cacheTTL: TimeInterval = 60 * 60  // 1 hour
     private init() { loadFromDisk() }
 
     func refresh() async {
@@ -27,6 +29,12 @@ final class ModeConfigCache: ObservableObject {
         } catch {
             // Keep existing cached modes on network failure
         }
+    }
+
+    func refreshIfStale() async {
+        let lastRefresh = UserDefaults.standard.double(forKey: cacheTsKey)
+        guard Date().timeIntervalSince1970 - lastRefresh > cacheTTL else { return }
+        await refresh()
     }
 
     func isActive(slug: String) -> Bool {
@@ -41,6 +49,7 @@ final class ModeConfigCache: ObservableObject {
     private func saveToDisk(_ modes: [ServerMode]) {
         guard let data = try? JSONEncoder().encode(modes) else { return }
         UserDefaults.standard.set(data, forKey: cacheKey)
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: cacheTsKey)
     }
 
     private func loadFromDisk() {

@@ -12,7 +12,7 @@ struct ScoreboardView: View {
     @State private var selectedTab = 0          // default: Venner (#76)
     @State private var selectedProfile: UserProfile? = nil
     @State private var searchText = ""
-    @State private var scoreMode: GameMode = .pi
+    @State private var scoreMode: AnyMode = .known(.pi)
     @State private var timeRange: TimeRange = .today
 
     private enum TimeRange: String, CaseIterable, Identifiable {
@@ -94,9 +94,9 @@ struct ScoreboardView: View {
         .fullScreenCover(item: $selectedProfile) { profile in
             OtherProfileView(profile: profile, ownUsername: ownUsername)
         }
-        .task { await scoreboardStore.refresh(mode: scoreMode) }
+        .task { await scoreboardStore.refresh(slug: scoreMode.slug) }
         .onChange(of: scoreMode) { mode in
-            Task { await scoreboardStore.refresh(mode: mode) }
+            Task { await scoreboardStore.refresh(slug: mode.slug) }
         }
     }
 
@@ -133,29 +133,27 @@ struct ScoreboardView: View {
     // MARK: – Score mode toggle
 
     private var scoreModeToggle: some View {
-        // Horizontal scroll so additional modes don't crowd the row (#52).
-        // Pill row matches design: each mode is a separate capsule with its
-        // accent-color border when selected.
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(modePrefs.activeOrder) { mode in
+                ForEach(modePrefs.activeCombinedOrder) { mode in
                     let selected = scoreMode == mode
+                    let accent = modeAccentColor(mode)
                     Button {
                         withAnimation(.easeInOut(duration: 0.15)) { scoreMode = mode }
                     } label: {
                         HStack(spacing: 6) {
-                            ModeGlyph(mode: mode, size: 13, weight: .bold, color: mode.accentColor)
-                            Text(scoreboardLabel(for: mode))
+                            anyModeGlyph(mode, size: 13, weight: .bold, color: accent)
+                            Text(modeLabel(mode))
                                 .font(.system(size: 12, weight: selected ? .heavy : .medium))
                                 .foregroundStyle(selected ? Color.mdText : Color.mdText3)
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(selected ? mode.accentColor.opacity(0.13) : Color.white.opacity(0.05))
+                        .background(selected ? accent.opacity(0.13) : Color.white.opacity(0.05))
                         .clipShape(Capsule())
                         .overlay(
                             Capsule().stroke(
-                                selected ? mode.accentColor.opacity(0.7) : Color.white.opacity(0.08),
+                                selected ? accent.opacity(0.7) : Color.white.opacity(0.08),
                                 lineWidth: 1.5
                             )
                         )
@@ -163,6 +161,28 @@ struct ScoreboardView: View {
                     .buttonStyle(.plain)
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func anyModeGlyph(_ mode: AnyMode, size: CGFloat, weight: Font.Weight, color: Color) -> some View {
+        switch mode {
+        case .known(let gm):  ModeGlyph(mode: gm, size: size, weight: weight, color: color)
+        case .server(let sm): ServerModeGlyph(iconSymbol: sm.iconSymbol, size: size, weight: weight, color: color)
+        }
+    }
+
+    private func modeLabel(_ mode: AnyMode) -> String {
+        switch mode {
+        case .known(let gm): return scoreboardLabel(for: gm)
+        case .server(let sm): return sm.name
+        }
+    }
+
+    private func modeAccentColor(_ mode: AnyMode) -> Color {
+        switch mode {
+        case .known(let gm):  return gm.accentColor
+        case .server(let sm): return sm.accentColor
         }
     }
 
@@ -181,18 +201,10 @@ struct ScoreboardView: View {
         }
     }
 
-    private func score(for profile: UserProfile, mode: GameMode) -> Int {
+    private func score(for profile: UserProfile, mode: AnyMode) -> Int {
         switch mode {
-        case .pi:            return profile.piScore
-        case .math:          return profile.mathScore
-        case .chemistry:     return profile.chemScore
-        case .geography:     return profile.geoScore
-        case .brainTraining: return profile.brainScore
-        case .science:       return profile.scienceScore
-        case .history:       return profile.historyScore
-        case .physics:       return profile.physicsScore
-        case .sport:         return profile.sportScore
-        case .grammar:       return profile.grammarScore
+        case .known(let gm): return profile.score(for: gm)
+        case .server:        return profile.apiScore
         }
     }
 

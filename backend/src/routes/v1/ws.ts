@@ -7,6 +7,9 @@ import crypto from 'crypto'
 
 const ROOM_TTL = 60 * 60 * 4 // 4 hours
 const DISCONNECT_GRACE_MS = 15_000
+const LOCK_TTL_MS = 500
+const LOCK_RETRIES = 3
+const LOCK_RETRY_DELAY_MS = 50
 
 interface Participant {
   userId: string
@@ -29,21 +32,37 @@ interface RoomState {
   status: 'waiting' | 'active' | 'finished'
 }
 
-// In-process map of connected WebSockets per room
+interface PubSubEnvelope {
+  payload: object
+  excludeUserId?: string
+  targetUserId?: string
+}
+
+type RedisClient = FastifyInstance['redis']
+
+// In-process map of connected WebSockets per room (local to this instance)
 const connections = new Map<string, Map<string, WebSocket>>() // roomId → userId → ws
 
-function roomKey(roomId: string) { return `room:${roomId}` }
+export function activeConnectionCount(): number {
+  let n = 0
+  for (const room of connections.values()) n += room.size
+  return n
+}
 
-async function getRoomState(redis: FastifyInstance['redis'], roomId: string): Promise<RoomState | null> {
+function roomKey(roomId: string) { return `room:${roomId}` }
+function lockKey(roomId: string) { return `room:${roomId}:lock` }
+function broadcastChannel(roomId: string) { return `room:${roomId}:broadcast` }
+
+async function getRoomState(redis: RedisClient, roomId: string): Promise<RoomState | null> {
   const raw = await redis.get(roomKey(roomId))
   return raw ? JSON.parse(raw) : null
 }
 
-async function setRoomState(redis: FastifyInstance['redis'], state: RoomState) {
+async function setRoomState(redis: RedisClient, state: RoomState) {
   await redis.set(roomKey(state.id), JSON.stringify(state), 'EX', ROOM_TTL)
 }
 
-function broadcast(roomId: string, payload: object, excludeUserId?: string) {
+function broadcastLocal(roomId: string, payload: object, excludeUserId?: string) {
   const room = connections.get(roomId)
   if (!room) return
   const msg = JSON.stringify(payload)
@@ -54,9 +73,38 @@ function broadcast(roomId: string, payload: object, excludeUserId?: string) {
   }
 }
 
-function sendTo(roomId: string, userId: string, payload: object) {
+function sendToLocal(roomId: string, userId: string, payload: object) {
   const ws = connections.get(roomId)?.get(userId)
   if (ws?.readyState === 1) ws.send(JSON.stringify(payload))
+}
+
+async function publish(redis: RedisClient, roomId: string, payload: object, excludeUserId?: string, targetUserId?: string) {
+  const envelope: PubSubEnvelope = { payload, excludeUserId, targetUserId }
+  await redis.publish(broadcastChannel(roomId), JSON.stringify(envelope))
+}
+
+// Atomic lock release: only delete if we still own the lock
+const RELEASE_LOCK_SCRIPT = `if redis.call("get",KEYS[1])==ARGV[1] then return redis.call("del",KEYS[1]) else return 0 end`
+
+async function withRoomLock<T>(
+  redis: RedisClient,
+  roomId: string,
+  fn: () => Promise<T>,
+): Promise<T | null> {
+  const key = lockKey(roomId)
+  const token = crypto.randomBytes(8).toString('hex')
+  for (let i = 0; i < LOCK_RETRIES; i++) {
+    const acquired = await redis.set(key, token, 'PX', LOCK_TTL_MS, 'NX')
+    if (acquired) {
+      try {
+        return await fn()
+      } finally {
+        await redis.eval(RELEASE_LOCK_SCRIPT, 1, key, token)
+      }
+    }
+    if (i < LOCK_RETRIES - 1) await new Promise(r => setTimeout(r, LOCK_RETRY_DELAY_MS))
+  }
+  return null
 }
 
 // ── HTTP endpoints ────────────────────────────────────────────────────────────
@@ -68,6 +116,27 @@ const createRoomBody = z.object({
 
 export default async function wsRoutes(app: FastifyInstance) {
   const auth = { onRequest: [app.authenticate] }
+
+  // Dedicated subscriber connection for cross-instance broadcast delivery
+  const subscriber = app.redis.duplicate()
+  await subscriber.psubscribe('room:*:broadcast')
+  subscriber.on('pmessage', (_pattern: string, channel: string, message: string) => {
+    const roomId = channel.split(':')[1]
+    const { payload, excludeUserId, targetUserId } = JSON.parse(message) as PubSubEnvelope
+    if (targetUserId) {
+      sendToLocal(roomId, targetUserId, payload)
+    } else {
+      broadcastLocal(roomId, payload, excludeUserId)
+    }
+  })
+  app.addHook('onClose', async () => { await subscriber.quit() })
+
+  // POST /v1/rooms/ws/ticket — issue a one-time WS connection ticket (30 s TTL)
+  app.post('/rooms/ws/ticket', auth, async (request, reply) => {
+    const ticket = crypto.randomBytes(16).toString('hex')
+    await app.redis.set(`ws_ticket:${ticket}`, request.userId, 'EX', 30)
+    return reply.status(201).send({ ticket })
+  })
 
   // POST /v1/rooms — create a multiplayer room
   app.post('/rooms', auth, async (request, reply) => {
@@ -140,34 +209,35 @@ export default async function wsRoutes(app: FastifyInstance) {
 
   // WS /v1/rooms/:roomId/ws — real-time game connection
   app.get('/rooms/:roomId/ws', { websocket: true }, async (socket: WebSocket, request) => {
-    // Authenticate via ?token= query param (JWT cannot be sent in WS headers from iOS)
-    const token = (request.query as { token?: string }).token
-    if (!token) { socket.close(4001, 'Unauthorized'); return }
+    // Authenticate via one-time ?ticket= query param fetched just before connecting.
+    // Short-lived tickets avoid exposing the long-lived JWT in WS URLs.
+    const ticket = (request.query as { ticket?: string }).ticket
+    if (!ticket) { socket.close(4001, 'Unauthorized'); return }
 
-    let userId: string
-    try {
-      const payload = app.jwt.verify(token) as { sub: string }
-      userId = payload.sub
-    } catch {
-      socket.close(4001, 'Invalid token'); return
+    const userId = await app.redis.getdel(`ws_ticket:${ticket}`)
+    if (!userId) { socket.close(4001, 'Invalid or expired ticket'); return }
+
+    // Verify user is not suspended before allowing connection
+    const user = await app.prisma.user.findUnique({
+      where: { id: userId },
+      select: { isSuspended: true, username: true, avatarEmoji: true },
+    })
+    if (!user || user.isSuspended || !user.username) {
+      socket.close(4003, 'Unauthorized')
+      return
     }
 
     const { roomId } = request.params as { roomId: string }
     const state = await getRoomState(app.redis, roomId)
     if (!state) { socket.close(4004, 'Room not found'); return }
 
-    // Register connection
+    // Register local connection
     if (!connections.has(roomId)) connections.set(roomId, new Map())
     connections.get(roomId)!.set(userId, socket)
 
     // Add participant if not already in room
     if (!state.participants.find(p => p.userId === userId)) {
       if (state.participants.length >= 8) { socket.close(4008, 'Room full'); return }
-      const user = await app.prisma.user.findUnique({
-        where: { id: userId },
-        select: { username: true, avatarEmoji: true },
-      })
-      if (!user?.username) { socket.close(4003, 'Username required'); return }
       state.participants.push({
         userId, username: user.username, avatarEmoji: user.avatarEmoji,
         lives: 5, skips: 5, isActive: true, score: 0,
@@ -176,88 +246,97 @@ export default async function wsRoutes(app: FastifyInstance) {
     } else {
       const p = state.participants.find(p => p.userId === userId)!
       p.isActive = true
+      await app.redis.del(`disconnect:${roomId}:${userId}`)
       await setRoomState(app.redis, state)
     }
 
     socket.send(JSON.stringify({ type: 'room_state', state }))
-    broadcast(roomId, { type: 'player_joined', userId, participants: state.participants }, userId)
+    await publish(app.redis, roomId, { type: 'player_joined', userId, participants: state.participants }, userId)
 
     // ── Incoming messages ──────────────────────────────────────────────────────
     socket.on('message', async (raw: Buffer | string) => {
       let msg: { type: string; [k: string]: unknown }
       try { msg = JSON.parse(raw.toString()) } catch { return }
 
-      const currentState = await getRoomState(app.redis, roomId)
-      if (!currentState) return
-
       switch (msg.type) {
         case 'start_game': {
-          if (userId !== currentState.hostUserId) break
-          if (currentState.status !== 'waiting') break
-          currentState.status = 'active'
-          await setRoomState(app.redis, currentState)
-          broadcast(roomId, { type: 'game_started', state: currentState })
-          notifyTurn(roomId, currentState)
+          await withRoomLock(app.redis, roomId, async () => {
+            const s = await getRoomState(app.redis, roomId)
+            if (!s) return
+            if (userId !== s.hostUserId) return
+            if (s.status !== 'waiting') return
+            s.status = 'active'
+            await setRoomState(app.redis, s)
+            await publish(app.redis, roomId, { type: 'game_started', state: s })
+            await notifyTurn(app.redis, roomId, s)
+          })
           break
         }
 
         case 'submit_answer': {
-          const active = currentState.participants[currentState.turnIndex]
-          if (active?.userId !== userId) break
-          if (currentState.status !== 'active') break
+          await withRoomLock(app.redis, roomId, async () => {
+            const s = await getRoomState(app.redis, roomId)
+            if (!s) return
+            const active = s.participants[s.turnIndex]
+            if (active?.userId !== userId) return
+            if (s.status !== 'active') return
 
-          const { questionRef, userAnswer, answerTimeMs } = msg as unknown as {
-            questionRef: string; userAnswer: string; answerTimeMs: number
-          }
+            const { questionRef, userAnswer, answerTimeMs } = msg as unknown as {
+              questionRef: string; userAnswer: string; answerTimeMs: number
+            }
 
-          // Basic validation
-          if (typeof answerTimeMs === 'number' && answerTimeMs < 200) break
+            if (typeof answerTimeMs === 'number' && answerTimeMs < 200) return
 
-          let isCorrect = false
-          if (currentState.mode === 'pi') {
-            const { validatePiAnswer } = await import('../../lib/pi')
-            isCorrect = validatePiAnswer(parseInt(questionRef, 10), String(userAnswer))
-          }
-          // Knowledge mode validation omitted here; extend similarly to games.ts
+            let isCorrect = false
+            if (s.mode === 'pi') {
+              const { validatePiAnswer } = await import('../../lib/pi')
+              isCorrect = validatePiAnswer(parseInt(questionRef, 10), String(userAnswer))
+            }
+            // Knowledge mode validation omitted here; extend similarly to games.ts
 
-          if (!isCorrect) {
-            active.lives = Math.max(0, active.lives - 1)
-          }
+            if (!isCorrect) {
+              active.lives = Math.max(0, active.lives - 1)
+            }
 
-          broadcast(roomId, { type: 'answer_result', userId, isCorrect, lives: active.lives })
+            await publish(app.redis, roomId, { type: 'answer_result', userId, isCorrect, lives: active.lives })
 
-          if (active.lives === 0 || active.skips === 0) {
-            active.isActive = false
-            broadcast(roomId, { type: 'player_out', userId })
-          }
+            if (active.lives === 0 || active.skips === 0) {
+              active.isActive = false
+              await publish(app.redis, roomId, { type: 'player_out', userId })
+            }
 
-          advanceTurn(currentState)
-          await setRoomState(app.redis, currentState)
+            advanceTurn(s)
+            await setRoomState(app.redis, s)
 
-          const remaining = currentState.participants.filter(p => p.isActive)
-          if (remaining.length <= 1) {
-            currentState.status = 'finished'
-            await setRoomState(app.redis, currentState)
-            const winner = remaining[0] ?? null
-            broadcast(roomId, { type: 'game_over', winner: winner?.userId ?? null, participants: currentState.participants })
-          } else {
-            notifyTurn(roomId, currentState)
-          }
+            const remaining = s.participants.filter(p => p.isActive)
+            if (remaining.length <= 1) {
+              s.status = 'finished'
+              await setRoomState(app.redis, s)
+              const winner = remaining[0] ?? null
+              await publish(app.redis, roomId, { type: 'game_over', winner: winner?.userId ?? null, participants: s.participants })
+            } else {
+              await notifyTurn(app.redis, roomId, s)
+            }
+          })
           break
         }
 
         case 'use_skip': {
-          const active = currentState.participants[currentState.turnIndex]
-          if (active?.userId !== userId) break
-          active.skips = Math.max(0, active.skips - 1)
-          broadcast(roomId, { type: 'skip_used', userId, skips: active.skips })
-          if (active.skips === 0) {
-            active.isActive = false
-            broadcast(roomId, { type: 'player_out', userId })
-            advanceTurn(currentState)
-          }
-          await setRoomState(app.redis, currentState)
-          notifyTurn(roomId, currentState)
+          await withRoomLock(app.redis, roomId, async () => {
+            const s = await getRoomState(app.redis, roomId)
+            if (!s) return
+            const active = s.participants[s.turnIndex]
+            if (active?.userId !== userId) return
+            active.skips = Math.max(0, active.skips - 1)
+            await publish(app.redis, roomId, { type: 'skip_used', userId, skips: active.skips })
+            if (active.skips === 0) {
+              active.isActive = false
+              await publish(app.redis, roomId, { type: 'player_out', userId })
+              advanceTurn(s)
+            }
+            await setRoomState(app.redis, s)
+            await notifyTurn(app.redis, roomId, s)
+          })
           break
         }
       }
@@ -266,18 +345,24 @@ export default async function wsRoutes(app: FastifyInstance) {
     // ── Disconnect handling ────────────────────────────────────────────────────
     socket.on('close', async () => {
       connections.get(roomId)?.delete(userId)
+      await app.redis.set(`disconnect:${roomId}:${userId}`, '1', 'PX', DISCONNECT_GRACE_MS + 5000)
 
       // Grace period: wait before treating as left
       setTimeout(async () => {
-        if (connections.get(roomId)?.has(userId)) return // reconnected
+        if (connections.get(roomId)?.has(userId)) return // reconnected locally
+        const stillDisconnected = await app.redis.exists(`disconnect:${roomId}:${userId}`)
+        if (!stillDisconnected) return // reconnected on another instance
 
-        const s = await getRoomState(app.redis, roomId)
-        if (!s) return
+        await withRoomLock(app.redis, roomId, async () => {
+          const s = await getRoomState(app.redis, roomId)
+          if (!s) return
 
-        const p = s.participants.find(p => p.userId === userId)
-        if (p) {
+          const p = s.participants.find(p => p.userId === userId)
+          if (!p) return
+
           p.isActive = false
-          broadcast(roomId, { type: 'player_disconnected', userId })
+          await app.redis.del(`disconnect:${roomId}:${userId}`)
+          await publish(app.redis, roomId, { type: 'player_disconnected', userId })
           advanceTurn(s)
           await setRoomState(app.redis, s)
 
@@ -285,9 +370,9 @@ export default async function wsRoutes(app: FastifyInstance) {
           if (s.status === 'active' && remaining.length <= 1) {
             s.status = 'finished'
             await setRoomState(app.redis, s)
-            broadcast(roomId, { type: 'game_over', winner: remaining[0]?.userId ?? null, participants: s.participants })
+            await publish(app.redis, roomId, { type: 'game_over', winner: remaining[0]?.userId ?? null, participants: s.participants })
           }
-        }
+        })
       }, DISCONNECT_GRACE_MS)
     })
   })
@@ -305,13 +390,13 @@ function advanceTurn(state: RoomState) {
   state.turnIndex = next
 }
 
-function notifyTurn(roomId: string, state: RoomState) {
+async function notifyTurn(redis: RedisClient, roomId: string, state: RoomState) {
   const current = state.participants[state.turnIndex]
   if (!current) return
-  broadcast(roomId, {
+  await publish(redis, roomId, {
     type: 'turn_changed',
     activeUserId: current.userId,
     turnIndex: state.turnIndex,
   })
-  sendTo(roomId, current.userId, { type: 'your_turn', position: current.userId })
+  await publish(redis, roomId, { type: 'your_turn', position: current.userId }, undefined, current.userId)
 }

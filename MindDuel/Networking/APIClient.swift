@@ -6,14 +6,14 @@ actor APIClient {
     static let shared = APIClient()
 
     #if DEBUG
-    private let baseURL = URL(string: "http://localhost:3000/v1")!
+    private var baseURL: URL { AppEnvironment.current.apiBaseURL }
     #else
     private let baseURL = URL(string: "https://api.mindduel.no/v1")!
     #endif
 
     private let session: URLSession
     private let tokenStore = AuthTokenStore.shared
-    private var isRefreshing = false
+    private var refreshTask: Task<Void, Error>?
 
     private init() {
         let config = URLSessionConfiguration.default
@@ -44,12 +44,15 @@ actor APIClient {
     private func request<B: Encodable, T: Decodable>(
         method: String, path: String, query: [String: String], body: B?
     ) async throws -> T {
-        var urlComponents = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
+        guard var urlComponents = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false) else {
+            throw URLError(.badURL)
+        }
         if !query.isEmpty {
             urlComponents.queryItems = query.map { URLQueryItem(name: $0.key, value: $0.value) }
         }
+        guard let requestURL = urlComponents.url else { throw URLError(.badURL) }
 
-        var req = URLRequest(url: urlComponents.url!)
+        var req = URLRequest(url: requestURL)
         req.httpMethod = method
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
@@ -119,18 +122,25 @@ actor APIClient {
     // MARK: – Token refresh
 
     private func refreshIfNeeded() async throws {
-        guard !isRefreshing else { return }
+        if let existing = refreshTask {
+            try await existing.value
+            return
+        }
         guard let refresh = tokenStore.refreshToken else { throw APIError.unauthorized }
-        isRefreshing = true
-        defer { isRefreshing = false }
+        let task = Task<Void, Error> { [self] in try await self.doRefresh(refreshToken: refresh) }
+        refreshTask = task
+        defer { refreshTask = nil }
+        try await task.value
+    }
 
+    private func doRefresh(refreshToken: String) async throws {
         struct RefreshBody: Encodable { let refreshToken: String }
         struct TokenPair: Decodable { let accessToken: String; let refreshToken: String }
 
         var req = URLRequest(url: baseURL.appendingPathComponent("auth/refresh"))
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.httpBody = try JSONEncoder().encode(RefreshBody(refreshToken: refresh))
+        req.httpBody = try JSONEncoder().encode(RefreshBody(refreshToken: refreshToken))
 
         do {
             let (data, response) = try await executeRequest(req)

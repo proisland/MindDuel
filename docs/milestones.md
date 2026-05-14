@@ -356,7 +356,7 @@ M6 krever betydelige endringer i appen for å gå fra lokal/mock-tilstand (M1–
 - [x] All kommunikasjon mellom app og backend er kryptert (HTTPS/WSS) *(Railway + WSS)*
 - [x] Admin-grensesnitt live med rollebasert autentisering *(EJS+Fastify, bcrypt-passordbeskyttet)*
 - [x] Spørsmålsbanker versjonshåndteres og kan oppdateres uten app-release
-- [ ] Bilder hostes sentralt (CDN/object storage) *(R2-plugin finnes, ruter ikke implementert)*
+- [x] Bilder hostes sentralt (CDN/object storage) *(flagbilder via flagcdn.com/AsyncImage; tilbakemeldingsbilder via R2 presigned URLs)*
 - [x] Admin kan aktivere/skjule/sesongsette spillmodi uten app-oppdatering
 - [x] Tilbakemeldingssystem fungerer end-to-end (mottak, svar og lukking)
 - [x] Anti-juks-flagging kjøres serverside *(< 200 ms avvist, avg < 400 ms → fastRoundCount)*
@@ -369,7 +369,7 @@ M6 krever betydelige endringer i appen for å gå fra lokal/mock-tilstand (M1–
 - [x] Redis er i bruk lokalt og i produksjon; WebSocket-meldinger rutes via Redis pub/sub
 - [ ] Graceful shutdown verifisert: pågående WebSocket-runder avbrytes ikke ved deploy
 - [x] GitHub Actions-workflow bygger og tester ved merge til `main`
-- [ ] GitHub Actions deployer til staging automatisk ved merge til `main`
+- [x] GitHub Actions deployer til staging automatisk ved merge til `main` *(Railway CLI via install.sh + RAILWAY_TOKEN + RAILWAY_PROJECT_ID)*
 
 **iOS-app**
 - [x] All brukerprofil-data, progresjon og scores lagres sentralt og synkroniseres på tvers av enheter

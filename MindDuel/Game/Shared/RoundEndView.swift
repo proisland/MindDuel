@@ -69,14 +69,13 @@ struct RoundEndView: View {
                 .padding(.bottom, MDSpacing.xl)
             }
         }
-        .onAppear {
-            // Count up from 0 to score over 600 ms
+        .task {
             let steps = 20
             let interval = 0.6 / Double(steps)
             for i in 1...steps {
-                DispatchQueue.main.asyncAfter(deadline: .now() + interval * Double(i)) {
-                    displayedScore = Int(Double(score) * Double(i) / Double(steps))
-                }
+                try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
+                guard !Task.isCancelled else { return }
+                displayedScore = Int(Double(score) * Double(i) / Double(steps))
             }
         }
     }

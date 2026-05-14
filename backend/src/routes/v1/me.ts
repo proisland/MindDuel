@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { config } from '../../config'
+import { revokeAllRefreshTokens } from '../../lib/tokens'
 
 const RESERVED_USERNAMES = new Set(['admin', 'mindduel', 'support', 'moderator', 'system'])
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
@@ -82,17 +83,16 @@ export default async function meRoutes(app: FastifyInstance) {
       return reply.status(409).send({ error: 'Username already set' })
     }
 
-    const taken = await app.prisma.user.findUnique({ where: { username } })
-    if (taken) {
-      return reply.status(409).send({ error: 'Username taken' })
+    try {
+      const user = await app.prisma.user.update({
+        where: { id: request.userId },
+        data: { username },
+      })
+      return reply.send({ username: user.username })
+    } catch (e: any) {
+      if (e.code === 'P2002') return reply.status(409).send({ error: 'Username taken' })
+      throw e
     }
-
-    const user = await app.prisma.user.update({
-      where: { id: request.userId },
-      data: { username },
-    })
-
-    return reply.send({ username: user.username })
   })
 
   // PATCH /v1/me
@@ -150,6 +150,7 @@ export default async function meRoutes(app: FastifyInstance) {
 
   // DELETE /v1/me
   app.delete('/', auth, async (request, reply) => {
+    await revokeAllRefreshTokens(app.redis, request.userId)
     await app.prisma.user.delete({ where: { id: request.userId } })
     return reply.status(204).send()
   })

@@ -35,6 +35,9 @@ struct UserProfile: Identifiable {
     var isPremium: Bool = false
     /// Average answer time in seconds (#57). 0 = unknown / no data.
     var avgAnswerTime: Double = 0
+    /// Score from the scoreboard API (avgScore). Used for server-only modes
+    /// where scores aren't stored locally in ProgressionStore.
+    var apiScore: Int = 0
 
     var totalScore: Int { piScore + mathScore + chemScore + geoScore + brainScore + scienceScore + historyScore + physicsScore + sportScore + grammarScore }
     var initials: String { String(username.prefix(2)).uppercased() }
@@ -122,6 +125,7 @@ extension UserProfile {
     @Published private(set) var friendUsernames: Set<String> = []
     @Published private(set) var sentRequestUsernames: Set<String> = []
     @Published private(set) var pendingRequests: [UserProfile] = []
+    @Published private(set) var friends: [UserProfile] = []
 
     private init() {}
 
@@ -130,10 +134,11 @@ extension UserProfile {
     func refresh() async {
         async let friendsTask: [APIFriend] = (try? APIClient.shared.get("friends")) ?? []
         async let requestsTask: FriendRequestsResponse? = try? APIClient.shared.get("friends/requests")
-        let (friends, requestsResp) = await (friendsTask, requestsTask)
+        let (fetchedFriends, requestsResp) = await (friendsTask, requestsTask)
 
-        apiFriends = friends
-        friendUsernames = Set(friends.map(\.username))
+        apiFriends = fetchedFriends
+        friends = fetchedFriends.map { UserProfile(from: $0) }
+        friendUsernames = Set(fetchedFriends.map(\.username))
         if let reqs = requestsResp {
             apiPendingRequests = reqs.received
             sentRequestUsernames = Set(reqs.sent.compactMap(\.toUsername))
@@ -142,10 +147,6 @@ extension UserProfile {
     }
 
     // MARK: – Queries
-
-    var friends: [UserProfile] {
-        apiFriends.map { UserProfile(from: $0) }
-    }
 
     var friendsLeaderboard: [UserProfile] {
         friends.sorted { $0.totalScore > $1.totalScore }
@@ -211,6 +212,7 @@ extension UserProfile {
     func removeFriend(username: String) {
         guard let friend = apiFriends.first(where: { $0.username == username }) else { return }
         apiFriends.removeAll { $0.id == friend.id }
+        friends.removeAll { $0.id == friend.id }
         friendUsernames.remove(username)
         Task {
             try? await APIClient.shared.delete("friends/\(friend.id)")
@@ -248,5 +250,6 @@ extension UserProfile {
         friendUsernames = []
         sentRequestUsernames = []
         pendingRequests = []
+        friends = []
     }
 }

@@ -35,8 +35,12 @@ export const config = {
     clientId: required('APPLE_CLIENT_ID'),
   },
 
+  enableDevAuth: process.env.ENABLE_DEV_AUTH === 'true',
+
   admin: {
-    sessionSecret: process.env.ADMIN_SESSION_SECRET ?? 'dev-admin-secret',
+    sessionSecret: process.env.NODE_ENV === 'production'
+      ? required('ADMIN_SESSION_SECRET')
+      : (process.env.ADMIN_SESSION_SECRET ?? 'dev-admin-secret'),
   },
 
   quota: {
