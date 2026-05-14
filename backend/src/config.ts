@@ -23,6 +23,9 @@ export const config = {
     accessKey: required('S3_ACCESS_KEY'),
     secretKey: required('S3_SECRET_KEY'),
     region: process.env.S3_REGION ?? 'us-east-1',
+    forcePathStyle: process.env.S3_FORCE_PATH_STYLE !== 'false',
+    publicUrl: process.env.S3_PUBLIC_URL
+      ?? `${required('S3_ENDPOINT')}/${required('S3_BUCKET')}`,
   },
 
   jwt: {
