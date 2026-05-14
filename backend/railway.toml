@@ -1,5 +1,6 @@
 [build]
 buildCommand = "npm ci && npm run build"
+dockerBuildTarget = "runner"
 
 [deploy]
 startCommand = "node_modules/.bin/prisma migrate deploy && node dist/server.js"
