@@ -57,3 +57,4 @@ export const config = {
     privateKeyBase64: process.env.APNS_PRIVATE_KEY_BASE64 ?? '',
   },
 } as const
+
