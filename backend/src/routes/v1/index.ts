@@ -8,11 +8,13 @@ import friendsRoutes from './friends'
 import scoreboardRoutes from './scoreboard'
 import telemetryRoutes from './telemetry'
 import feedbackRoutes from './feedback'
+import purchaseRoutes from './purchase'
 import wsRoutes from './ws'
 
 export default async function v1Routes(app: FastifyInstance) {
   app.register(authRoutes,       { prefix: '/auth' })
   app.register(meRoutes,         { prefix: '/me' })
+  app.register(purchaseRoutes,   { prefix: '/me/purchase' })
   app.register(gamesRoutes,      { prefix: '/games' })
   app.register(modesRoutes,      { prefix: '/modes' })
   app.register(questionsRoutes,  { prefix: '/questions' })

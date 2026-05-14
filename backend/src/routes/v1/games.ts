@@ -50,14 +50,20 @@ async function getOrCreateQuota(
   })
 }
 
+function isCurrentlyPremium(user: { isPremium: boolean; premiumExpiresAt: Date | null }): boolean {
+  if (!user.isPremium) return false
+  if (user.premiumExpiresAt === null) return true  // lifetime
+  return user.premiumExpiresAt > new Date()
+}
+
 async function checkQuota(
   prisma: FastifyInstance['prisma'],
   userId: string,
-  isPremium: boolean,
+  user: { isPremium: boolean; premiumExpiresAt: Date | null },
   isTraining: boolean,
   localDate: string,
 ): Promise<{ allowed: boolean; count: number; remaining: number }> {
-  if (isPremium || isTraining) return { allowed: true, count: 0, remaining: 999 }
+  if (isCurrentlyPremium(user) || isTraining) return { allowed: true, count: 0, remaining: 999 }
 
   const quota = await getOrCreateQuota(prisma, userId, localDate)
   const count = quota.date === localDate ? quota.count : 0
@@ -87,13 +93,13 @@ export default async function gamesRoutes(app: FastifyInstance) {
 
     const user = await app.prisma.user.findUnique({
       where: { id: request.userId },
-      select: { isPremium: true, isSuspended: true, progressions: { where: { mode: body.data.mode } } },
+      select: { isPremium: true, premiumExpiresAt: true, isSuspended: true, progressions: { where: { mode: body.data.mode } } },
     })
     if (!user) return reply.status(404).send({ error: 'User not found' })
     if (user.isSuspended) return reply.status(403).send({ error: 'Account suspended' })
 
     const { allowed, remaining } = await checkQuota(
-      app.prisma, request.userId, user.isPremium, body.data.isTraining, body.data.localDate,
+      app.prisma, request.userId, user, body.data.isTraining, body.data.localDate,
     )
     if (!allowed) return reply.status(429).send({ error: 'Daily quota exceeded', quotaRemaining: 0 })
 
@@ -186,9 +192,9 @@ export default async function gamesRoutes(app: FastifyInstance) {
     if (!session.isTraining) {
       const user = await app.prisma.user.findUnique({
         where: { id: request.userId },
-        select: { isPremium: true },
+        select: { isPremium: true, premiumExpiresAt: true },
       })
-      if (!user?.isPremium) {
+      if (!user || !isCurrentlyPremium(user)) {
         const today = new Date().toISOString().slice(0, 10)
         // Use $executeRaw to atomically reset-or-increment in a single statement:
         // - same day → increment

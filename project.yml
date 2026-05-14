@@ -18,6 +18,9 @@ targets:
     platform: iOS
     sources:
       - path: MindDuel
+      - path: Configuration.storekit
+        type: file
+        buildPhase: resources
     info:
       path: MindDuel/Info.plist
       properties:
@@ -41,6 +44,8 @@ targets:
           fi
     entitlements:
       path: MindDuel/MindDuel.entitlements
+    dependencies:
+      - sdk: StoreKit.framework
     settings:
       base:
         SWIFT_VERSION: "5.9"
@@ -54,6 +59,7 @@ targets:
         Debug:
           DEBUG_INFORMATION_FORMAT: dwarf
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+          STOREKIT_CONFIGURATION: Configuration.storekit
         Release:
           DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
           SWIFT_COMPILATION_MODE: wholemodule

@@ -1,0 +1,114 @@
+{
+  "identifier" : "73F54B94-C85F-4A99-9F05-28FEB91D3E7C",
+  "nonConsumableProducts" : [
+    {
+      "displayPrice" : "199",
+      "familySharable" : false,
+      "internalID" : "A1E54B94-C85F-4A99-9F05-28FEB91D3E7C",
+      "localizations" : [
+        {
+          "description" : "Ubegrenset tilgang for alltid",
+          "displayName" : "MindDuel Premium – livstid",
+          "locale" : "nb_NO"
+        },
+        {
+          "description" : "Unlimited access forever",
+          "displayName" : "MindDuel Premium – Lifetime",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "no.mindduel.premium.lifetime",
+      "referenceName" : "MindDuel Premium Lifetime",
+      "type" : "NonConsumable"
+    }
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_interruptedPurchasesEnabled" : false,
+    "_billingGracePeriodEnabled" : false,
+    "_renewalSpeedMultiplier" : 1
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "20F5B7B6-2A6E-4B48-8D99-E9A47E7A2A01",
+      "localizations" : [
+        {
+          "locale" : "nb_NO",
+          "name" : "MindDuel Premium"
+        },
+        {
+          "locale" : "en_US",
+          "name" : "MindDuel Premium"
+        }
+      ],
+      "name" : "MindDuel Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "19",
+          "familySharable" : false,
+          "groupNumber" : 1,
+          "internalID" : "B2F64B94-C85F-4A99-9F05-28FEB91D3E7C",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Ubegrenset tilgang i en måned",
+              "displayName" : "MindDuel Premium – månedlig",
+              "locale" : "nb_NO"
+            },
+            {
+              "description" : "Unlimited access for one month",
+              "displayName" : "MindDuel Premium – Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "no.mindduel.premium.monthly",
+          "referenceName" : "MindDuel Premium Monthly",
+          "subscriptionPeriod" : "P1M",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "99",
+          "familySharable" : false,
+          "groupNumber" : 2,
+          "internalID" : "C3F74B94-C85F-4A99-9F05-28FEB91D3E7C",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Ubegrenset tilgang i ett år",
+              "displayName" : "MindDuel Premium – årlig",
+              "locale" : "nb_NO"
+            },
+            {
+              "description" : "Unlimited access for one year",
+              "displayName" : "MindDuel Premium – Yearly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "no.mindduel.premium.yearly",
+          "referenceName" : "MindDuel Premium Yearly",
+          "subscriptionPeriod" : "P1Y",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

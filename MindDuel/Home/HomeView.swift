@@ -72,7 +72,8 @@ struct HomeView: View {
                         if progression.isNearQuota {
                             QuotaBanner(
                                 used: progression.dailyUsed,
-                                total: ProgressionStore.dailyQuota
+                                total: ProgressionStore.dailyQuota,
+                                userId: authState.currentUserId ?? ""
                             )
                             .padding(.horizontal, MDSpacing.md)
                         }
@@ -129,7 +130,7 @@ struct HomeView: View {
         }
         .fullScreenCover(item: $activeDestination) { dest in
             switch dest {
-            case .profile:         ProfileView(username: username, onSignOut: { authState.signOut() })
+            case .profile:         ProfileView(username: username, userId: authState.currentUserId ?? "", onSignOut: { authState.signOut() })
             case .scoreboard:      ScoreboardView(ownUsername: username)
             case .multiplayerHost: MultiplayerLobbyView(ownUsername: username, startAsHost: true)
             case .multiplayerInvites:

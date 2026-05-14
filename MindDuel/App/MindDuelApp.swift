@@ -6,6 +6,9 @@ struct MindDuelApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var authState = AuthState()
     @StateObject private var modeCache = ModeConfigCache.shared
+    // Starts the StoreKit transaction listener at app launch so renewals and
+    // family-share events are handled even before the paywall opens.
+    @StateObject private var store = StoreKitService.shared
     @AppStorage("colorSchemePreference") private var colorSchemePreference = "system"
 
     private var preferredScheme: ColorScheme? {

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ProfileView: View {
     let username: String
+    let userId: String
     let onSignOut: () -> Void
     @ObservedObject private var progression = ProgressionStore.shared
     @ObservedObject private var social = SocialStore.shared
@@ -137,7 +138,7 @@ struct ProfileView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: showFlagExplanation)
         .fullScreenCover(isPresented: $showSettings) {
-            SettingsView(onSignOut: onSignOut)
+            SettingsView(onSignOut: onSignOut, userId: userId)
         }
         .fullScreenCover(isPresented: $showAvatarPicker) {
             AvatarPickerSheet()

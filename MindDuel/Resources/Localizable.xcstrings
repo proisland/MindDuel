@@ -2822,6 +2822,66 @@
         }
       }
     },
+    "paywall_badge_best_value" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Best value" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Beste verdi" } }
+      }
+    },
+    "paywall_badge_popular" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Popular" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Populær" } }
+      }
+    },
+    "paywall_error_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Purchase failed" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Kjøp mislyktes" } }
+      }
+    },
+    "paywall_headline" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unlock MindDuel Premium" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Lås opp MindDuel Premium" } }
+      }
+    },
+    "paywall_restore_action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Restore purchases" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Gjenopprett kjøp" } }
+      }
+    },
+    "paywall_select_plan" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select a plan" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Velg abonnement" } }
+      }
+    },
+    "paywall_subheadline" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unlimited questions, every day." } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Ubegrenset antall spørsmål, hver dag." } }
+      }
+    },
+    "paywall_subscribe_action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Subscribe for %@" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Abonner for %@" } }
+      }
+    },
+    "paywall_terms_note" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Subscriptions renew automatically. Cancel anytime in App Store settings." } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Abonnement fornyes automatisk. Avslutt når som helst i App Store-innstillinger." } }
+      }
+    },
+    "paywall_title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Premium" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Premium" } }
+      }
+    },
     "quota_upgrade_action" : {
       "extractionState" : "stale",
       "localizations" : {

@@ -12,6 +12,13 @@ final class AuthState: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
 
+    var currentUserId: String? {
+        switch phase {
+        case .authenticated(let id, _), .needsUsername(let id): return id
+        case .signedOut: return nil
+        }
+    }
+
     private let tokenStore = AuthTokenStore.shared
 
     init() {

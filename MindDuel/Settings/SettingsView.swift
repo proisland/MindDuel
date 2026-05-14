@@ -2,7 +2,9 @@ import SwiftUI
 
 struct SettingsView: View {
     let onSignOut: () -> Void
+    let userId: String
     @Environment(\.dismiss) private var dismiss
+    @State private var showPaywall = false
     @AppStorage("selectedLanguageCode") private var selectedLanguageCode = "system"
     @AppStorage("privacyHideLastActive") private var privacyHideLastActive = false
     @AppStorage("privacyMutualFriendsOnly") private var privacyMutualFriendsOnly = false
@@ -67,17 +69,7 @@ struct SettingsView: View {
                         }
 
                         settingsSection(String(localized: "settings_subscription_section")) {
-                            VStack(alignment: .leading, spacing: MDSpacing.sm) {
-                                Text(String(localized: "settings_free_plan_label"))
-                                    .mdStyle(.caption)
-                                    .foregroundStyle(Color.mdText2)
-                                MDButton(.primary, title: String(localized: "quota_upgrade_action")) { }
-                            }
-                            .padding(MDSpacing.md)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.mdSurface2)
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdBorder2, lineWidth: 0.5))
+                            subscriptionCard
                         }
 
                         // #89: send feedback / report bugs / suggest tasks
@@ -228,6 +220,33 @@ struct SettingsView: View {
             Button("OK", role: .cancel) { onSignOut() }
         } message: {
             Text(String(localized: "settings_delete_done_message"))
+        }
+    }
+
+    // MARK: – Subscription card
+
+    @ViewBuilder
+    private var subscriptionCard: some View {
+        VStack(alignment: .leading, spacing: MDSpacing.sm) {
+            HStack(spacing: MDSpacing.xs) {
+                Image(systemName: "crown.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.mdAccent)
+                Text(String(localized: "settings_free_plan_label"))
+                    .mdStyle(.caption)
+                    .foregroundStyle(Color.mdText2)
+            }
+            MDButton(.primary, title: String(localized: "quota_upgrade_action")) {
+                showPaywall = true
+            }
+        }
+        .padding(MDSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.mdSurface2)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdBorder2, lineWidth: 0.5))
+        .sheet(isPresented: $showPaywall) {
+            PaywallView(userId: userId)
         }
     }
 

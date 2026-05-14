@@ -17,6 +17,8 @@ model User {
   birthDate               DateTime?
   avatarEmoji             String    @default("🧠")
   isPremium               Boolean   @default(false)
+  premiumExpiresAt        DateTime? // null = lifetime; future date = active subscription
+  premiumProductId        String?   // which product they purchased last
   isFlagged               Boolean   @default(false)
   isSuspended             Boolean   @default(false)
   flagReason              String?

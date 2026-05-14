@@ -3,6 +3,8 @@ import SwiftUI
 struct QuotaBanner: View {
     let used: Int
     let total: Int
+    let userId: String
+    @State private var showPaywall = false
 
     var body: some View {
         HStack(spacing: MDSpacing.sm) {
@@ -26,8 +28,10 @@ struct QuotaBanner: View {
 
             Spacer()
 
-            MDButton(.primary, title: String(localized: "quota_upgrade_action")) { }
-                .frame(width: 100)
+            MDButton(.primary, title: String(localized: "quota_upgrade_action")) {
+                showPaywall = true
+            }
+            .frame(width: 100)
         }
         .padding(.horizontal, MDSpacing.md)
         .padding(.vertical, MDSpacing.sm)
@@ -43,5 +47,8 @@ struct QuotaBanner: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color(red: 0.78, green: 0.39, blue: 0).opacity(0.35), lineWidth: 1)
         )
+        .sheet(isPresented: $showPaywall) {
+            PaywallView(userId: userId)
+        }
     }
 }
