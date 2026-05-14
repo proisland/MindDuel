@@ -41,7 +41,7 @@ export default async function adminFeedbackRoutes(app: FastifyInstance) {
         ? app.prisma.$queryRaw<Array<{ id: string; imageUrl: string | null }>>`
             SELECT id, "imageUrl" FROM "Feedback" WHERE id = ANY(${ticketIds})
           `
-        : Promise.resolve([]),
+        : Promise.resolve([] as Array<{ id: string; imageUrl: string | null }>),
       ticketIds.length > 0
         ? app.prisma.$queryRaw<Array<{ id: string; feedbackId: string; body: string; notified: boolean; createdAt: Date }>>`
             SELECT id, "feedbackId", body, notified, "createdAt"
@@ -49,7 +49,7 @@ export default async function adminFeedbackRoutes(app: FastifyInstance) {
             WHERE "feedbackId" = ANY(${ticketIds})
             ORDER BY "createdAt" ASC
           `
-        : Promise.resolve([]),
+        : Promise.resolve([] as Array<{ id: string; feedbackId: string; body: string; notified: boolean; createdAt: Date }>),
     ])
 
     const imageUrlById = new Map(rawImageUrls.map(r => [r.id, r.imageUrl]))
