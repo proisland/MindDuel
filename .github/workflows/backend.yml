@@ -82,6 +82,7 @@ jobs:
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
 
     steps:
+      - uses: actions/checkout@v4
       - name: Install Railway CLI
         run: |
           curl -fsSL https://railway.app/install.sh | bash
@@ -91,4 +92,4 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
         run: railway up --service MindDuel --environment staging --detach --ci
-        working-directory: ${{ github.workspace }}/backend
+        working-directory: backend
