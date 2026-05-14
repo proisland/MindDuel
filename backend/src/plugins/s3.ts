@@ -11,7 +11,7 @@ export default fp(async (app: FastifyInstance) => {
       accessKeyId: config.s3.accessKey,
       secretAccessKey: config.s3.secretKey,
     },
-    forcePathStyle: true, // required for MinIO
+    forcePathStyle: config.s3.forcePathStyle,
   })
 
   app.decorate('s3', s3)

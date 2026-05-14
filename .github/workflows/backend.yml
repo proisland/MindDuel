@@ -13,6 +13,7 @@ on:
     branches: [main]
     paths:
       - "backend/**"
+  workflow_dispatch:
 
 jobs:
   build-and-test:
@@ -102,3 +103,23 @@ jobs:
       S3_SECRET_KEY: mindduel123
       JWT_SECRET: ci-test-secret
       APPLE_CLIENT_ID: no.mindduel.app
+
+  deploy-production:
+    name: Deploy to production
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Railway (production)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+        shell: bash
+        run: |
+          curl -fsSL https://railway.app/install.sh | bash
+          export PATH="$HOME/.railway/bin:$PATH"
+          railway up --service MindDuel --environment production --project "$RAILWAY_PROJECT_ID" --detach
