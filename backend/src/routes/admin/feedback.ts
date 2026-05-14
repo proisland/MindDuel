@@ -35,25 +35,28 @@ export default async function adminFeedbackRoutes(app: FastifyInstance) {
     ])
 
     // Fetch imageUrl + comments via raw SQL (fields not in stale Prisma client)
+    type RawImageUrl = { id: string; imageUrl: string | null }
+    type RawComment = { id: string; feedbackId: string; body: string; notified: boolean; createdAt: Date }
+
     const ticketIds = ticketsBase.map(t => t.id)
     const [rawImageUrls, rawComments] = await Promise.all([
       ticketIds.length > 0
-        ? app.prisma.$queryRaw<Array<{ id: string; imageUrl: string | null }>>`
+        ? app.prisma.$queryRaw<RawImageUrl[]>`
             SELECT id, "imageUrl" FROM "Feedback" WHERE id = ANY(${ticketIds})
           `
-        : Promise.resolve([]),
+        : Promise.resolve([] as RawImageUrl[]),
       ticketIds.length > 0
-        ? app.prisma.$queryRaw<Array<{ id: string; feedbackId: string; body: string; notified: boolean; createdAt: Date }>>`
+        ? app.prisma.$queryRaw<RawComment[]>`
             SELECT id, "feedbackId", body, notified, "createdAt"
             FROM "FeedbackComment"
             WHERE "feedbackId" = ANY(${ticketIds})
             ORDER BY "createdAt" ASC
           `
-        : Promise.resolve([]),
+        : Promise.resolve([] as RawComment[]),
     ])
 
     const imageUrlById = new Map(rawImageUrls.map(r => [r.id, r.imageUrl]))
-    const commentsByTicket = new Map<string, typeof rawComments>()
+    const commentsByTicket = new Map<string, RawComment[]>()
     for (const c of rawComments) {
       if (!commentsByTicket.has(c.feedbackId)) commentsByTicket.set(c.feedbackId, [])
       commentsByTicket.get(c.feedbackId)!.push(c)
