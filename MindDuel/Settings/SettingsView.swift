@@ -310,6 +310,24 @@ struct SettingsView: View {
 
     private var debugSection: some View {
         settingsSection(String(localized: "debug_section_title")) {
+            #if DEBUG
+            toggleRow(
+                icon: "server.rack", iconBg: .mdAmberSoft, iconColor: .mdAmber,
+                label: "API Environment"
+            ) {
+                Picker("", selection: Binding(
+                    get: { AppEnvironment.current },
+                    set: { AppEnvironment.current = $0 }
+                )) {
+                    ForEach(AppEnvironment.allCases, id: \.self) { env in
+                        Text(env.displayName).tag(env)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 180)
+            }
+            #endif
+
             Button {
                 ProgressionStore.shared.resetDailyQuota()
             } label: {

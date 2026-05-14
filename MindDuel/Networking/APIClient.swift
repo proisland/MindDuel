@@ -6,7 +6,7 @@ actor APIClient {
     static let shared = APIClient()
 
     #if DEBUG
-    private let baseURL = URL(string: "http://localhost:3000/v1")!
+    private var baseURL: URL { AppEnvironment.current.apiBaseURL }
     #else
     private let baseURL = URL(string: "https://api.mindduel.no/v1")!
     #endif

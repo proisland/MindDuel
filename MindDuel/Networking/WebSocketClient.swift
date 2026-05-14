@@ -17,7 +17,7 @@ final class WebSocketClient: NSObject, ObservableObject {
     private var pingTask: Task<Void, Never>?
 
     #if DEBUG
-    private let wsBase = "ws://localhost:3000/v1/ws/rooms"
+    private var wsBase: String { AppEnvironment.current.wsBase }
     #else
     private let wsBase = "wss://api.mindduel.no/v1/ws/rooms"
     #endif
