@@ -1,7 +1,7 @@
 name: MindDuel
 
 options:
-  bundleIdPrefix: no.mindduel
+  bundleIdPrefix: com.proisland
   deploymentTarget:
     iOS: "16.0"
   defaultConfig: Debug
@@ -44,8 +44,8 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "5.9"
-        PRODUCT_BUNDLE_IDENTIFIER: no.mindduel.app
-        DEVELOPMENT_TEAM: ""
+        PRODUCT_BUNDLE_IDENTIFIER: com.proisland.mindduel
+        DEVELOPMENT_TEAM: "3KQ2TQS63W"
         CODE_SIGN_STYLE: Automatic
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         IPHONEOS_DEPLOYMENT_TARGET: "16.0"
@@ -68,7 +68,7 @@ targets:
       base:
         SWIFT_VERSION: "5.9"
         PRODUCT_BUNDLE_IDENTIFIER: no.mindduel.tests
-        DEVELOPMENT_TEAM: ""
+        DEVELOPMENT_TEAM: "3KQ2TQS63W"
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: ""
         CODE_SIGNING_REQUIRED: NO
@@ -86,7 +86,7 @@ targets:
       base:
         SWIFT_VERSION: "5.9"
         PRODUCT_BUNDLE_IDENTIFIER: no.mindduel.uitests
-        DEVELOPMENT_TEAM: ""
+        DEVELOPMENT_TEAM: "3KQ2TQS63W"
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: ""
         CODE_SIGNING_REQUIRED: NO
