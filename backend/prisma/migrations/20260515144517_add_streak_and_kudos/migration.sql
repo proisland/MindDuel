@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "GameMode" ADD COLUMN     "colorHex" TEXT NOT NULL DEFAULT '#6366F1',
+ADD COLUMN     "iconSymbol" TEXT NOT NULL DEFAULT 'questionmark',
+ADD COLUMN     "nameEn" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "nameNo" TEXT NOT NULL DEFAULT '';

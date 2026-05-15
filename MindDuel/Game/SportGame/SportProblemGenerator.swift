@@ -5,20 +5,25 @@ import Foundation
 /// VM-historie. Round history avoids repeats within a session.
 enum SportProblemGenerator {
 
-    private static var seenCorrects: Set<String> = []
+    private static let historyMode = "sport"
+    private static var seenCorrects: Set<String> = QuestionHistory.load(mode: "sport")
 
-    static func resetRoundHistory() { seenCorrects.removeAll() }
+    static func resetRoundHistory() { seenCorrects = QuestionHistory.load(mode: historyMode) }
 
     static func generate(level: Int = 1) -> SportProblem {
         let clamped = max(1, min(20, level))
         let pool = pool(forLevel: clamped)
         var candidates = pool.filter { !seenCorrects.contains($0.correct + ":" + $0.prompt) }
         if candidates.isEmpty {
-            seenCorrects.subtract(pool.map { $0.correct + ":" + $0.prompt })
+            let poolKeys = Set(pool.map { $0.correct + ":" + $0.prompt })
+            seenCorrects.subtract(poolKeys)
+            QuestionHistory.removeKeys(poolKeys, mode: historyMode)
             candidates = pool
         }
         let raw = candidates.randomElement() ?? pool[0]
-        seenCorrects.insert(raw.correct + ":" + raw.prompt)
+        let key = raw.correct + ":" + raw.prompt
+        seenCorrects.insert(key)
+        QuestionHistory.save(seenCorrects, mode: historyMode)
         let opts = ([raw.correct] + Array(raw.distractors.shuffled().prefix(3))).shuffled()
         return SportProblem(prompt: raw.prompt,
                             correctAnswer: raw.correct,

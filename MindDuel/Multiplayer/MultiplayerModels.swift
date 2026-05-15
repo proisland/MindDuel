@@ -23,6 +23,7 @@ struct MultiplayerActivityItem: Identifiable, Codable {
     let didWin: Bool
     let score: Int
     let timestamp: Date
+    var roomId: String? = nil
 
     var timeAgoString: String {
         let seconds = Int(-timestamp.timeIntervalSinceNow)

@@ -128,6 +128,22 @@ import SwiftUI
     @Published private(set) var genericLevelProgress: [String: Int] = [:]
     @Published private(set) var genericBestScores: [String: Int] = [:]
 
+    // MARK: – Streak tracking (per mode, from server)
+
+    @Published private(set) var currentStreaks: [String: Int] = [:]
+    @Published private(set) var longestStreaks: [String: Int] = [:]
+
+    func currentStreak(for mode: GameMode) -> Int { currentStreaks[mode.slug] ?? 0 }
+    func longestStreak(for mode: GameMode) -> Int  { longestStreaks[mode.slug] ?? 0 }
+
+    func applyStreakUpdate(mode: String, currentStreak: Int, longestStreak: Int) {
+        currentStreaks[mode] = currentStreak
+        longestStreaks[mode] = longestStreak
+        let d = UserDefaults.standard
+        if let data = try? JSONEncoder().encode(currentStreaks) { d.set(data, forKey: "currentStreaks") }
+        if let data = try? JSONEncoder().encode(longestStreaks) { d.set(data, forKey: "longestStreaks") }
+    }
+
     @Published private(set) var dailyUsed: Int
     @Published private(set) var totalRoundsPlayed: Int
     @Published private(set) var isFlagged: Bool
@@ -202,6 +218,14 @@ import SwiftUI
         if let data = d.data(forKey: "generic.bestScores"),
            let dict = try? JSONDecoder().decode([String: Int].self, from: data) {
             genericBestScores = dict
+        }
+        if let data = d.data(forKey: "currentStreaks"),
+           let dict = try? JSONDecoder().decode([String: Int].self, from: data) {
+            currentStreaks = dict
+        }
+        if let data = d.data(forKey: "longestStreaks"),
+           let dict = try? JSONDecoder().decode([String: Int].self, from: data) {
+            longestStreaks = dict
         }
         dailyUsed         = d.integer(forKey: "dailyUsed")
         quotaResetEpoch   = d.double(forKey: "quotaResetEpoch")

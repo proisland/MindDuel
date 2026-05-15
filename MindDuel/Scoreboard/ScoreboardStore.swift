@@ -6,6 +6,7 @@ final class ScoreboardStore: ObservableObject {
 
     @Published private(set) var globalEntries: [ScoreboardEntry] = []
     @Published private(set) var friendEntries: [ScoreboardEntry] = []
+    @Published private(set) var weeklyFriendsResponse: WeeklyLeaderboardResponse? = nil
     @Published private(set) var isLoading = false
 
     private var lastMode: String?
@@ -22,7 +23,13 @@ final class ScoreboardStore: ObservableObject {
         async let friendTask: [ScoreboardEntry] = (try? APIClient.shared.get(
             "scoreboard/friends", query: ["mode": slug]
         )) ?? []
-        (globalEntries, friendEntries) = await (globalTask, friendTask)
+        async let weeklyTask: WeeklyLeaderboardResponse? = try? APIClient.shared.get(
+            "scoreboard/weekly-friends", query: ["mode": slug]
+        )
+        let (g, f, w) = await (globalTask, friendTask, weeklyTask)
+        globalEntries = g
+        friendEntries = f
+        weeklyFriendsResponse = w
         isLoading = false
     }
 

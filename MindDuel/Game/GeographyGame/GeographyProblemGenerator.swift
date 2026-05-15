@@ -7,13 +7,16 @@ import Foundation
 /// any handcrafted "specials" pushes well past the 50-per-level target.
 enum GeographyProblemGenerator {
 
-    /// Set of `correct` answers already served in the current round (#64).
-    /// Spans levels — once you've seen a question, it doesn't reappear in
-    /// the round even after leveling up. Cleared via `resetRoundHistory()`.
-    private static var seenCorrects: Set<String> = []
+    private static let historyMode = "geography"
 
+    /// Questions seen across all rounds, persisted to disk so they survive
+    /// app restarts. Loaded lazily from UserDefaults via `resetRoundHistory()`.
+    private static var seenCorrects: Set<String> = QuestionHistory.load(mode: "geography")
+
+    /// Called at the start of a new round — reloads persisted history rather
+    /// than clearing it, so cross-round deduplication is maintained.
     static func resetRoundHistory() {
-        seenCorrects.removeAll()
+        seenCorrects = QuestionHistory.load(mode: historyMode)
     }
 
     static func generate(level: Int = 1) -> GeographyProblem {
@@ -21,11 +24,15 @@ enum GeographyProblemGenerator {
         let pool = pool(forLevel: clamped)
         var candidates = pool.filter { !seenCorrects.contains($0.correct + ":" + $0.prompt) }
         if candidates.isEmpty {
-            seenCorrects.subtract(pool.map { $0.correct + ":" + $0.prompt })
+            let poolKeys = Set(pool.map { $0.correct + ":" + $0.prompt })
+            seenCorrects.subtract(poolKeys)
+            QuestionHistory.removeKeys(poolKeys, mode: historyMode)
             candidates = pool
         }
         let raw = candidates.randomElement() ?? pool[0]
-        seenCorrects.insert(raw.correct + ":" + raw.prompt)
+        let key = raw.correct + ":" + raw.prompt
+        seenCorrects.insert(key)
+        QuestionHistory.save(seenCorrects, mode: historyMode)
         return GeographyProblem(
             prompt: raw.prompt,
             flag: raw.flag,

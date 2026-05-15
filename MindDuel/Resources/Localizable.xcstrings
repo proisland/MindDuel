@@ -5086,6 +5086,56 @@
         }
       }
     },
+    "daily_challenge_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daily Challenge"
+          }
+        }
+      }
+    },
+    "daily_challenge_subtitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's featured mode"
+          }
+        }
+      }
+    },
+    "scoreboard_weekly_friends_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This week – friends"
+          }
+        }
+      }
+    },
+    "scoreboard_rounds_format" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d rounds"
+          }
+        }
+      }
+    },
+    "you_label" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You"
+          }
+        }
+      }
+    },
     "π" : {
 
     },

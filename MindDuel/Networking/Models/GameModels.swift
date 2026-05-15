@@ -37,6 +37,42 @@ struct ProgressionDelta: Decodable {
     let mode: String
     let position: Double
     let progress: Double
+    let currentStreak: Int?
+    let longestStreak: Int?
+}
+
+struct DailyChallenge: Decodable {
+    struct ModeInfo: Decodable {
+        let slug: String
+        let nameNo: String
+        let nameEn: String
+        let iconSymbol: String
+        let colorHex: String
+    }
+    let date: String
+    let mode: ModeInfo
+}
+
+struct KudosUnread: Decodable {
+    let count: Int
+}
+
+struct WeeklyLeaderboardEntry: Decodable, Identifiable {
+    var id: String { userId }
+    let rank: Int
+    let userId: String
+    let username: String
+    let avatarEmoji: String
+    let avgScore: Int
+    let roundCount: Int
+    let isMe: Bool
+}
+
+struct WeeklyLeaderboardResponse: Decodable {
+    let mode: String
+    let entries: [WeeklyLeaderboardEntry]
+    let friendCount: Int
+    let minFriends: Int
 }
 
 struct QuotaSyncRequest: Encodable {

@@ -41,18 +41,23 @@ model User {
   feedbacks               Feedback[]
   multiplayerParticipants MultiplayerParticipant[]
   hostedRooms             MultiplayerRoom[]
+  kudosSent               ActivityKudos[]  @relation("KudosSender")
+  kudosReceived           ActivityKudos[]  @relation("KudosReceiver")
 }
 
 // ── Progression ───────────────────────────────────────────────────────────────
 
 model Progression {
-  id        String   @id @default(cuid())
-  userId    String
-  mode      String   // "pi" | "math" | "chem" | "geo" | "grammar" | "history" | "physics" | "science" | "sport" | "brain"
-  position  Int      @default(0)   // Pi: decimal index; knowledge: level (1–20)
-  progress  Float    @default(0)   // Knowledge: progress toward next level (0–1)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  userId          String
+  mode            String   // "pi" | "math" | "chem" | "geo" | "grammar" | "history" | "physics" | "science" | "sport" | "brain"
+  position        Int      @default(0)   // Pi: decimal index; knowledge: level (1–20)
+  progress        Float    @default(0)   // Knowledge: progress toward next level (0–1)
+  currentStreak   Int      @default(0)   // Consecutive days played in this mode
+  longestStreak   Int      @default(0)
+  lastPlayedDate  String?               // YYYY-MM-DD of most recent completed session
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -289,6 +294,22 @@ model AppImage {
   mimeType  String   @default("image/png")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ── Activity kudos ────────────────────────────────────────────────────────────
+
+model ActivityKudos {
+  id         String   @id @default(cuid())
+  fromUserId String
+  toUserId   String
+  roomId     String
+  createdAt  DateTime @default(now())
+
+  from       User     @relation("KudosSender",   fields: [fromUserId], references: [id], onDelete: Cascade)
+  to         User     @relation("KudosReceiver", fields: [toUserId],   references: [id], onDelete: Cascade)
+
+  @@unique([fromUserId, roomId])
+  @@index([toUserId, createdAt(sort: Desc)])
 }
 
 // ── Admin ─────────────────────────────────────────────────────────────────────

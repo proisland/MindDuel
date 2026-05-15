@@ -6,12 +6,11 @@ import Foundation
 /// reliably has 50+ unique prompts.
 enum ChemistryProblemGenerator {
 
-    /// Round-scoped seen-set so a question answered correctly never repeats
-    /// the rest of the round, regardless of level (#64).
-    private static var seenCorrects: Set<String> = []
+    private static let historyMode = "chemistry"
+    private static var seenCorrects: Set<String> = QuestionHistory.load(mode: "chemistry")
 
     static func resetRoundHistory() {
-        seenCorrects.removeAll()
+        seenCorrects = QuestionHistory.load(mode: historyMode)
     }
 
     static func generate(level: Int = 1) -> ChemistryProblem {
@@ -19,11 +18,15 @@ enum ChemistryProblemGenerator {
         let pool = pool(forLevel: clamped)
         var candidates = pool.filter { !seenCorrects.contains($0.correct + ":" + $0.prompt) }
         if candidates.isEmpty {
-            seenCorrects.subtract(pool.map { $0.correct + ":" + $0.prompt })
+            let poolKeys = Set(pool.map { $0.correct + ":" + $0.prompt })
+            seenCorrects.subtract(poolKeys)
+            QuestionHistory.removeKeys(poolKeys, mode: historyMode)
             candidates = pool
         }
         let raw = candidates.randomElement() ?? pool[0]
-        seenCorrects.insert(raw.correct + ":" + raw.prompt)
+        let key = raw.correct + ":" + raw.prompt
+        seenCorrects.insert(key)
+        QuestionHistory.save(seenCorrects, mode: historyMode)
         return ChemistryProblem(
             prompt: raw.prompt,
             correctAnswer: raw.correct,

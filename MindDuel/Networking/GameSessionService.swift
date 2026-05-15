@@ -60,9 +60,9 @@ final class GameSessionService: ObservableObject {
         return try await APIClient.shared.post("games/sessions/\(token)/answers", body: body)
     }
 
-    func endSession() async throws -> EndSessionResponse {
+    func endSession(reason: String = "user_quit") async throws -> EndSessionResponse {
         guard let token = sessionToken else { throw SessionError.noActiveSession }
-        let body = EndSessionRequest(reason: "user_quit")
+        let body = EndSessionRequest(reason: reason)
         let result: EndSessionResponse = try await APIClient.shared.post(
             "games/sessions/\(token)/end",
             body: body
@@ -70,6 +70,17 @@ final class GameSessionService: ObservableObject {
         sessionToken = nil
         sessionStarted = nil
         lastEventAt = nil
+        // Propagate streak data from server to ProgressionStore
+        if let current = result.progression.currentStreak,
+           let longest = result.progression.longestStreak {
+            await MainActor.run {
+                ProgressionStore.shared.applyStreakUpdate(
+                    mode: result.progression.mode,
+                    currentStreak: current,
+                    longestStreak: longest
+                )
+            }
+        }
         return result
     }
 

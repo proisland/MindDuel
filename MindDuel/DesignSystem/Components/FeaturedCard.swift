@@ -7,6 +7,7 @@ struct MDFeaturedCard: View {
     let score: Int
     let level: Int
     var maxLevel: Int = 20
+    var streak: Int = 0
     var action: (() -> Void)? = nil
 
     var body: some View {
@@ -23,9 +24,20 @@ struct MDFeaturedCard: View {
             .frame(width: 44, height: 44)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(mode.localizedTitle)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Color.mdText)
+                HStack(spacing: 4) {
+                    Text(mode.localizedTitle)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Color.mdText)
+                    if streak >= 2 {
+                        Text("\(streak)d")
+                            .font(.system(size: 9, weight: .heavy))
+                            .foregroundStyle(Color.mdAccent)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(Color.mdAccent.opacity(0.15))
+                            .clipShape(Capsule())
+                    }
+                }
                 Text(formatPoints(score))
                     .font(.system(size: 13, weight: .heavy))
                     .foregroundStyle(mode.accentColor)

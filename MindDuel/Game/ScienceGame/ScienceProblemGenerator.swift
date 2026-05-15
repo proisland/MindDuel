@@ -7,20 +7,25 @@ import Foundation
 /// GeographyProblemGenerator's contract).
 enum ScienceProblemGenerator {
 
-    private static var seenCorrects: Set<String> = []
+    private static let historyMode = "science"
+    private static var seenCorrects: Set<String> = QuestionHistory.load(mode: "science")
 
-    static func resetRoundHistory() { seenCorrects.removeAll() }
+    static func resetRoundHistory() { seenCorrects = QuestionHistory.load(mode: historyMode) }
 
     static func generate(level: Int = 1) -> ScienceProblem {
         let clamped = max(1, min(20, level))
         let pool = pool(forLevel: clamped)
         var candidates = pool.filter { !seenCorrects.contains($0.correct + ":" + $0.prompt) }
         if candidates.isEmpty {
-            seenCorrects.subtract(pool.map { $0.correct + ":" + $0.prompt })
+            let poolKeys = Set(pool.map { $0.correct + ":" + $0.prompt })
+            seenCorrects.subtract(poolKeys)
+            QuestionHistory.removeKeys(poolKeys, mode: historyMode)
             candidates = pool
         }
         let raw = candidates.randomElement() ?? pool[0]
-        seenCorrects.insert(raw.correct + ":" + raw.prompt)
+        let key = raw.correct + ":" + raw.prompt
+        seenCorrects.insert(key)
+        QuestionHistory.save(seenCorrects, mode: historyMode)
         let opts = ([raw.correct] + Array(raw.distractors.shuffled().prefix(3))).shuffled()
         return ScienceProblem(prompt: raw.prompt,
                               correctAnswer: raw.correct,

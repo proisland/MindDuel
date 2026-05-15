@@ -266,9 +266,29 @@ export default async function gamesRoutes(app: FastifyInstance) {
         ? progression.position
         : applyProgressionDelta(progression.position, correctCount, isWin)
 
+      // Compute daily streak (training sessions don't count toward streak)
+      const today     = new Date().toISOString().slice(0, 10)
+      const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)
+      const lastDate  = progression.lastPlayedDate
+
+      let newStreak = progression.currentStreak
+      if (!session.isTraining) {
+        if (lastDate === yesterday) newStreak = progression.currentStreak + 1
+        else if (lastDate === today) newStreak = progression.currentStreak // same day, no change
+        else newStreak = 1 // streak broken or first time
+      }
+      const newLongest = Math.max(progression.longestStreak, newStreak)
+
       const updatedProgression = await tx.progression.update({
         where: { userId_mode: { userId: request.userId, mode: session.mode } },
-        data: { position: newPosition },
+        data: {
+          position: newPosition,
+          ...(session.isTraining ? {} : {
+            currentStreak:  newStreak,
+            longestStreak:  newLongest,
+            lastPlayedDate: today,
+          }),
+        },
       })
 
       if (!session.isTraining && score > 0) {
@@ -304,9 +324,11 @@ export default async function gamesRoutes(app: FastifyInstance) {
     return reply.send({
       score,
       progression: {
-        mode: updatedProgression.mode,
-        position: updatedProgression.position,
-        progress: updatedProgression.progress,
+        mode:           updatedProgression.mode,
+        position:       updatedProgression.position,
+        progress:       updatedProgression.progress,
+        currentStreak:  updatedProgression.currentStreak,
+        longestStreak:  updatedProgression.longestStreak,
       },
       quota: quota ? { date: quota.date, count: quota.count } : null,
     })
