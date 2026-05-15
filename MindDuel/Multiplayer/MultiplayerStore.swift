@@ -869,7 +869,8 @@ import UserNotifications
             mode: room.mode,
             didWin: room.winner?.isYou == true,
             score: me.score,
-            timestamp: Date()
+            timestamp: Date(),
+            roomId: room.id
         )
         recentActivity.insert(item, at: 0)
         if recentActivity.count > 10 { recentActivity = Array(recentActivity.prefix(10)) }

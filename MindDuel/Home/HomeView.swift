@@ -40,11 +40,12 @@ private enum HomeDestination: Identifiable {
 struct HomeView: View {
     let username: String
     @EnvironmentObject private var authState: AuthState
-    @ObservedObject private var progression = ProgressionStore.shared
-    @ObservedObject private var social      = SocialStore.shared
-    @ObservedObject private var multiplayer = MultiplayerStore.shared
-    @ObservedObject private var prefs       = ModePreferences.shared
-    @ObservedObject private var modeCache   = ModeConfigCache.shared
+    @ObservedObject private var progression    = ProgressionStore.shared
+    @ObservedObject private var social         = SocialStore.shared
+    @ObservedObject private var multiplayer    = MultiplayerStore.shared
+    @ObservedObject private var prefs          = ModePreferences.shared
+    @ObservedObject private var modeCache      = ModeConfigCache.shared
+    @ObservedObject private var dailyChallenge = DailyChallengeStore.shared
     @State private var gamePath = NavigationPath()
     @State private var activeDestination: HomeDestination? = nil
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
@@ -107,6 +108,16 @@ struct HomeView: View {
                             scoreboardCard
                                 .padding(.horizontal, MDSpacing.md)
 
+                            // Daily challenge card
+                            if let challenge = dailyChallenge.challenge {
+                                DailyChallengeCard(challenge: challenge) {
+                                    if let gm = GameMode(slug: challenge.mode.slug) {
+                                        startOrResume(gm)
+                                    }
+                                }
+                                .padding(.horizontal, MDSpacing.md)
+                            }
+
                             // Recent activity — always visible
                             recentActivitySection
                                 .padding(.horizontal, MDSpacing.md)
@@ -118,6 +129,7 @@ struct HomeView: View {
             .onAppear {
                 progression.checkResetQuota()
                 if !hasSeenOnboarding { showOnboarding = true }
+                Task { await DailyChallengeStore.shared.fetch() }
             }
             .fullScreenCover(item: $activeDestination) { dest in
             switch dest {
@@ -225,6 +237,7 @@ struct HomeView: View {
                             mode: gm,
                             score: progression.bestScore(for: gm),
                             level: progression.level(for: gm),
+                            streak: progression.currentStreak(for: gm),
                             action: { startOrResume(gm) }
                         )
                         .contextMenu {

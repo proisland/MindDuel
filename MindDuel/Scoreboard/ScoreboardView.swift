@@ -365,6 +365,16 @@ struct ScoreboardView: View {
 
             sectionHeader(String(localized: "scoreboard_friends_tab"))
             rankedFriendsSection
+
+            // Weekly friends leaderboard — shown only when ≥5 friends
+            if let weekly = scoreboardStore.weeklyFriendsResponse,
+               weekly.friendCount >= weekly.minFriends,
+               !weekly.entries.isEmpty {
+                sectionHeader(String(localized: "scoreboard_weekly_friends_title"))
+                ForEach(weekly.entries) { entry in
+                    weeklyLeaderboardRow(entry: entry)
+                }
+            }
         }
     }
 
@@ -383,6 +393,34 @@ struct ScoreboardView: View {
                 leaderboardRow(rank: item.rank, profile: item.profile, isOwn: item.isOwn)
             }
         }
+    }
+
+    @ViewBuilder
+    private func weeklyLeaderboardRow(entry: WeeklyLeaderboardEntry) -> some View {
+        HStack(spacing: MDSpacing.sm) {
+            Text("#\(entry.rank)")
+                .font(.system(size: 12, weight: .heavy))
+                .foregroundStyle(Color.mdText3)
+                .frame(width: 28, alignment: .center)
+            Text(entry.avatarEmoji)
+                .font(.system(size: 22))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(entry.isMe ? String(localized: "you_label") : entry.username)
+                    .font(.system(size: 13, weight: entry.isMe ? .heavy : .semibold))
+                    .foregroundStyle(entry.isMe ? Color.mdAccent : Color.mdText)
+                Text(String(format: String(localized: "scoreboard_rounds_format"), entry.roundCount))
+                    .font(.system(size: 10))
+                    .foregroundStyle(Color.mdText3)
+            }
+            Spacer()
+            Text(formatPoints(entry.avgScore))
+                .font(.system(size: 13, weight: .heavy))
+                .foregroundStyle(Color.mdAccent)
+        }
+        .padding(MDSpacing.sm)
+        .background(entry.isMe ? Color.mdAccent.opacity(0.08) : Color.mdSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.mdBorder2, lineWidth: 0.5))
     }
 
     // MARK: – Global section

@@ -4,6 +4,8 @@ struct ActivityListView: View {
     @ObservedObject private var store = MultiplayerStore.shared
     @Environment(\.dismiss) private var dismiss
 
+    @State private var kudosSent: Set<String> = []
+
     // Tick every 30s so timestamps like "1m" / "2t" refresh without the user
     // having to navigate away and back.
     @State private var nowTick = Date()
@@ -71,6 +73,19 @@ struct ActivityListView: View {
                 .mdStyle(.micro)
                 .foregroundStyle(Color.mdText3)
                 .id(nowTick)  // force re-render on tick
+            if let roomId = item.roomId {
+                let alreadySent = kudosSent.contains(roomId)
+                Button {
+                    kudosSent.insert(roomId)
+                    Task { try? await ActivityService.sendKudos(roomId: roomId) }
+                } label: {
+                    Image(systemName: alreadySent ? "hand.thumbsup.fill" : "hand.thumbsup")
+                        .font(.system(size: 14))
+                        .foregroundStyle(alreadySent ? Color.mdAccent : Color.mdText3)
+                }
+                .buttonStyle(.plain)
+                .disabled(alreadySent)
+            }
         }
         .padding(MDSpacing.sm)
         .background(Color.mdSurface)

@@ -7,6 +7,8 @@ const scoreboardQuery = z.object({
 })
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
+const SEVEN_DAYS_MS  =  7 * 24 * 60 * 60 * 1000
+const MIN_FRIENDS_FOR_WEEKLY = 5
 
 export default async function scoreboardRoutes(app: FastifyInstance) {
   const auth = { onRequest: [app.authenticate] }
@@ -109,6 +111,66 @@ export default async function scoreboardRoutes(app: FastifyInstance) {
     })
 
     return reply.send({ mode: query.data.mode, entries })
+  })
+
+  // GET /v1/scoreboard/weekly-friends?mode=pi — 7-day friends leaderboard (min 5 friends)
+  app.get('/weekly-friends', auth, async (request, reply) => {
+    const query = scoreboardQuery.safeParse(request.query)
+    if (!query.success) return reply.status(400).send({ error: 'Invalid query' })
+
+    const since = new Date(Date.now() - SEVEN_DAYS_MS)
+
+    const friendships = await app.prisma.friendship.findMany({
+      where: {
+        OR: [{ senderId: request.userId }, { receiverId: request.userId }],
+      },
+      select: { senderId: true, receiverId: true },
+    })
+    const friendIds = friendships.map(f =>
+      f.senderId === request.userId ? f.receiverId : f.senderId,
+    )
+
+    if (friendIds.length < MIN_FRIENDS_FOR_WEEKLY) {
+      return reply.send({
+        mode: query.data.mode,
+        entries: [] as object[],
+        friendCount: friendIds.length,
+        minFriends: MIN_FRIENDS_FOR_WEEKLY,
+      })
+    }
+
+    const allIds = [request.userId, ...friendIds]
+
+    const rows = await app.prisma.score.groupBy({
+      by: ['userId'],
+      where: { mode: query.data.mode, userId: { in: allIds }, createdAt: { gte: since } },
+      _avg: { value: true },
+      _count: { value: true },
+      orderBy: { _avg: { value: 'desc' } },
+    })
+
+    const users = await app.prisma.user.findMany({
+      where: { id: { in: rows.map(r => r.userId) } },
+      select: { id: true, username: true, avatarEmoji: true },
+    })
+    const userMap = new Map(users.map(u => [u.id, u]))
+
+    const entries = rows.map((row, i) => ({
+      rank: i + 1,
+      userId: row.userId,
+      username: userMap.get(row.userId)?.username ?? '?',
+      avatarEmoji: userMap.get(row.userId)?.avatarEmoji ?? '🧠',
+      avgScore: Math.round(row._avg.value ?? 0),
+      roundCount: row._count.value,
+      isMe: row.userId === request.userId,
+    }))
+
+    return reply.send({
+      mode: query.data.mode,
+      entries,
+      friendCount: friendIds.length,
+      minFriends: MIN_FRIENDS_FOR_WEEKLY,
+    })
   })
 
   // GET /v1/users/:username/profile — public profile
