@@ -13,6 +13,9 @@
     "@%@" : {
 
     },
+    "#%@" : {
+
+    },
     "%@" : {
 
     },
@@ -38,6 +41,9 @@
           }
         }
       }
+    },
+    "%@d" : {
+
     },
     "∑" : {
 
@@ -772,6 +778,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "VGS %d"
+          }
+        }
+      }
+    },
+    "daily_challenge_subtitle" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's featured mode"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dagens fremhevede modus"
+          }
+        }
+      }
+    },
+    "daily_challenge_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daily Challenge"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dagens utfordring"
           }
         }
       }
@@ -3808,6 +3848,23 @@
         }
       }
     },
+    "scoreboard_rounds_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d rounds"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d runder"
+          }
+        }
+      }
+    },
     "scoreboard_share_location_action" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3906,6 +3963,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Scoreboard"
+          }
+        }
+      }
+    },
+    "scoreboard_weekly_friends_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This week – friends"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne uken – venner"
           }
         }
       }
@@ -5069,6 +5143,23 @@
         }
       }
     },
+    "you_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du"
+          }
+        }
+      }
+    },
     "your_label" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5082,56 +5173,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Deg"
-          }
-        }
-      }
-    },
-    "daily_challenge_title" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Daily Challenge"
-          }
-        }
-      }
-    },
-    "daily_challenge_subtitle" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Today's featured mode"
-          }
-        }
-      }
-    },
-    "scoreboard_weekly_friends_title" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This week – friends"
-          }
-        }
-      }
-    },
-    "scoreboard_rounds_format" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d rounds"
-          }
-        }
-      }
-    },
-    "you_label" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You"
           }
         }
       }
