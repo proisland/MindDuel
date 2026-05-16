@@ -17,18 +17,18 @@ final class ScoreboardStore: ObservableObject {
         guard slug != lastMode || globalEntries.isEmpty else { return }
         isLoading = true
         lastMode = slug
-        async let globalTask: [ScoreboardEntry] = (try? APIClient.shared.get(
+        async let globalTask: ScoreboardResponse? = try? APIClient.shared.get(
             "scoreboard/global", query: ["mode": slug]
-        )) ?? []
-        async let friendTask: [ScoreboardEntry] = (try? APIClient.shared.get(
+        )
+        async let friendTask: ScoreboardResponse? = try? APIClient.shared.get(
             "scoreboard/friends", query: ["mode": slug]
-        )) ?? []
+        )
         async let weeklyTask: WeeklyLeaderboardResponse? = try? APIClient.shared.get(
             "scoreboard/weekly-friends", query: ["mode": slug]
         )
         let (g, f, w) = await (globalTask, friendTask, weeklyTask)
-        globalEntries = g
-        friendEntries = f
+        globalEntries = g?.entries ?? []
+        friendEntries = f?.entries ?? []
         weeklyFriendsResponse = w
         isLoading = false
     }

@@ -31,6 +31,10 @@ struct ScoreboardEntry: Decodable {
     let avgScore: Int
 }
 
+struct ScoreboardResponse: Decodable {
+    let entries: [ScoreboardEntry]
+}
+
 struct UserSearchResult: Decodable {
     let id: String
     let username: String
