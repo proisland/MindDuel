@@ -24,9 +24,7 @@ struct QuotaInfo: Decodable {
 }
 
 struct UsernameResponse: Decodable {
-    let id: String
     let username: String
-    let avatarEmoji: String
 }
 
 struct PublicProfile: Decodable {
