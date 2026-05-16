@@ -25,6 +25,12 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UIRequiresFullScreen: true
         UIUserInterfaceStyle: Dark
         NSLocationWhenInUseUsageDescription: "MindDuel bruker din posisjon kun til å vise spillere i nærheten på scoreboardet."
         GitBranch: ""

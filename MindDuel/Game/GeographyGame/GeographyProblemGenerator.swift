@@ -299,32 +299,6 @@ enum GeographyProblemGenerator {
         case 1: return level1Specials
         case 2: return level2Specials
         case 3: return level3Specials
-        case 9991:
-            return [
-                Raw(prompt: "Hvilken elv renner gjennom Paris?", correct: "Seinen",
-                    distractors: ["Loire", "Rhône", "Themsen"]),
-                Raw(prompt: "Hvilken elv renner gjennom London?", correct: "Themsen",
-                    distractors: ["Severn", "Mersey", "Seinen"]),
-                Raw(prompt: "Hvor ligger Eiffeltårnet?", correct: "Paris",
-                    distractors: ["Roma", "London", "Madrid"]),
-                Raw(prompt: "Hvor ligger Big Ben?", correct: "London",
-                    distractors: ["Edinburgh", "Dublin", "Cardiff"]),
-                Raw(prompt: "Hvor ligger Colosseum?", correct: "Roma",
-                    distractors: ["Athen", "Madrid", "Firenze"])
-            ]
-        case 3:
-            return [
-                Raw(prompt: "Hvilken elv renner gjennom Wien?", correct: "Donau",
-                    distractors: ["Rhinen", "Elben", "Inn"]),
-                Raw(prompt: "Hvilken elv renner gjennom Budapest?", correct: "Donau",
-                    distractors: ["Tisza", "Drava", "Sava"]),
-                Raw(prompt: "Hvilken elv renner gjennom Praha?", correct: "Vltava",
-                    distractors: ["Donau", "Elben", "Oder"]),
-                Raw(prompt: "Hvor ligger Akropolis?", correct: "Athen",
-                    distractors: ["Roma", "Istanbul", "Sparta"]),
-                Raw(prompt: "Hvor ligger Sagrada Família?", correct: "Barcelona",
-                    distractors: ["Madrid", "Valencia", "Sevilla"])
-            ]
         case 4:
             return [
                 Raw(prompt: "Hvor ligger Frihetsgudinnen?", correct: "New York",

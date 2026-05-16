@@ -45,7 +45,7 @@ final class AuthService: NSObject {
             refreshToken: response.refreshToken
         )
 
-        return (userId: response.userId, isNew: response.isNew)
+        return (userId: response.user.id, isNew: response.needsUsername)
     }
 }
 
@@ -86,9 +86,11 @@ extension AuthService: ASAuthorizationControllerDelegate {
 
 extension AuthService: ASAuthorizationControllerPresentationContextProviding {
     nonisolated func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap { $0.windows }
-            .first(where: { $0.isKeyWindow }) ?? ASPresentationAnchor()
+        MainActor.assumeIsolated {
+            UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .flatMap { $0.windows }
+                .first(where: { $0.isKeyWindow }) ?? ASPresentationAnchor()
+        }
     }
 }
