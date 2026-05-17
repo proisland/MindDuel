@@ -474,7 +474,7 @@ struct HomeView: View {
 
     private func startOrResume(_ mode: GameMode) {
         let resumeRoomID = multiplayer.backgroundRooms.first(where: {
-            $0.isStandaloneSolo && $0.mode == mode && $0.status == .playing
+            $0.isStandaloneSolo && $0.mode == mode && $0.serverModeSlug == nil && $0.status == .playing
         })?.id
         gamePath.append(GameModeRoute(mode: mode, resumeRoomID: resumeRoomID))
     }

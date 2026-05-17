@@ -100,6 +100,13 @@ struct StandardGameView: View {
         problem      = Self.generate(mode: mode, level: progression.level(for: mode))
         problemCount = max(1, me.correctCount + 1)
         engine.restoreState(lives: me.lives, skips: me.skips, correctCount: me.correctCount)
+        // Re-save immediately so the session survives a crash or early dismiss
+        // before onDisappear has a chance to call autoSaveIfInProgress.
+        _ = MultiplayerStore.shared.saveStandaloneSolo(
+            mode: mode, ownUsername: username,
+            lives: me.lives, skips: me.skips, score: 0,
+            correctCount: me.correctCount, startLevel: startLevel
+        )
     }
 
     private func saveSessionAndExit() {

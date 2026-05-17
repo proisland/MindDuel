@@ -103,6 +103,11 @@ struct MathGameView: View {
         problem    = MathProblemGenerator.generate(level: progression.mathLevel)
         problemCount = max(1, me.correctCount + 1)
         engine.restoreState(lives: me.lives, skips: me.skips, correctCount: me.correctCount)
+        // Re-save immediately so the session survives a crash or early dismiss.
+        _ = MultiplayerStore.shared.saveStandaloneSoloMath(
+            ownUsername: username, lives: me.lives, skips: me.skips,
+            score: 0, correctCount: me.correctCount, startLevel: startLevel
+        )
     }
 
     private func saveSessionAndExit() {

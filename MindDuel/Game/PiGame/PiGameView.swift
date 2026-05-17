@@ -142,6 +142,11 @@ struct PiGameView: View {
             sessionStartIndex = room.myPiDigitIndex
             currentIndex = 0
             engine.restoreState(lives: me.lives, skips: me.skips, correctCount: me.correctCount)
+            // Re-save immediately so the session survives a crash or early dismiss.
+            _ = MultiplayerStore.shared.saveStandaloneSoloPi(
+                ownUsername: username, lives: me.lives, skips: me.skips,
+                score: 0, correctCount: me.correctCount, currentDigit: room.myPiDigitIndex
+            )
             return
         }
         // Fresh game: start at the boundary of the user's current Pi level
