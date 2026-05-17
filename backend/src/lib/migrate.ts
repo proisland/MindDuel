@@ -161,4 +161,9 @@ async function runMigrationsInternal(prisma: PrismaClient) {
       ON "User" USING GIN (username gin_trgm_ops)
   `)
 
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "User"
+      ADD COLUMN IF NOT EXISTS "isUnlimited" BOOLEAN NOT NULL DEFAULT false
+  `)
+
 }
