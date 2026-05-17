@@ -43,7 +43,7 @@
             <% } %>
           </td>
           <td class="px-4 py-3 text-gray-500 text-xs">
-            <%= fmtDate(u.lastActiveAt) %>
+            <%= fmtDateTime(u.lastActiveAt) %>
           </td>
           <td class="px-4 py-3 flex gap-2">
             <button onclick="toggleFlag('<%= u.id %>', <%= u.isFlagged %>)"

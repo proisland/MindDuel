@@ -355,13 +355,7 @@ struct ProfileView: View {
     }
 
     private func timeAgoString(from date: Date) -> String {
-        let seconds = Int(-date.timeIntervalSinceNow)
-        if seconds < 60 { return String(localized: "time_just_now") }
-        let minutes = seconds / 60
-        if minutes < 60 { return "\(minutes)m" }
-        let hours = minutes / 60
-        if hours < 24 { return "\(hours)t" }
-        return "\(hours / 24)d"
+        return UserProfile.relativeTime(date)
     }
 
     // MARK: – Flag modal

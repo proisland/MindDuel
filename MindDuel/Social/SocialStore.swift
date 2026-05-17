@@ -108,11 +108,17 @@ extension UserProfile {
     }
 
     static func relativeTime(_ date: Date) -> String {
-        let secs = Int(Date().timeIntervalSince(date))
-        if secs < 60 { return "Nå" }
-        if secs < 3600 { return "\(secs/60)m siden" }
-        if secs < 86400 { return "\(secs/3600)t siden" }
-        return "\(secs/86400)d siden"
+        let cal = Calendar.current
+        let timeFmt = DateFormatter()
+        timeFmt.locale = Locale(identifier: "nb_NO")
+        timeFmt.dateFormat = "HH:mm"
+        let timeStr = timeFmt.string(from: date)
+        if cal.isDateInToday(date)     { return "I dag kl. \(timeStr)" }
+        if cal.isDateInYesterday(date) { return "I går kl. \(timeStr)" }
+        let dateFmt = DateFormatter()
+        dateFmt.locale = Locale(identifier: "nb_NO")
+        dateFmt.dateFormat = "d. MMM"
+        return "\(dateFmt.string(from: date)) kl. \(timeStr)"
     }
 }
 
