@@ -13,10 +13,17 @@ enum RoundEndReason {
 }
 
 @MainActor final class GameEngine: ObservableObject {
-    @Published private(set) var lives = 5
-    @Published private(set) var skips = 5
+    @Published private(set) var lives: Int
+    @Published private(set) var skips: Int
     @Published private(set) var phase: GamePhase = .playing
-    @Published private(set) var correctCount = 0
+    @Published private(set) var correctCount: Int
+
+    nonisolated init(lives: Int = 5, skips: Int = 5, correctCount: Int = 0) {
+        _lives        = Published(initialValue: lives)
+        _skips        = Published(initialValue: skips)
+        _correctCount = Published(initialValue: correctCount)
+        _phase        = Published(initialValue: .playing)
+    }
 
     var isRoundOver: Bool {
         if case .roundOver = phase { return true }

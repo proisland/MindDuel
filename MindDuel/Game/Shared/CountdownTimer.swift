@@ -5,16 +5,17 @@ import SwiftUI
 /// button — players asked for a clearer signal that they have ten seconds.
 struct CountdownTimer: View {
     let elapsedSeconds: Double
+    var maxSeconds: Double = 10.0
 
     private var remaining: Double {
-        max(0, 10.0 - elapsedSeconds)
+        max(0, maxSeconds - elapsedSeconds)
     }
 
     private var color: Color {
         switch remaining {
-        case ..<3:  return .mdRed
-        case ..<6:  return .mdAmber
-        default:    return .mdText2
+        case ..<(maxSeconds * 0.3):  return .mdRed
+        case ..<(maxSeconds * 0.6):  return .mdAmber
+        default:                     return .mdText2
         }
     }
 

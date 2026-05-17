@@ -540,26 +540,19 @@ struct ScoreboardView: View {
                             .foregroundStyle(Color.mdText3)
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                Spacer()
-
-                // #112: fixed-width score column so the points text sits at the
-                // same horizontal position regardless of friend status, own row,
-                // or digit count. Right-aligned so larger scores grow leftward.
                 Text("\(effectiveScore(for: profile)) \(String(localized: "points_word"))")
                     .mdStyle(.bodyMd)
                     .foregroundStyle((!isOwn ? trophyColor(forRank: rank) : nil) ?? Color.mdText2)
                     .lineLimit(1)
-                    .frame(width: 96, alignment: .trailing)
+                    .frame(width: 84, alignment: .trailing)
 
-                // #78/#112: quick "+venn" action so users can add new friends
-                // discovered on Lokalt/Globalt boards. Trailing slot is fixed
-                // width so the action column lines up across rows.
                 Group {
                     if !isOwn { addFriendButton(for: profile) }
                     else { Color.clear }
                 }
-                .frame(width: 76, alignment: .trailing)
+                .frame(width: 64, alignment: .trailing)
             }
             .padding(.horizontal, MDSpacing.md)
             .padding(.vertical, MDSpacing.sm)

@@ -18,6 +18,9 @@ struct PiGameView: View {
     @State private var roundResult:      ProgressionStore.RoundResult? = nil
     @State private var sessionStartIndex: Int = 0
 
+    @AppStorage("game.difficulty") private var difficultyRaw: String = "normal"
+    private var difficulty: GameDifficulty { GameDifficulty(rawValue: difficultyRaw) ?? .normal }
+
     @StateObject private var sessionService = GameSessionService()
 
     @Environment(\.dismiss) private var dismiss
@@ -31,6 +34,11 @@ struct PiGameView: View {
         self.resumeRoomID = resumeRoomID
         self.isPractice = isPractice
         self.practiceStartDigit = practiceStartDigit
+        if let id = resumeRoomID,
+           let room = MultiplayerStore.shared.backgroundRooms.first(where: { $0.id == id }),
+           let me = room.players.first(where: { $0.isYou }) {
+            _engine = StateObject(wrappedValue: GameEngine(lives: me.lives, skips: me.skips, correctCount: me.correctCount))
+        }
     }
 
     /// The first digit index of the user's current Pi level (level 1 → 0, level 2 → 50, …).
@@ -195,7 +203,7 @@ struct PiGameView: View {
                 .padding(.horizontal, MDSpacing.md)
                 .padding(.top, MDSpacing.md)
 
-            CountdownTimer(elapsedSeconds: elapsedSeconds)
+            CountdownTimer(elapsedSeconds: elapsedSeconds, maxSeconds: difficulty.timerSeconds)
                 .padding(.top, MDSpacing.sm)
 
             questionCard
@@ -367,8 +375,8 @@ struct PiGameView: View {
     private func handleTimerTick() {
         guard !isInteractionBlocked,
               isPractice || !progression.isQuotaExhausted else { return }
-        elapsedSeconds = min(elapsedSeconds + 0.1, 10.0)
-        if !isPractice, elapsedSeconds >= 10.0 { handleSkip() }
+        elapsedSeconds = min(elapsedSeconds + 0.1, difficulty.timerSeconds)
+        if !isPractice, elapsedSeconds >= difficulty.timerSeconds { handleSkip() }
     }
 
     private func finaliseRound(won: Bool) {
@@ -377,7 +385,8 @@ struct PiGameView: View {
             roundResult = progression.applyPiRound(
                 correctCount: engine.correctCount,
                 avgTime: avgTime,
-                won: won
+                won: won,
+                difficultyMultiplier: difficulty.scoreMultiplier
             )
             Task { try? await sessionService.endSession() }
         } else {

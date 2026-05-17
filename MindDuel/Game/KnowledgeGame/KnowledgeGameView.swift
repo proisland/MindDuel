@@ -22,6 +22,9 @@ struct KnowledgeGameView: View {
     @State private var feedbackTask:         Task<Void, Never>? = nil
     @State private var sessionEnded         = false
 
+    @AppStorage("game.difficulty") private var difficultyRaw: String = "normal"
+    private var difficulty: GameDifficulty { GameDifficulty(rawValue: difficultyRaw) ?? .normal }
+
     @Environment(\.dismiss) private var dismiss
     @StateObject private var sessionService  = GameSessionService()
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
@@ -34,6 +37,11 @@ struct KnowledgeGameView: View {
         let lvl = ProgressionStore.shared.level(forSlug: serverMode.slug)
         _startLevel       = State(initialValue: lvl)
         _currentQuestion  = State(initialValue: KnowledgeProblemGenerator.generate(slug: serverMode.slug, level: lvl))
+        if let id = resumeRoomID,
+           let room = MultiplayerStore.shared.backgroundRooms.first(where: { $0.id == id }),
+           let me = room.players.first(where: { $0.isYou }) {
+            _engine = StateObject(wrappedValue: GameEngine(lives: me.lives, skips: me.skips, correctCount: me.correctCount))
+        }
     }
 
     private var avgTime: Double {
@@ -121,7 +129,7 @@ struct KnowledgeGameView: View {
             ResourcePillRow(lives: engine.lives, skips: engine.skips)
                 .padding(.horizontal, MDSpacing.md)
                 .padding(.top, MDSpacing.md)
-            CountdownTimer(elapsedSeconds: elapsedSeconds)
+            CountdownTimer(elapsedSeconds: elapsedSeconds, maxSeconds: difficulty.timerSeconds)
                 .padding(.top, MDSpacing.sm)
             problemCard
                 .padding(.horizontal, MDSpacing.md)
@@ -246,8 +254,8 @@ struct KnowledgeGameView: View {
         guard !showQuitModal else { return }
         guard !engine.isRoundOver, !engine.isWaitingAfterSkip,
               feedbackIsCorrect == nil, !progression.isQuotaExhausted else { return }
-        elapsedSeconds = min(elapsedSeconds + 0.1, 10.0)
-        if elapsedSeconds >= 10.0 { handleSkip() }
+        elapsedSeconds = min(elapsedSeconds + 0.1, difficulty.timerSeconds)
+        if elapsedSeconds >= difficulty.timerSeconds { handleSkip() }
     }
 
     private func loadNextQuestion() {
@@ -320,7 +328,8 @@ struct KnowledgeGameView: View {
             correctCount: engine.correctCount,
             level: startLevel,
             avgTime: avgTime,
-            won: won
+            won: won,
+            difficultyMultiplier: difficulty.scoreMultiplier
         )
     }
 

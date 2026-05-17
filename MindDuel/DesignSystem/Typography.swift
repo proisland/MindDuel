@@ -6,11 +6,11 @@ enum MDTextStyle {
     case heading   // 17 pt Heavy  – skjermoverskrifter, modale titler
     case title2    // 15 pt Heavy  – profilnavn, kortoverskrifter
     case subtitle  // 14 pt Bold   – topbar-titler
-    case body      // 13 pt Bold   – modusnavn, viktige stats
-    case bodyMd    // 12 pt Bold   – knapper, scoreboard-rader
-    case caption   // 11 pt SemiBold – sekundærlabels
-    case footnote  // 10 pt Medium – tidsstempler
-    case micro     //  9 pt Medium – statusbar
+    case body      // 14 pt Bold   – modusnavn, viktige stats
+    case bodyMd    // 13 pt Bold   – knapper, scoreboard-rader
+    case caption   // 12 pt SemiBold – sekundærlabels
+    case footnote  // 11 pt Medium – tidsstempler
+    case micro     // 10 pt Medium – statusbar
 }
 
 extension View {
@@ -27,11 +27,11 @@ private struct MDTypographyModifier: ViewModifier {
     @ScaledMetric(relativeTo: .body) private var headingSize: CGFloat = 17
     @ScaledMetric(relativeTo: .body) private var title2Size: CGFloat = 15
     @ScaledMetric(relativeTo: .body) private var subtitleSize: CGFloat = 14
-    @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 13
-    @ScaledMetric(relativeTo: .body) private var bodyMdSize: CGFloat = 12
-    @ScaledMetric(relativeTo: .body) private var captionSize: CGFloat = 11
-    @ScaledMetric(relativeTo: .body) private var footnoteSize: CGFloat = 10
-    @ScaledMetric(relativeTo: .body) private var microSize: CGFloat = 9
+    @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 14
+    @ScaledMetric(relativeTo: .body) private var bodyMdSize: CGFloat = 13
+    @ScaledMetric(relativeTo: .body) private var captionSize: CGFloat = 12
+    @ScaledMetric(relativeTo: .body) private var footnoteSize: CGFloat = 11
+    @ScaledMetric(relativeTo: .body) private var microSize: CGFloat = 10
 
     func body(content: Content) -> some View {
         content

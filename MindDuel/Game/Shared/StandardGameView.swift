@@ -20,6 +20,9 @@ struct StandardGameView: View {
     @State private var roundResult:      ProgressionStore.RoundResult? = nil
     @State private var startLevel:       Int
 
+    @AppStorage("game.difficulty") private var difficultyRaw: String = "normal"
+    private var difficulty: GameDifficulty { GameDifficulty(rawValue: difficultyRaw) ?? .normal }
+
     @Environment(\.dismiss) private var dismiss
     @StateObject private var sessionService = GameSessionService()
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
@@ -33,6 +36,11 @@ struct StandardGameView: View {
         _startLevel = State(initialValue: lvl)
         Self.resetRoundHistory(mode: mode)
         _problem = State(initialValue: Self.generate(mode: mode, level: lvl))
+        if let id = resumeRoomID,
+           let room = MultiplayerStore.shared.backgroundRooms.first(where: { $0.id == id }),
+           let me = room.players.first(where: { $0.isYou }) {
+            _engine = StateObject(wrappedValue: GameEngine(lives: me.lives, skips: me.skips, correctCount: me.correctCount))
+        }
     }
 
     private var avgTime: Double {
@@ -145,7 +153,7 @@ struct StandardGameView: View {
                 .padding(.horizontal, MDSpacing.md)
                 .padding(.top, MDSpacing.md)
 
-            CountdownTimer(elapsedSeconds: elapsedSeconds)
+            CountdownTimer(elapsedSeconds: elapsedSeconds, maxSeconds: difficulty.timerSeconds)
                 .padding(.top, MDSpacing.sm)
 
             problemCard
@@ -312,8 +320,8 @@ struct StandardGameView: View {
     private func handleTimerTick() {
         guard !engine.isRoundOver, !engine.isWaitingAfterSkip,
               feedbackIsCorrect == nil, !progression.isQuotaExhausted else { return }
-        elapsedSeconds = min(elapsedSeconds + 0.1, 10.0)
-        if elapsedSeconds >= 10.0 { handleSkip() }
+        elapsedSeconds = min(elapsedSeconds + 0.1, difficulty.timerSeconds)
+        if elapsedSeconds >= difficulty.timerSeconds { handleSkip() }
     }
 
     private func nextProblem() {
@@ -330,7 +338,8 @@ struct StandardGameView: View {
             correctCount: engine.correctCount,
             level: startLevel,
             avgTime: avgTime,
-            won: won
+            won: won,
+            difficultyMultiplier: difficulty.scoreMultiplier
         )
     }
 

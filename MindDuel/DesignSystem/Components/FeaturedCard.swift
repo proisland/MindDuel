@@ -29,13 +29,17 @@ struct MDFeaturedCard: View {
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(Color.mdText)
                     if streak >= 2 {
-                        Text("\(streak)d")
-                            .font(.system(size: 9, weight: .heavy))
-                            .foregroundStyle(Color.mdAccent)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(Color.mdAccent.opacity(0.15))
-                            .clipShape(Capsule())
+                        HStack(spacing: 2) {
+                            Image(systemName: "flame.fill")
+                                .font(.system(size: 9, weight: .heavy))
+                            Text("\(streak)")
+                                .font(.system(size: 9, weight: .heavy))
+                        }
+                        .foregroundStyle(Color.mdAmber)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(Color.mdAmber.opacity(0.18))
+                        .clipShape(Capsule())
                     }
                 }
                 Text(formatPoints(score))
