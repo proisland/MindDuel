@@ -7,9 +7,17 @@ struct OtherProfileView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showFlagExplanation = false
     @State private var showChallenge = false
+    @State private var loadedProfile: PublicUserProfile? = nil
 
     private var isFriend: Bool { social.friendUsernames.contains(profile.username) }
     private var hasSentRequest: Bool { social.sentRequestUsernames.contains(profile.username) }
+
+    private static let memberSinceFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        f.timeStyle = .none
+        return f
+    }()
 
     var body: some View {
         ZStack {
@@ -24,7 +32,8 @@ struct OtherProfileView: View {
                     VStack(spacing: MDSpacing.lg) {
                         // Avatar block
                         VStack(spacing: MDSpacing.xs) {
-                            MDAvatar(username: profile.username, size: .lg)
+                            MDAvatar(username: profile.username, size: .lg,
+                                     customEmoji: profile.avatarEmoji == "🧠" ? nil : profile.avatarEmoji)
                             HStack(spacing: MDSpacing.xxs) {
                                 Text("\(profile.username)")
                                     .mdStyle(.title2)
@@ -50,7 +59,7 @@ struct OtherProfileView: View {
                                 Text(String(localized: "stats_last_active_label") + ":")
                                     .mdStyle(.micro)
                                     .foregroundStyle(Color.mdText3)
-                                Text(profile.lastActive)
+                                Text(lastActiveDisplay)
                                     .mdStyle(.micro)
                                     .foregroundStyle(Color.mdGreen)
                             }
@@ -78,15 +87,13 @@ struct OtherProfileView: View {
                         sectionContainer(String(localized: "stats_section_title")) {
                             VStack(spacing: 0) {
                                 statRow(label: String(localized: "stats_rounds_played_label"),
-                                        value: "\(profile.roundsPlayed)")
+                                        value: "\(loadedProfile?.roundsPlayed ?? profile.roundsPlayed)")
                                 Divider().background(Color.mdBorder2)
                                 statRow(label: String(localized: "stats_avg_answer_time_label"),
-                                        value: profile.avgAnswerTime > 0
-                                            ? String(format: "%.1f s", profile.avgAnswerTime)
-                                            : "–")
+                                        value: avgAnswerTimeDisplay)
                                 Divider().background(Color.mdBorder2)
                                 statRow(label: String(localized: "stats_member_since_label"),
-                                        value: profile.memberSince)
+                                        value: memberSinceDisplay)
                             }
                             .background(Color.mdSurface2)
                             .clipShape(RoundedRectangle(cornerRadius: 14))
@@ -123,9 +130,44 @@ struct OtherProfileView: View {
                 flagModal
             }
         }
+        .onAppear { loadProfile() }
         .animation(.easeInOut(duration: 0.2), value: showFlagExplanation)
         .fullScreenCover(isPresented: $showChallenge) {
             MultiplayerLobbyView(ownUsername: ownUsername, startAsHost: true, invitedUsername: profile.username)
+        }
+    }
+
+    // MARK: – Computed display values
+
+    private var lastActiveDisplay: String {
+        if let date = loadedProfile?.lastActiveAt {
+            return UserProfile.relativeTime(date)
+        }
+        return profile.lastActive
+    }
+
+    private var avgAnswerTimeDisplay: String {
+        if let lp = loadedProfile {
+            return lp.avgAnswerTimeMs > 0
+                ? String(format: "%.1f s", lp.avgAnswerTimeMs / 1000)
+                : "–"
+        }
+        return profile.avgAnswerTime > 0
+            ? String(format: "%.1f s", profile.avgAnswerTime)
+            : "–"
+    }
+
+    private var memberSinceDisplay: String {
+        if let date = loadedProfile?.memberSince {
+            return Self.memberSinceFormatter.string(from: date)
+        }
+        return profile.memberSince
+    }
+
+    private func loadProfile() {
+        Task {
+            let result: PublicUserProfile? = try? await APIClient.shared.get("users/\(profile.username)")
+            await MainActor.run { loadedProfile = result }
         }
     }
 

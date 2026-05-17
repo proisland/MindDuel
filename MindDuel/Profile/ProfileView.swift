@@ -14,6 +14,9 @@ struct ProfileView: View {
     @State private var showOnboarding = false
     @State private var selectedFriend: UserProfile? = nil
     @State private var showFlagExplanation = false
+    @State private var friendSearch = ""
+    @State private var searchResults: [UserSearchResult] = []
+    @State private var isSearching = false
 
     var body: some View {
         ZStack {
@@ -182,6 +185,76 @@ struct ProfileView: View {
 
     private var friendsRow: some View {
         VStack(spacing: MDSpacing.sm) {
+            // Friend search bar
+            HStack(spacing: MDSpacing.xs) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.mdText3)
+                TextField(String(localized: "search_username_placeholder"), text: $friendSearch)
+                    .mdStyle(.bodyMd)
+                    .foregroundStyle(Color.mdText)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .onChange(of: friendSearch) { q in searchUsers(q) }
+                if !friendSearch.isEmpty {
+                    Button { friendSearch = ""; searchResults = [] } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(Color.mdText3)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, MDSpacing.sm)
+            .padding(.vertical, MDSpacing.xs)
+            .background(Color.mdSurface2)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.mdBorder2, lineWidth: 0.5))
+
+            // Search results
+            if !searchResults.isEmpty {
+                VStack(spacing: 0) {
+                    ForEach(searchResults) { result in
+                        HStack(spacing: MDSpacing.sm) {
+                            MDAvatar(username: result.username, size: .sm,
+                                     customEmoji: result.avatarEmoji == "🧠" ? nil : result.avatarEmoji)
+                            Text(result.username)
+                                .mdStyle(.caption)
+                                .foregroundStyle(Color.mdText)
+                                .lineLimit(1)
+                            Spacer()
+                            if social.friendUsernames.contains(result.username) {
+                                Image(systemName: "person.fill.checkmark")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(Color.mdGreen)
+                            } else if social.sentRequestUsernames.contains(result.username) {
+                                Text(String(localized: "friend_request_pending_short"))
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(Color.mdText3)
+                            } else {
+                                Button {
+                                    social.sendFriendRequest(to: result.username)
+                                } label: {
+                                    Text(String(localized: "add_friend_short_action"))
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundStyle(Color.mdAccent)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 5)
+                                        .background(Color.mdAccentSoft)
+                                        .clipShape(Capsule())
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal, MDSpacing.md)
+                        .padding(.vertical, MDSpacing.sm)
+                    }
+                }
+                .background(Color.mdSurface2)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdBorder2, lineWidth: 0.5))
+            }
+
             // Pending requests with accept / decline
             ForEach(social.pendingRequests) { req in
                 HStack(spacing: MDSpacing.sm) {
@@ -265,6 +338,18 @@ struct ProfileView: View {
         }
         .padding(.horizontal, MDSpacing.md)
         .padding(.vertical, MDSpacing.sm)
+    }
+
+    private func searchUsers(_ query: String) {
+        guard query.count >= 2 else { searchResults = []; return }
+        isSearching = true
+        Task {
+            let results: [UserSearchResult] = (try? await APIClient.shared.get("users/search", query: ["q": query])) ?? []
+            await MainActor.run {
+                searchResults = results
+                isSearching = false
+            }
+        }
     }
 
     private func timeAgoString(from date: Date) -> String {

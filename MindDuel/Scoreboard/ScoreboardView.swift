@@ -13,6 +13,7 @@ struct ScoreboardView: View {
     @State private var selectedProfile: UserProfile? = nil
     @State private var searchText = ""
     @State private var scoreMode: AnyMode = .known(.pi)
+    @State private var useTotalScore: Bool = true
     @State private var timeRange: TimeRange = .today
 
     private enum TimeRange: String, CaseIterable, Identifiable {
@@ -94,9 +95,12 @@ struct ScoreboardView: View {
         .fullScreenCover(item: $selectedProfile) { profile in
             OtherProfileView(profile: profile, ownUsername: ownUsername)
         }
-        .task { await scoreboardStore.refresh(slug: scoreMode.slug) }
+        .task { await scoreboardStore.refresh(slug: useTotalScore ? nil : scoreMode.slug) }
         .onChange(of: scoreMode) { mode in
-            Task { await scoreboardStore.refresh(slug: mode.slug) }
+            Task { await scoreboardStore.refresh(slug: useTotalScore ? nil : mode.slug) }
+        }
+        .onChange(of: useTotalScore) { total in
+            Task { await scoreboardStore.refresh(slug: total ? nil : scoreMode.slug) }
         }
     }
 
@@ -135,11 +139,39 @@ struct ScoreboardView: View {
     private var scoreModeToggle: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
+                // Total chip (default)
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) { useTotalScore = true }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "sum")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(useTotalScore ? Color.mdAccent : Color.mdText3)
+                        Text(String(localized: "scoreboard_total_label"))
+                            .font(.system(size: 12, weight: useTotalScore ? .heavy : .medium))
+                            .foregroundStyle(useTotalScore ? Color.mdText : Color.mdText3)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(useTotalScore ? Color.mdAccent.opacity(0.13) : Color.white.opacity(0.05))
+                    .clipShape(Capsule())
+                    .overlay(
+                        Capsule().stroke(
+                            useTotalScore ? Color.mdAccent.opacity(0.7) : Color.white.opacity(0.08),
+                            lineWidth: 1.5
+                        )
+                    )
+                }
+                .buttonStyle(.plain)
+
                 ForEach(modePrefs.activeCombinedOrder) { mode in
-                    let selected = scoreMode == mode
+                    let selected = !useTotalScore && scoreMode == mode
                     let accent = modeAccentColor(mode)
                     Button {
-                        withAnimation(.easeInOut(duration: 0.15)) { scoreMode = mode }
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            useTotalScore = false
+                            scoreMode = mode
+                        }
                     } label: {
                         HStack(spacing: 6) {
                             anyModeGlyph(mode, size: 13, weight: .bold, color: accent)
@@ -201,8 +233,9 @@ struct ScoreboardView: View {
         }
     }
 
-    private func score(for profile: UserProfile, mode: AnyMode) -> Int {
-        switch mode {
+    private func effectiveScore(for profile: UserProfile) -> Int {
+        if useTotalScore { return profile.totalScore }
+        switch scoreMode {
         case .known(let gm): return profile.score(for: gm)
         case .server:        return profile.apiScore
         }
@@ -482,13 +515,16 @@ struct ScoreboardView: View {
                 }
                 .frame(width: 24, alignment: .center)
 
-                MDAvatar(username: profile.username, size: .sm)
+                MDAvatar(username: profile.username, size: .sm,
+                         customEmoji: profile.avatarEmoji == "🧠" ? nil : profile.avatarEmoji)
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: MDSpacing.xxs) {
                         Text("\(profile.username)")
                             .mdStyle(.caption)
                             .foregroundStyle(Color.mdText)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
                         if isOwn {
                             MDPillTag(label: String(localized: "your_label"), variant: .accent)
                         }
@@ -510,7 +546,7 @@ struct ScoreboardView: View {
                 // #112: fixed-width score column so the points text sits at the
                 // same horizontal position regardless of friend status, own row,
                 // or digit count. Right-aligned so larger scores grow leftward.
-                Text("\(score(for: profile, mode: scoreMode)) \(String(localized: "points_word"))")
+                Text("\(effectiveScore(for: profile)) \(String(localized: "points_word"))")
                     .mdStyle(.bodyMd)
                     .foregroundStyle((!isOwn ? trophyColor(forRank: rank) : nil) ?? Color.mdText2)
                     .lineLimit(1)
@@ -598,7 +634,7 @@ struct ScoreboardView: View {
             combined.append(own)
         }
         return combined
-            .sorted { score(for: $0, mode: scoreMode) > score(for: $1, mode: scoreMode) }
+            .sorted { effectiveScore(for: $0) > effectiveScore(for: $1) }
             .enumerated()
             .map { idx, p in RankedEntry(rank: idx + 1, profile: p, isOwn: p.username == own.username) }
     }

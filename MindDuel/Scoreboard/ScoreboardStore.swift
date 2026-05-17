@@ -13,18 +13,20 @@ final class ScoreboardStore: ObservableObject {
 
     private init() {}
 
-    func refresh(slug: String) async {
-        guard slug != lastMode || globalEntries.isEmpty else { return }
+    func refresh(slug: String?) async {
+        let key = slug ?? "total"
+        guard key != lastMode || globalEntries.isEmpty else { return }
         isLoading = true
-        lastMode = slug
+        lastMode = key
+        let query = slug.map { ["mode": $0] } ?? [:]
         async let globalTask: ScoreboardResponse? = try? APIClient.shared.get(
-            "scoreboard/global", query: ["mode": slug]
+            "scoreboard/global", query: query
         )
         async let friendTask: ScoreboardResponse? = try? APIClient.shared.get(
-            "scoreboard/friends", query: ["mode": slug]
+            "scoreboard/friends", query: query
         )
         async let weeklyTask: WeeklyLeaderboardResponse? = try? APIClient.shared.get(
-            "scoreboard/weekly-friends", query: ["mode": slug]
+            "scoreboard/weekly-friends", query: query
         )
         let (g, f, w) = await (globalTask, friendTask, weeklyTask)
         globalEntries = g?.entries ?? []

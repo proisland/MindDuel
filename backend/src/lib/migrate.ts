@@ -150,6 +150,9 @@ async function runMigrationsInternal(prisma: PrismaClient) {
     UPDATE "GameMode" SET "nameNo" = name WHERE "nameNo" = ''
   `)
 
+  // Remove the development test account — real users are in use now.
+  await prisma.$executeRawUnsafe(`DELETE FROM "User" WHERE username = 'devuser'`)
+
   // Enable trigram extension for fast ILIKE username search.
   await prisma.$executeRawUnsafe(`CREATE EXTENSION IF NOT EXISTS pg_trgm`)
 

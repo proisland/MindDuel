@@ -34,3 +34,16 @@ struct PublicProfile: Decodable {
     let isPremium: Bool
     let progressions: [APIProgression]
 }
+
+struct PublicUserProfile: Decodable {
+    let id: String
+    let username: String
+    let avatarEmoji: String
+    let isPremium: Bool
+    let isFlagged: Bool
+    let lastActiveAt: Date?
+    let memberSince: Date
+    let roundsPlayed: Int
+    let avgAnswerTimeMs: Double
+    let progressions: [APIProgression]
+}
