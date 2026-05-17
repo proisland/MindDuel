@@ -1,6 +1,7 @@
 import SwiftUI
 
 enum AuthPhase {
+    case loading
     case signedOut
     case needsUsername(userID: String)
     case authenticated(userID: String, username: String)
@@ -8,7 +9,7 @@ enum AuthPhase {
 
 @MainActor
 final class AuthState: ObservableObject {
-    @Published var phase: AuthPhase = .signedOut
+    @Published var phase: AuthPhase = .loading
     @Published var isLoading = false
     @Published var errorMessage: String?
 
@@ -106,7 +107,10 @@ final class AuthState: ObservableObject {
     // MARK: – Session restore
 
     private func restoreSession() {
-        guard tokenStore.accessToken != nil || tokenStore.refreshToken != nil else { return }
+        guard tokenStore.accessToken != nil || tokenStore.refreshToken != nil else {
+            phase = .signedOut
+            return
+        }
         Task {
             do {
                 let user: APIUser = try await APIClient.shared.get("me")

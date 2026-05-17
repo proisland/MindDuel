@@ -8,6 +8,10 @@ struct APIFriend: Decodable {
     let lastActiveAt: Date?
 }
 
+struct FriendsResponse: Decodable {
+    let friends: [APIFriend]
+}
+
 struct FriendRequestsResponse: Decodable {
     let sent: [APIFriendRequest]
     let received: [APIFriendRequest]
@@ -35,7 +39,7 @@ struct ScoreboardResponse: Decodable {
     let entries: [ScoreboardEntry]
 }
 
-struct UserSearchResult: Decodable {
+struct UserSearchResult: Decodable, Identifiable {
     let id: String
     let username: String
     let avatarEmoji: String

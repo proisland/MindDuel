@@ -113,6 +113,8 @@ struct HomeView: View {
                                 DailyChallengeCard(challenge: challenge) {
                                     if let gm = GameMode(slug: challenge.mode.slug) {
                                         startOrResume(gm)
+                                    } else if let sm = modeCache.serverOnlyModes.first(where: { $0.slug == challenge.mode.slug }) {
+                                        startOrResumeServer(sm)
                                     }
                                 }
                                 .padding(.horizontal, MDSpacing.md)

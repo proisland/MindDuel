@@ -22,30 +22,41 @@ extension View {
 private struct MDTypographyModifier: ViewModifier {
     let style: MDTextStyle
 
+    @ScaledMetric(relativeTo: .body) private var displaySize: CGFloat = 30
+    @ScaledMetric(relativeTo: .body) private var titleSize: CGFloat = 20
+    @ScaledMetric(relativeTo: .body) private var headingSize: CGFloat = 17
+    @ScaledMetric(relativeTo: .body) private var title2Size: CGFloat = 15
+    @ScaledMetric(relativeTo: .body) private var subtitleSize: CGFloat = 14
+    @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 13
+    @ScaledMetric(relativeTo: .body) private var bodyMdSize: CGFloat = 12
+    @ScaledMetric(relativeTo: .body) private var captionSize: CGFloat = 11
+    @ScaledMetric(relativeTo: .body) private var footnoteSize: CGFloat = 10
+    @ScaledMetric(relativeTo: .body) private var microSize: CGFloat = 9
+
     func body(content: Content) -> some View {
         content
-            .font(style.font)
+            .font(resolvedFont)
             .foregroundStyle(style.defaultColor)
             .tracking(style == .micro ? 0.9 : 0)
+    }
+
+    private var resolvedFont: Font {
+        switch style {
+        case .display:  return .system(size: displaySize,  weight: .heavy)
+        case .title:    return .system(size: titleSize,    weight: .heavy)
+        case .heading:  return .system(size: headingSize,  weight: .heavy)
+        case .title2:   return .system(size: title2Size,   weight: .heavy)
+        case .subtitle: return .system(size: subtitleSize, weight: .bold)
+        case .body:     return .system(size: bodySize,     weight: .bold)
+        case .bodyMd:   return .system(size: bodyMdSize,   weight: .bold)
+        case .caption:  return .system(size: captionSize,  weight: .semibold)
+        case .footnote: return .system(size: footnoteSize, weight: .semibold)
+        case .micro:    return .system(size: microSize,    weight: .bold)
+        }
     }
 }
 
 private extension MDTextStyle {
-    var font: Font {
-        switch self {
-        case .display:  return .system(size: 30, weight: .heavy)
-        case .title:    return .system(size: 20, weight: .heavy)
-        case .heading:  return .system(size: 17, weight: .heavy)
-        case .title2:   return .system(size: 15, weight: .heavy)
-        case .subtitle: return .system(size: 14, weight: .bold)
-        case .body:     return .system(size: 13, weight: .bold)
-        case .bodyMd:   return .system(size: 12, weight: .bold)
-        case .caption:  return .system(size: 11, weight: .semibold)
-        case .footnote: return .system(size: 10, weight: .semibold)
-        case .micro:    return .system(size:  9, weight: .bold)
-        }
-    }
-
     var defaultColor: Color {
         switch self {
         case .caption, .footnote, .micro: return .mdText2

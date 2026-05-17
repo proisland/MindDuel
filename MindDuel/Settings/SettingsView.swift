@@ -16,6 +16,7 @@ struct SettingsView: View {
     @State private var showFeedback = false
     @State private var showDeleteConfirm = false
     @State private var showDeleteDone = false
+    @State private var showUpgradeComingSoon = false
     @State private var birthDate: Date? = nil
     @State private var showBirthDatePicker = false
     @State private var pendingBirthDate: Date = Calendar.current.date(byAdding: .year, value: -18, to: Date()) ?? Date()
@@ -71,7 +72,9 @@ struct SettingsView: View {
                                 Text(String(localized: "settings_free_plan_label"))
                                     .mdStyle(.caption)
                                     .foregroundStyle(Color.mdText2)
-                                MDButton(.primary, title: String(localized: "quota_upgrade_action")) { }
+                                MDButton(.primary, title: String(localized: "quota_upgrade_action")) {
+                                    showUpgradeComingSoon = true
+                                }
                             }
                             .padding(MDSpacing.md)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -210,6 +213,14 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showTerms) { TermsAndPrivacyView() }
         .fullScreenCover(isPresented: $showFeedback) { FeedbackView() }
+        .alert(
+            String(localized: "upgrade_coming_soon_title"),
+            isPresented: $showUpgradeComingSoon
+        ) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(String(localized: "upgrade_coming_soon_message"))
+        }
         .alert(
             String(localized: "settings_delete_confirm_title"),
             isPresented: $showDeleteConfirm

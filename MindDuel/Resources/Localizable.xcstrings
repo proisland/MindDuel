@@ -295,13 +295,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "+ Friend"
+            "value" : "Add as Friend"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "+ Venn"
+            "value" : "Legg til som venn"
           }
         }
       }
@@ -2273,13 +2273,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Join me in MindDuel! Room code: %@. Get the app: https://mindduel.app"
+            "value" : "I'm playing MindDuel! Download here: https://apps.apple.com/app/mindduel/id6744530074 — Room code: %@"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bli med i MindDuel! Romkode: %@. Last ned appen: https://mindduel.app"
+            "value" : "Jeg spiller MindDuel! Last ned her: https://apps.apple.com/app/mindduel/id6744530074 — Romkode: %@"
           }
         }
       }
@@ -3219,6 +3219,38 @@
         }
       }
     },
+    "upgrade_coming_soon_message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium subscription is coming soon. Stay tuned!"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium-abonnement kommer snart. Følg med!"
+          }
+        }
+      }
+    },
+    "upgrade_coming_soon_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium"
+          }
+        }
+      }
+    },
     "quota_warning_subtitle" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3963,6 +3995,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Scoreboard"
+          }
+        }
+      }
+    },
+    "scoreboard_total_label" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Totalt"
           }
         }
       }

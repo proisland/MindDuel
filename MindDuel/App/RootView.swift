@@ -9,6 +9,8 @@ struct RootView: View {
     var body: some View {
         Group {
             switch authState.phase {
+            case .loading:
+                Color.mdBg.ignoresSafeArea()
             case .signedOut:
                 SignInView()
             case .needsUsername(let userID):
@@ -31,6 +33,7 @@ struct RootView: View {
     /// (the phase enum has associated values and isn't directly Equatable).
     private var authPhaseDescription: String {
         switch authState.phase {
+        case .loading:                                return "loading"
         case .signedOut:                              return "out"
         case .needsUsername:                          return "needs"
         case .authenticated(_, let username):         return "auth:\(username)"
@@ -40,6 +43,8 @@ struct RootView: View {
     private func syncOwnUsername() {
         if case .authenticated(_, let username) = authState.phase {
             AvatarStore.shared.ownUsername = username
+        } else if case .loading = authState.phase {
+            // still restoring – leave ownUsername unchanged
         } else {
             AvatarStore.shared.ownUsername = nil
         }
