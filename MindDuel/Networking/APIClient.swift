@@ -39,6 +39,19 @@ actor APIClient {
         let _: Empty = try await request(method: "DELETE", path: path, query: [:], body: nil as Empty?)
     }
 
+    /// PUT raw binary data to an external URL (e.g. a presigned S3 URL). No auth header.
+    func putData(to url: URL, data: Data, contentType: String) async throws {
+        var req = URLRequest(url: url)
+        req.httpMethod = "PUT"
+        req.setValue(contentType, forHTTPHeaderField: "Content-Type")
+        req.httpBody = data
+        let (_, response) = try await executeRequest(req)
+        let status = (response as! HTTPURLResponse).statusCode
+        guard status >= 200 && status < 300 else {
+            throw APIError.serverError(status, nil)
+        }
+    }
+
     // MARK: – Core
 
     private func request<B: Encodable, T: Decodable>(

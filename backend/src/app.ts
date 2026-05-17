@@ -57,6 +57,15 @@ export async function buildApp() {
     try {
       await request.jwtVerify()
       request.userId = (request.user as { sub: string }).sub
+      // Fire-and-forget: update lastActiveAt at most once per 5 minutes
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
+      app.prisma.user.updateMany({
+        where: {
+          id: request.userId,
+          OR: [{ lastActiveAt: null }, { lastActiveAt: { lt: fiveMinutesAgo } }],
+        },
+        data: { lastActiveAt: new Date() },
+      }).catch(() => {})
     } catch {
       reply.status(401).send({ error: 'Unauthorized' })
     }

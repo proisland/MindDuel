@@ -4,6 +4,7 @@ struct APIFriend: Decodable {
     let id: String
     let username: String
     let avatarEmoji: String
+    let avatarUrl: String?
     let isPremium: Bool
     let lastActiveAt: Date?
 }
@@ -32,6 +33,7 @@ struct ScoreboardEntry: Decodable {
     let userId: String
     let username: String
     let avatarEmoji: String
+    let avatarUrl: String?
     let avgScore: Int
 }
 
@@ -43,6 +45,7 @@ struct UserSearchResult: Decodable, Identifiable {
     let id: String
     let username: String
     let avatarEmoji: String
+    let avatarUrl: String?
     let isPremium: Bool
 }
 

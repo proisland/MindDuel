@@ -34,10 +34,14 @@ struct PiGameView: View {
         self.resumeRoomID = resumeRoomID
         self.isPractice = isPractice
         self.practiceStartDigit = practiceStartDigit
-        if let id = resumeRoomID,
-           let room = MultiplayerStore.shared.backgroundRooms.first(where: { $0.id == id }),
-           let me = room.players.first(where: { $0.isYou }) {
-            _engine = StateObject(wrappedValue: GameEngine(lives: me.lives, skips: me.skips, correctCount: me.correctCount))
+        if resumeRoomID != nil {
+            // Look up by mode — the ID may have drifted after a re-save.
+            let savedRoom = MultiplayerStore.shared.backgroundRooms.first(where: { room in
+                room.isStandaloneSolo && room.mode == .pi && room.serverModeSlug == nil
+            })
+            if let me = savedRoom?.players.first(where: { $0.isYou }) {
+                _engine = StateObject(wrappedValue: GameEngine(lives: me.lives, skips: me.skips, correctCount: me.correctCount))
+            }
         }
     }
 
@@ -143,8 +147,10 @@ struct PiGameView: View {
     }
 
     private func restoreOrStartFresh() {
-        if let id = resumeRoomID,
-           let room = MultiplayerStore.shared.popStandaloneSolo(roomID: id),
+        // Fall back to mode-based lookup when the ID has drifted after a re-save.
+        let popped = resumeRoomID.flatMap { MultiplayerStore.shared.popStandaloneSolo(roomID: $0) }
+            ?? (resumeRoomID != nil ? MultiplayerStore.shared.popStandaloneSoloByMode(.pi) : nil)
+        if let room = popped,
            let me = room.players.first(where: { $0.isYou }) {
             // Resume saved session: start at the saved digit position, currentIndex is 0
             sessionStartIndex = room.myPiDigitIndex

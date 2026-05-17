@@ -44,7 +44,8 @@ final class ScoreboardStore: ObservableObject {
             roundsPlayed: 0, age: nil, city: nil,
             memberSince: "–", lastActive: "–",
             isFriend: SocialStore.shared.friendUsernames.contains(entry.username),
-            isFlagged: false
+            isFlagged: false,
+            avatarUrl: entry.avatarUrl
         )
         profile.apiScore = entry.avgScore
         return profile

@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 
 const scoreboardQuery = z.object({
-  mode: z.string().min(1),
+  mode: z.string().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
 })
 
@@ -23,7 +23,7 @@ export default async function scoreboardRoutes(app: FastifyInstance) {
     const rows = await app.prisma.score.groupBy({
       by: ['userId'],
       where: {
-        mode: query.data.mode,
+        ...(query.data.mode && { mode: query.data.mode }),
         createdAt: { gte: since },
         user: { isFlagged: false, isSuspended: false },
       },
@@ -57,7 +57,7 @@ export default async function scoreboardRoutes(app: FastifyInstance) {
       }
     })
 
-    return reply.send({ mode: query.data.mode, entries })
+    return reply.send({ mode: query.data.mode ?? 'total', entries })
   })
 
   // GET /v1/scoreboard/friends?mode=pi
@@ -81,7 +81,11 @@ export default async function scoreboardRoutes(app: FastifyInstance) {
 
     const rows = await app.prisma.score.groupBy({
       by: ['userId'],
-      where: { mode: query.data.mode, userId: { in: allIds }, createdAt: { gte: since } },
+      where: {
+        ...(query.data.mode && { mode: query.data.mode }),
+        userId: { in: allIds },
+        createdAt: { gte: since },
+      },
       _avg: { value: true },
       _count: { value: true },
       orderBy: { _avg: { value: 'desc' } },
@@ -110,7 +114,7 @@ export default async function scoreboardRoutes(app: FastifyInstance) {
       }
     })
 
-    return reply.send({ mode: query.data.mode, entries })
+    return reply.send({ mode: query.data.mode ?? 'total', entries })
   })
 
   // GET /v1/scoreboard/weekly-friends?mode=pi — 7-day friends leaderboard (min 5 friends)
@@ -183,6 +187,7 @@ export default async function scoreboardRoutes(app: FastifyInstance) {
         id: true,
         username: true,
         avatarEmoji: true,
+        avatarUrl: true,
         birthDate: true,
         isFlagged: true,
         isSuspended: true,
@@ -222,6 +227,7 @@ export default async function scoreboardRoutes(app: FastifyInstance) {
       id: user.id,
       username: user.username,
       avatarEmoji: user.avatarEmoji,
+      avatarUrl: (user as any).avatarUrl ?? null,
       age,
       isFlagged: user.isFlagged,
       isSuspended: user.isSuspended,

@@ -33,7 +33,8 @@ struct OtherProfileView: View {
                         // Avatar block
                         VStack(spacing: MDSpacing.xs) {
                             MDAvatar(username: profile.username, size: .lg,
-                                     customEmoji: profile.avatarEmoji == "🧠" ? nil : profile.avatarEmoji)
+                                     customEmoji: profile.avatarEmoji == "🧠" ? nil : profile.avatarEmoji,
+                                     avatarUrl: loadedProfile?.avatarUrl ?? profile.avatarUrl)
                             HStack(spacing: MDSpacing.xxs) {
                                 Text("\(profile.username)")
                                     .mdStyle(.title2)
