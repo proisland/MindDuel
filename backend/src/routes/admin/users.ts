@@ -5,6 +5,7 @@ import { revokeAllRefreshTokens } from '../../lib/tokens'
 const patchBody = z.object({
   isFlagged:   z.boolean().optional(),
   isSuspended: z.boolean().optional(),
+  isUnlimited: z.boolean().optional(),
   flagReason:  z.string().optional(),
 })
 
@@ -127,6 +128,6 @@ export default async function adminUsersRoutes(app: FastifyInstance) {
     if (body.data.isSuspended === true) {
       await revokeAllRefreshTokens(app.redis, id)
     }
-    return reply.send({ ok: true, isFlagged: user.isFlagged, isSuspended: user.isSuspended })
+    return reply.send({ ok: true, isFlagged: user.isFlagged, isSuspended: user.isSuspended, isUnlimited: user.isUnlimited })
   })
 }

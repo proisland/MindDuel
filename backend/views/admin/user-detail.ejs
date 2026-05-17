@@ -11,6 +11,9 @@
     <div class="flex justify-between"><span class="text-gray-400">Suspended</span>
       <span class="<%= user.isSuspended ? 'text-red-400' : 'text-gray-500' %>">
         <%= user.isSuspended ? '🚫 Yes' : 'No' %></span></div>
+    <div class="flex justify-between"><span class="text-gray-400">Unlimited quota</span>
+      <span class="<%= user.isUnlimited ? 'text-green-400' : 'text-gray-500' %>">
+        <%= user.isUnlimited ? '♾️ Yes' : 'No' %></span></div>
     <div class="flex justify-between"><span class="text-gray-400">Fast rounds</span><span><%= user.fastRoundCount %></span></div>
     <div class="flex justify-between"><span class="text-gray-400">Total rounds</span><span><%= totalRounds %></span></div>
     <% if (quota) { %>
@@ -36,6 +39,10 @@
       <button onclick="patch({isSuspended: <%= !user.isSuspended %>})"
         class="text-sm px-3 py-1.5 bg-gray-700 hover:bg-red-800 rounded">
         <%= user.isSuspended ? 'Unsuspend' : 'Suspend account' %>
+      </button>
+      <button onclick="patch({isUnlimited: <%= !user.isUnlimited %>})"
+        class="text-sm px-3 py-1.5 bg-gray-700 hover:bg-green-800 rounded">
+        <%= user.isUnlimited ? 'Remove unlimited' : 'Grant unlimited quota' %>
       </button>
     </div>
   </div>

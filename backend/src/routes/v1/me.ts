@@ -56,7 +56,7 @@ export default async function meRoutes(app: FastifyInstance) {
       })),
       dailyQuota: {
         used: user.dailyQuota?.count ?? 0,
-        limit: config.quota.freeLimit,
+        limit: user.isUnlimited ? 9999 : config.quota.freeLimit,
       },
     })
   })

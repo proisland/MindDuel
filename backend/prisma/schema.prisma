@@ -19,6 +19,7 @@ model User {
   isPremium               Boolean   @default(false)
   isFlagged               Boolean   @default(false)
   isSuspended             Boolean   @default(false)
+  isUnlimited             Boolean   @default(false)
   flagReason              String?
   fastRoundCount          Int       @default(0)
   totalRoundsPlayed       Int       @default(0)

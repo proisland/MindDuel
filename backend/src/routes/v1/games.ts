@@ -376,8 +376,8 @@ export default async function gamesRoutes(app: FastifyInstance) {
             "updatedAt" = NOW()
     `
 
-    const user = await app.prisma.user.findUnique({ where: { id: request.userId }, select: { isPremium: true } })
-    const limit = config.quota.freeLimit
-    return reply.send({ used: syncedCount, limit: user?.isPremium ? 999 : limit })
+    const user = await app.prisma.user.findUnique({ where: { id: request.userId }, select: { isPremium: true, isUnlimited: true } })
+    const limit = (user?.isPremium || user?.isUnlimited) ? 9999 : config.quota.freeLimit
+    return reply.send({ used: syncedCount, limit })
   })
 }

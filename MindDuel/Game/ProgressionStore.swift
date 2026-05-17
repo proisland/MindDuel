@@ -145,6 +145,7 @@ import SwiftUI
     }
 
     @Published private(set) var dailyUsed: Int
+    @Published private(set) var serverDailyLimit: Int
     @Published private(set) var totalRoundsPlayed: Int
     @Published private(set) var isFlagged: Bool
 
@@ -228,6 +229,8 @@ import SwiftUI
             longestStreaks = dict
         }
         dailyUsed         = d.integer(forKey: "dailyUsed")
+        let storedLimit   = d.integer(forKey: "serverDailyLimit")
+        serverDailyLimit  = storedLimit > 0 ? storedLimit : Self.dailyQuota
         quotaResetEpoch   = d.double(forKey: "quotaResetEpoch")
         totalRoundsPlayed = d.integer(forKey: "totalRoundsPlayed")
         isFlagged         = d.bool(forKey: "isFlagged")
@@ -273,9 +276,9 @@ import SwiftUI
 
     // MARK: – Quota
 
-    var questionsRemaining: Int { Self.dailyQuota - dailyUsed }
-    var isQuotaExhausted: Bool  { dailyUsed >= Self.dailyQuota }
-    var isNearQuota: Bool       { dailyUsed >= 16 }
+    var questionsRemaining: Int { serverDailyLimit - dailyUsed }
+    var isQuotaExhausted: Bool  { dailyUsed >= serverDailyLimit }
+    var isNearQuota: Bool       { dailyUsed >= serverDailyLimit - 4 }
 
     var piLevel: Int { Self.piLevel(forPosition: piPosition) }
 
@@ -295,7 +298,7 @@ import SwiftUI
 
     func consumeQuestion() {
         checkResetQuota()
-        set(dailyUsed: min(Self.dailyQuota, dailyUsed + 1))
+        set(dailyUsed: min(serverDailyLimit, dailyUsed + 1))
         bumpLastActive()
     }
 
@@ -348,18 +351,19 @@ import SwiftUI
         }
     }
 
-    func applyRound(mode: GameMode, correctCount: Int, level: Int, avgTime: Double, won: Bool) -> RoundResult {
+    func applyRound(mode: GameMode, correctCount: Int, level: Int, avgTime: Double, won: Bool, difficultyMultiplier: Double = 1.0) -> RoundResult {
+        let scoreTime = difficultyMultiplier == 1.0 ? avgTime : max(0.21, avgTime / difficultyMultiplier)
         switch mode {
-        case .pi:            return applyPiRound(correctCount: correctCount, avgTime: avgTime, won: won)
-        case .math:          return applyMathRound(correctCount: correctCount, level: level, avgTime: avgTime, won: won)
-        case .chemistry:     return applyChemRound(correctCount: correctCount, level: level, avgTime: avgTime, won: won)
-        case .geography:     return applyGeoRound(correctCount: correctCount, level: level, avgTime: avgTime, won: won)
-        case .brainTraining: return applyBrainRound(correctCount: correctCount, level: level, avgTime: avgTime, won: won)
-        case .science:       return applyScienceRound(correctCount: correctCount, level: level, avgTime: avgTime, won: won)
-        case .history:       return applyHistoryRound(correctCount: correctCount, level: level, avgTime: avgTime, won: won)
-        case .physics:       return applyPhysicsRound(correctCount: correctCount, level: level, avgTime: avgTime, won: won)
-        case .sport:         return applySportRound(correctCount: correctCount, level: level, avgTime: avgTime, won: won)
-        case .grammar:       return applyGrammarRound(correctCount: correctCount, level: level, avgTime: avgTime, won: won)
+        case .pi:            return applyPiRound(correctCount: correctCount, avgTime: scoreTime, won: won)
+        case .math:          return applyMathRound(correctCount: correctCount, level: level, avgTime: scoreTime, won: won)
+        case .chemistry:     return applyChemRound(correctCount: correctCount, level: level, avgTime: scoreTime, won: won)
+        case .geography:     return applyGeoRound(correctCount: correctCount, level: level, avgTime: scoreTime, won: won)
+        case .brainTraining: return applyBrainRound(correctCount: correctCount, level: level, avgTime: scoreTime, won: won)
+        case .science:       return applyScienceRound(correctCount: correctCount, level: level, avgTime: scoreTime, won: won)
+        case .history:       return applyHistoryRound(correctCount: correctCount, level: level, avgTime: scoreTime, won: won)
+        case .physics:       return applyPhysicsRound(correctCount: correctCount, level: level, avgTime: scoreTime, won: won)
+        case .sport:         return applySportRound(correctCount: correctCount, level: level, avgTime: scoreTime, won: won)
+        case .grammar:       return applyGrammarRound(correctCount: correctCount, level: level, avgTime: scoreTime, won: won)
         }
     }
 
@@ -387,13 +391,14 @@ import SwiftUI
         persistGeneric()
     }
 
-    func applyGenericRound(slug: String, correctCount: Int, level startLevel: Int, avgTime: Double, won: Bool) -> RoundResult {
+    func applyGenericRound(slug: String, correctCount: Int, level startLevel: Int, avgTime: Double, won: Bool, difficultyMultiplier: Double = 1.0) -> RoundResult {
         guard !isFlagged, correctCount > 0, avgTime > 0.2 else {
             incrementRounds()
             return RoundResult(score: 0, isPersonalBest: false)
         }
+        let scoreTime = difficultyMultiplier == 1.0 ? avgTime : max(0.21, avgTime / difficultyMultiplier)
         let pts   = Double(correctCount) * Self.levelMultiplier(startLevel)
-        let score = max(0, Int(pts * (Self.K / avgTime)))
+        let score = max(0, Int(pts * (Self.K / scoreTime)))
 
         if !won {
             let rollback    = max(0, Int(Double(correctCount) * Self.rollbackRate))
@@ -436,6 +441,7 @@ import SwiftUI
                 let body = QuotaSyncRequest(localDate: DateFormatter.localDate.string(from: Date()), localCount: dailyUsed)
                 let quota: QuotaInfo = try await APIClient.shared.post("games/quota/sync", body: body)
                 set(dailyUsed: max(dailyUsed, quota.used))
+                set(serverDailyLimit: quota.limit)
                 // Patch locale so stats stay accurate
                 let locale = Locale.current.language.languageCode?.identifier ?? Locale.current.identifier.components(separatedBy: "_").first ?? "en"
                 struct LocalePatch: Encodable { let locale: String }
@@ -532,8 +538,9 @@ import SwiftUI
         let isPersonalBest: Bool
     }
 
-    func applyPiRound(correctCount: Int, avgTime: Double, won: Bool) -> RoundResult {
-        let score = piScore(correctCount: correctCount, avgTime: avgTime)
+    func applyPiRound(correctCount: Int, avgTime: Double, won: Bool, difficultyMultiplier: Double = 1.0) -> RoundResult {
+        let scoreTime = difficultyMultiplier == 1.0 ? avgTime : max(0.21, avgTime / difficultyMultiplier)
+        let score = piScore(correctCount: correctCount, avgTime: scoreTime)
         // piPosition is advanced live via advancePiPosition() during the round.
         // On loss we still apply a small rollback as a soft "make-it-stick" penalty.
         if !won && correctCount > 0 {
@@ -972,8 +979,9 @@ import SwiftUI
         UserDefaults.standard.set(val, forKey: "grammarBestScore")
     }
 
-    func applyMathRound(correctCount: Int, level: Int, avgTime: Double, won: Bool) -> RoundResult {
-        let score = mathScore(correctCount: correctCount, level: level, avgTime: avgTime)
+    func applyMathRound(correctCount: Int, level: Int, avgTime: Double, won: Bool, difficultyMultiplier: Double = 1.0) -> RoundResult {
+        let scoreTime = difficultyMultiplier == 1.0 ? avgTime : max(0.21, avgTime / difficultyMultiplier)
+        let score = mathScore(correctCount: correctCount, level: level, avgTime: scoreTime)
         if !won && correctCount > 0 {
             let rollback     = max(0, Int(Double(correctCount) * Self.rollbackRate))
             var total        = (mathLevel - 1) * Self.mathLevelUpThreshold + mathLevelProgress
@@ -1057,6 +1065,11 @@ import SwiftUI
     private func set(dailyUsed val: Int) {
         dailyUsed = val
         UserDefaults.standard.set(val, forKey: "dailyUsed")
+    }
+
+    private func set(serverDailyLimit val: Int) {
+        serverDailyLimit = val
+        UserDefaults.standard.set(val, forKey: "serverDailyLimit")
     }
 
     // MARK: – Multiplayer integration
