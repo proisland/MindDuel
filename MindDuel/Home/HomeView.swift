@@ -92,7 +92,18 @@ struct HomeView: View {
                             }
 
                             favoritesSection
-                            quickAccessSection
+
+                            // Daily challenge card
+                            if let challenge = dailyChallenge.challenge {
+                                DailyChallengeCard(challenge: challenge) {
+                                    if let gm = GameMode(slug: challenge.mode.slug) {
+                                        startOrResume(gm)
+                                    } else if let sm = modeCache.serverOnlyModes.first(where: { $0.slug == challenge.mode.slug }) {
+                                        startOrResumeServer(sm)
+                                    }
+                                }
+                                .padding(.horizontal, MDSpacing.md)
+                            }
 
                             // Rejoin banner (one or multiple active games)
                             if !playingRooms.isEmpty {
@@ -107,18 +118,6 @@ struct HomeView: View {
                             // Scoreboard shortcut (redesigned)
                             scoreboardCard
                                 .padding(.horizontal, MDSpacing.md)
-
-                            // Daily challenge card
-                            if let challenge = dailyChallenge.challenge {
-                                DailyChallengeCard(challenge: challenge) {
-                                    if let gm = GameMode(slug: challenge.mode.slug) {
-                                        startOrResume(gm)
-                                    } else if let sm = modeCache.serverOnlyModes.first(where: { $0.slug == challenge.mode.slug }) {
-                                        startOrResumeServer(sm)
-                                    }
-                                }
-                                .padding(.horizontal, MDSpacing.md)
-                            }
 
                             // Recent activity — always visible
                             recentActivitySection
@@ -229,65 +228,26 @@ struct HomeView: View {
                 .buttonStyle(.plain)
             }
 
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
-                                GridItem(.flexible(), spacing: 10)],
-                      spacing: 10) {
-                ForEach(featured) { mode in
-                    switch mode {
-                    case .known(let gm):
-                        MDFeaturedCard(
-                            mode: gm,
-                            score: progression.bestScore(for: gm),
-                            level: progression.level(for: gm),
-                            streak: progression.currentStreak(for: gm),
-                            action: { startOrResume(gm) }
-                        )
-                        .contextMenu {
-                            Button { startOrResume(gm) } label: {
-                                Label(String(localized: "play_normal_action"), systemImage: "play.fill")
-                            }
-                            if gm == .pi || gm == .math {
-                                Button { startPractice(gm) } label: {
-                                    Label(String(localized: "practice_round_action"), systemImage: "dumbbell.fill")
-                                }
-                            }
-                        }
-                    case .server(let sm):
-                        MDServerFeaturedCard(
-                            serverMode: sm,
-                            score: progression.bestScore(forSlug: sm.slug),
-                            level: progression.level(forSlug: sm.slug),
-                            action: { startOrResumeServer(sm) }
-                        )
+            // Non-lazy 2-column grid — avoids LazyVGrid's intermittent
+            // first-row rendering glitch on iOS 16/17.
+            let row1 = Array(featured.prefix(2))
+            let row2 = Array(featured.dropFirst(2).prefix(2))
+            VStack(spacing: 10) {
+                if !row1.isEmpty {
+                    HStack(spacing: 10) {
+                        ForEach(row1) { featuredCardView(for: $0) }
+                        if row1.count < 2 { Color.clear.frame(maxWidth: .infinity) }
+                    }
+                }
+                if !row2.isEmpty {
+                    HStack(spacing: 10) {
+                        ForEach(row2) { featuredCardView(for: $0) }
+                        if row2.count < 2 { Color.clear.frame(maxWidth: .infinity) }
                     }
                 }
             }
         }
         .padding(.horizontal, MDSpacing.md)
-    }
-
-    private var quickAccessSection: some View {
-        VStack(alignment: .leading, spacing: MDSpacing.xs) {
-            Text(String(localized: "quick_access_title"))
-                .font(.system(size: 13, weight: .heavy))
-                .foregroundStyle(Color.mdText)
-                .padding(.horizontal, MDSpacing.md)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(prefs.activeOrder, id: \.self) { mode in
-                        MDQuickPill(mode: mode) { startOrResume(mode) }
-                    }
-                    ForEach(modeCache.serverOnlyModes) { serverMode in
-                        ServerModeQuickPill(serverMode: serverMode) {
-                            startOrResumeServer(serverMode)
-                        }
-                    }
-                }
-                .padding(.horizontal, MDSpacing.md)
-                .padding(.vertical, 2)
-            }
-        }
     }
 
     // MARK: – Rejoin banner
@@ -469,6 +429,37 @@ struct HomeView: View {
                     }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func featuredCardView(for mode: AnyMode) -> some View {
+        switch mode {
+        case .known(let gm):
+            MDFeaturedCard(
+                mode: gm,
+                score: progression.bestScore(for: gm),
+                level: progression.level(for: gm),
+                streak: progression.currentStreak(for: gm),
+                action: { startOrResume(gm) }
+            )
+            .contextMenu {
+                Button { startOrResume(gm) } label: {
+                    Label(String(localized: "play_normal_action"), systemImage: "play.fill")
+                }
+                if gm == .pi || gm == .math {
+                    Button { startPractice(gm) } label: {
+                        Label(String(localized: "practice_round_action"), systemImage: "dumbbell.fill")
+                    }
+                }
+            }
+        case .server(let sm):
+            MDServerFeaturedCard(
+                serverMode: sm,
+                score: progression.bestScore(forSlug: sm.slug),
+                level: progression.level(forSlug: sm.slug),
+                action: { startOrResumeServer(sm) }
+            )
         }
     }
 

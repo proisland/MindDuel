@@ -169,6 +169,8 @@ extension UserProfile {
             do {
                 struct Body: Encodable { let username: String }
                 let _: Empty = try await APIClient.shared.post("friends/requests", body: Body(username: username))
+            } catch APIError.conflict {
+                // 409 means a request already exists — keep the optimistic UI state
             } catch {
                 sentRequestUsernames.remove(username)
             }

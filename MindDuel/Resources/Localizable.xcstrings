@@ -3219,38 +3219,6 @@
         }
       }
     },
-    "upgrade_coming_soon_message" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Premium subscription is coming soon. Stay tuned!"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Premium-abonnement kommer snart. Følg med!"
-          }
-        }
-      }
-    },
-    "upgrade_coming_soon_title" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Premium"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Premium"
-          }
-        }
-      }
-    },
     "quota_warning_subtitle" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4000,6 +3968,7 @@
       }
     },
     "scoreboard_total_label" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4557,6 +4526,36 @@
             "value" : "Logg ut"
           }
         }
+      }
+    },
+    "settings_difficulty_section" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Gameplay" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Spillinnstillinger" } }
+      }
+    },
+    "settings_difficulty_label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Difficulty" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Vanskelighetsgrad" } }
+      }
+    },
+    "difficulty_easy" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Easy" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Lett" } }
+      }
+    },
+    "difficulty_normal" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Normal" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Normal" } }
+      }
+    },
+    "difficulty_hard" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hard" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Vanskelig" } }
       }
     },
     "settings_subscription_section" : {
@@ -5136,6 +5135,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "sek"
+          }
+        }
+      }
+    },
+    "upgrade_coming_soon_message" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium subscription is coming soon. Stay tuned!"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium-abonnement kommer snart. Følg med!"
+          }
+        }
+      }
+    },
+    "upgrade_coming_soon_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium"
           }
         }
       }

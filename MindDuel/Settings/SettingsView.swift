@@ -6,6 +6,7 @@ struct SettingsView: View {
     @AppStorage("selectedLanguageCode") private var selectedLanguageCode = "system"
     @AppStorage("privacyHideLastActive") private var privacyHideLastActive = false
     @AppStorage("privacyMutualFriendsOnly") private var privacyMutualFriendsOnly = false
+    @AppStorage("game.difficulty") private var difficultyRaw: String = "normal"
     @State private var notificationsEnabled = UserDefaults.standard.bool(forKey: "notificationsEnabled")
     @State private var showSignOutModal = false
     @State private var showLanguagePicker = false
@@ -65,6 +66,21 @@ struct SettingsView: View {
                                 )
                             }
                             .buttonStyle(.plain)
+                        }
+
+                        settingsSection(String(localized: "settings_difficulty_section")) {
+                            toggleRow(
+                                icon: "speedometer", iconBg: .mdAccentSoft, iconColor: .mdAccent,
+                                label: String(localized: "settings_difficulty_label")
+                            ) {
+                                Picker("", selection: $difficultyRaw) {
+                                    Text(String(localized: "difficulty_easy")).tag("easy")
+                                    Text(String(localized: "difficulty_normal")).tag("normal")
+                                    Text(String(localized: "difficulty_hard")).tag("hard")
+                                }
+                                .pickerStyle(.segmented)
+                                .frame(maxWidth: 160)
+                            }
                         }
 
                         settingsSection(String(localized: "settings_subscription_section")) {
