@@ -105,7 +105,7 @@ extension UserProfile {
         )
     }
 
-    private static func relativeTime(_ date: Date) -> String {
+    static func relativeTime(_ date: Date) -> String {
         let secs = Int(Date().timeIntervalSince(date))
         if secs < 60 { return "Nå" }
         if secs < 3600 { return "\(secs/60)m siden" }
@@ -132,10 +132,11 @@ extension UserProfile {
     // MARK: – Refresh from API
 
     func refresh() async {
-        async let friendsTask: [APIFriend] = (try? APIClient.shared.get("friends")) ?? []
+        async let friendsTask: FriendsResponse? = try? APIClient.shared.get("friends")
         async let requestsTask: FriendRequestsResponse? = try? APIClient.shared.get("friends/requests")
-        let (fetchedFriends, requestsResp) = await (friendsTask, requestsTask)
+        let (friendsResp, requestsResp) = await (friendsTask, requestsTask)
 
+        let fetchedFriends = friendsResp?.friends ?? []
         apiFriends = fetchedFriends
         friends = fetchedFriends.map { UserProfile(from: $0) }
         friendUsernames = Set(fetchedFriends.map(\.username))

@@ -113,6 +113,8 @@ struct HomeView: View {
                                 DailyChallengeCard(challenge: challenge) {
                                     if let gm = GameMode(slug: challenge.mode.slug) {
                                         startOrResume(gm)
+                                    } else if let sm = modeCache.serverOnlyModes.first(where: { $0.slug == challenge.mode.slug }) {
+                                        startOrResumeServer(sm)
                                     }
                                 }
                                 .padding(.horizontal, MDSpacing.md)
@@ -472,7 +474,7 @@ struct HomeView: View {
 
     private func startOrResume(_ mode: GameMode) {
         let resumeRoomID = multiplayer.backgroundRooms.first(where: {
-            $0.isStandaloneSolo && $0.mode == mode && $0.status == .playing
+            $0.isStandaloneSolo && $0.mode == mode && $0.serverModeSlug == nil && $0.status == .playing
         })?.id
         gamePath.append(GameModeRoute(mode: mode, resumeRoomID: resumeRoomID))
     }

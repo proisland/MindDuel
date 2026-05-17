@@ -11,6 +11,7 @@ import feedbackRoutes from './feedback'
 import wsRoutes from './ws'
 import challengesRoutes from './challenges'
 import activityRoutes from './activity'
+import usersRoutes from './users'
 
 export default async function v1Routes(app: FastifyInstance) {
   app.register(authRoutes,       { prefix: '/auth' })
@@ -24,6 +25,7 @@ export default async function v1Routes(app: FastifyInstance) {
   app.register(feedbackRoutes,   { prefix: '/feedback' })
   app.register(challengesRoutes, { prefix: '/challenges' })
   app.register(activityRoutes,   { prefix: '/activity' })
+  app.register(usersRoutes,      { prefix: '/users' })
   app.register(wsRoutes)         // registers /rooms/* and /rooms/:id/ws
 
   app.get('/health', async (_request, reply) =>
