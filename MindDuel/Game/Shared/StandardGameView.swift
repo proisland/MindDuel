@@ -19,6 +19,7 @@ struct StandardGameView: View {
     @State private var showQuitModal     = false
     @State private var roundResult:      ProgressionStore.RoundResult? = nil
     @State private var startLevel:       Int
+    @State private var hasRestoredSession = false
 
     @AppStorage("game.difficulty") private var difficultyRaw: String = "normal"
     private var difficulty: GameDifficulty { GameDifficulty(rawValue: difficultyRaw) ?? .normal }
@@ -106,22 +107,17 @@ struct StandardGameView: View {
     // MARK: – Session restore / save
 
     private func restoreSavedSessionIfNeeded() {
-        guard resumeRoomID != nil else { return }
-        // Fall back to mode-based lookup when the ID has drifted after a re-save.
-        let popped = MultiplayerStore.shared.popStandaloneSolo(roomID: resumeRoomID!)
-            ?? MultiplayerStore.shared.popStandaloneSoloByMode(mode)
-        guard let room = popped, let me = room.players.first(where: { $0.isYou }) else { return }
+        guard !hasRestoredSession, resumeRoomID != nil else { return }
+        hasRestoredSession = true
+        // Use mode-based lookup (ID may have drifted after a re-save).
+        let room = MultiplayerStore.shared.backgroundRooms.first(where: {
+            $0.isStandaloneSolo && $0.mode == mode && $0.serverModeSlug == nil
+        })
+        guard let room, let me = room.players.first(where: { $0.isYou }) else { return }
         startLevel   = max(1, room.startLevel)
         problem      = Self.generate(mode: mode, level: progression.level(for: mode))
         problemCount = max(1, me.correctCount + 1)
         engine.restoreState(lives: me.lives, skips: me.skips, correctCount: me.correctCount)
-        // Re-save immediately so the session survives a crash or early dismiss
-        // before onDisappear has a chance to call autoSaveIfInProgress.
-        _ = MultiplayerStore.shared.saveStandaloneSolo(
-            mode: mode, ownUsername: username,
-            lives: me.lives, skips: me.skips, score: 0,
-            correctCount: me.correctCount, startLevel: startLevel
-        )
     }
 
     private func saveSessionAndExit() {

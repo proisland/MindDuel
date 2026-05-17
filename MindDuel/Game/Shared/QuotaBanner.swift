@@ -3,6 +3,7 @@ import SwiftUI
 struct QuotaBanner: View {
     let used: Int
     let total: Int
+    var onUpgrade: (() -> Void)? = nil
 
     var body: some View {
         HStack(spacing: MDSpacing.sm) {
@@ -26,8 +27,10 @@ struct QuotaBanner: View {
 
             Spacer()
 
-            MDButton(.primary, title: String(localized: "quota_upgrade_action")) { }
-                .frame(width: 100)
+            MDButton(.primary, title: String(localized: "quota_upgrade_action")) {
+                onUpgrade?()
+            }
+            .frame(width: 100)
         }
         .padding(.horizontal, MDSpacing.md)
         .padding(.vertical, MDSpacing.sm)

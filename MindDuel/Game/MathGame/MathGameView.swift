@@ -18,6 +18,7 @@ struct MathGameView: View {
     @State private var showQuitModal     = false
     @State private var roundResult:      ProgressionStore.RoundResult? = nil
     @State private var startLevel:       Int
+    @State private var hasRestoredSession = false
 
     @AppStorage("game.difficulty") private var difficultyRaw: String = "normal"
     private var difficulty: GameDifficulty { GameDifficulty(rawValue: difficultyRaw) ?? .normal }
@@ -108,20 +109,17 @@ struct MathGameView: View {
     // MARK: – Session restore / save
 
     private func restoreSavedSessionIfNeeded() {
-        guard resumeRoomID != nil else { return }
-        // Fall back to mode-based lookup when the ID has drifted after a re-save.
-        let popped = MultiplayerStore.shared.popStandaloneSolo(roomID: resumeRoomID!)
-            ?? MultiplayerStore.shared.popStandaloneSoloByMode(.math)
-        guard let room = popped, let me = room.players.first(where: { $0.isYou }) else { return }
+        guard !hasRestoredSession, resumeRoomID != nil else { return }
+        hasRestoredSession = true
+        // Use mode-based lookup (ID may have drifted after a re-save).
+        let room = MultiplayerStore.shared.backgroundRooms.first(where: {
+            $0.isStandaloneSolo && $0.mode == .math && $0.serverModeSlug == nil
+        })
+        guard let room, let me = room.players.first(where: { $0.isYou }) else { return }
         startLevel = max(1, room.startLevel)
         problem    = MathProblemGenerator.generate(level: progression.mathLevel)
         problemCount = max(1, me.correctCount + 1)
         engine.restoreState(lives: me.lives, skips: me.skips, correctCount: me.correctCount)
-        // Re-save immediately so the session survives a crash or early dismiss.
-        _ = MultiplayerStore.shared.saveStandaloneSoloMath(
-            ownUsername: username, lives: me.lives, skips: me.skips,
-            score: 0, correctCount: me.correctCount, startLevel: startLevel
-        )
     }
 
     private func saveSessionAndExit() {

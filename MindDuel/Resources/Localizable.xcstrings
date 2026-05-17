@@ -13,6 +13,16 @@
     "@%@" : {
 
     },
+    "@%@ og @%@ ble venner" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "@%1$@ og @%2$@ ble venner"
+          }
+        }
+      }
+    },
     "#%@" : {
 
     },
@@ -42,10 +52,23 @@
         }
       }
     },
+    "%@ holder %@-dagers streak" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ holder %2$@-dagers streak"
+          }
+        }
+      }
+    },
     "∑" : {
 
     },
     "⚗︎" : {
+
+    },
+    "🔥" : {
 
     },
     "accept_action" : {
@@ -201,6 +224,57 @@
         }
       }
     },
+    "activity_friend_and" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "and"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "og"
+          }
+        }
+      }
+    },
+    "activity_friend_suffix" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "became friends"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ble venner"
+          }
+        }
+      }
+    },
+    "activity_friend_you" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You and"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du og"
+          }
+        }
+      }
+    },
     "activity_lost_format" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -252,6 +326,57 @@
         }
       }
     },
+    "activity_streak_days_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld-day streak"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld-dagers streak"
+          }
+        }
+      }
+    },
+    "activity_streak_mode_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "i %@"
+          }
+        }
+      }
+    },
+    "activity_streak_you" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're on a"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du holder"
+          }
+        }
+      }
+    },
     "activity_won_format" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -267,42 +392,6 @@
             "value" : "Du vant mot @%@"
           }
         }
-      }
-    },
-    "activity_friend_and" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "and" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "og" } }
-      }
-    },
-    "activity_friend_suffix" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "became friends" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "ble venner" } }
-      }
-    },
-    "activity_friend_you" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "You and" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Du og" } }
-      }
-    },
-    "activity_streak_days_format" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld-day streak" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "%lld-dagers streak" } }
-      }
-    },
-    "activity_streak_mode_format" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "in %@" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "i %@" } }
-      }
-    },
-    "activity_streak_you" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "You're on a" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Du holder" } }
       }
     },
     "activity_won_prefix" : {
@@ -1087,6 +1176,9 @@
         }
       }
     },
+    "Du og @%@ ble venner" : {
+
+    },
     "error_account_suspended" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1715,6 +1807,9 @@
           }
         }
       }
+    },
+    "i %@" : {
+
     },
     "last_active_now" : {
       "extractionState" : "stale",

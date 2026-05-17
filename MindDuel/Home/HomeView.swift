@@ -52,6 +52,7 @@ struct HomeView: View {
     @State private var showOnboarding = false
     @State private var practiceMode: GameMode? = nil
     @State private var pendingGameMode: GameMode? = nil
+    @State private var showUpgradeComingSoon = false
     @AppStorage("game.difficulty") private var difficultyRaw: String = "normal"
     private var difficulty: GameDifficulty { GameDifficulty(rawValue: difficultyRaw) ?? .normal }
 
@@ -112,7 +113,8 @@ struct HomeView: View {
                             if progression.isNearQuota {
                                 QuotaBanner(
                                     used: progression.dailyUsed,
-                                    total: ProgressionStore.dailyQuota
+                                    total: ProgressionStore.dailyQuota,
+                                    onUpgrade: { showUpgradeComingSoon = true }
                                 )
                                 .padding(.horizontal, MDSpacing.md)
                             }
@@ -207,6 +209,14 @@ struct HomeView: View {
                 pendingGameMode = nil
                 gamePath.append(GameModeRoute(mode: mode, resumeRoomID: nil))
             }
+        }
+        .alert(
+            String(localized: "upgrade_coming_soon_title"),
+            isPresented: $showUpgradeComingSoon
+        ) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(String(localized: "upgrade_coming_soon_message"))
         }
     }
 

@@ -94,14 +94,22 @@ export default async function activityRoutes(app: FastifyInstance) {
       : []
     const modeNameMap = new Map(modeRows.map((m: any) => [m.slug, m.nameNo || m.nameEn || m.slug]))
 
-    const newFriendItems = recentFriendships.map((f: any) => ({
-      id: `friend-${f.senderId}-${f.receiverId}`,
-      type: 'new_friend',
-      createdAt: f.createdAt.toISOString(),
-      user1: { username: f.sender.username ?? '?', avatarEmoji: f.sender.avatarEmoji },
-      user2: { username: f.receiver.username ?? '?', avatarEmoji: f.receiver.avatarEmoji },
-      isMe: f.senderId === request.userId || f.receiverId === request.userId,
-    }))
+    const newFriendItems = recentFriendships.map((f: any) => {
+      const isSender = f.senderId === request.userId
+      const isMe = isSender || f.receiverId === request.userId
+      // When isMe, always put the current user in user1 and the friend in user2
+      // so the iOS "Du og @user2 ble venner" string renders correctly.
+      const user1 = isMe ? (isSender ? f.sender : f.receiver) : f.sender
+      const user2 = isMe ? (isSender ? f.receiver : f.sender) : f.receiver
+      return {
+        id: `friend-${f.senderId}-${f.receiverId}`,
+        type: 'new_friend',
+        createdAt: f.createdAt.toISOString(),
+        user1: { username: user1.username ?? '?', avatarEmoji: user1.avatarEmoji },
+        user2: { username: user2.username ?? '?', avatarEmoji: user2.avatarEmoji },
+        isMe,
+      }
+    })
 
     const streakItems = activeStreaks.map((p: any) => ({
       id: `streak-${p.userId}-${p.mode}`,

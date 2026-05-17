@@ -35,7 +35,7 @@ const endSessionBody = z.object({
 
 const syncQuotaBody = z.object({
   localDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  localCount: z.number().int().min(0).max(config.quota.freeLimit),
+  localCount: z.number().int().min(0).max(9999),
 })
 
 async function getOrCreateQuota(
@@ -54,10 +54,11 @@ async function checkQuota(
   prisma: FastifyInstance['prisma'],
   userId: string,
   isPremium: boolean,
+  isUnlimited: boolean,
   isTraining: boolean,
   localDate: string,
 ): Promise<{ allowed: boolean; count: number; remaining: number }> {
-  if (isPremium || isTraining) return { allowed: true, count: 0, remaining: 999 }
+  if (isPremium || isUnlimited || isTraining) return { allowed: true, count: 0, remaining: 999 }
 
   const quota = await getOrCreateQuota(prisma, userId, localDate)
   const count = quota.date === localDate ? quota.count : 0
@@ -87,13 +88,13 @@ export default async function gamesRoutes(app: FastifyInstance) {
 
     const user = await app.prisma.user.findUnique({
       where: { id: request.userId },
-      select: { isPremium: true, isSuspended: true, progressions: { where: { mode: body.data.mode } } },
+      select: { isPremium: true, isUnlimited: true, isSuspended: true, progressions: { where: { mode: body.data.mode } } },
     })
     if (!user) return reply.status(404).send({ error: 'User not found' })
     if (user.isSuspended) return reply.status(403).send({ error: 'Account suspended' })
 
     const { allowed, remaining } = await checkQuota(
-      app.prisma, request.userId, user.isPremium, body.data.isTraining, body.data.localDate,
+      app.prisma, request.userId, user.isPremium, user.isUnlimited, body.data.isTraining, body.data.localDate,
     )
     if (!allowed) return reply.status(429).send({ error: 'Daily quota exceeded', quotaRemaining: 0 })
 
@@ -340,17 +341,18 @@ export default async function gamesRoutes(app: FastifyInstance) {
     const date = localDate ?? new Date().toISOString().slice(0, 10)
 
     const [user, quota] = await Promise.all([
-      app.prisma.user.findUnique({ where: { id: request.userId }, select: { isPremium: true } }),
+      app.prisma.user.findUnique({ where: { id: request.userId }, select: { isPremium: true, isUnlimited: true } }),
       app.prisma.dailyQuota.findUnique({ where: { userId: request.userId } }),
     ])
 
     if (!user) return reply.status(404).send({ error: 'User not found' })
 
     const count = quota?.date === date ? quota.count : 0
+    const isExempt = user.isPremium || user.isUnlimited
     const limit = config.quota.freeLimit
-    const remaining = user.isPremium ? 999 : Math.max(0, limit - count)
+    const remaining = isExempt ? 999 : Math.max(0, limit - count)
 
-    return reply.send({ date, count, limit: user.isPremium ? null : limit, remaining })
+    return reply.send({ date, count, limit: isExempt ? null : limit, remaining })
   })
 
   // POST /v1/games/quota/sync — reconcile offline count with server

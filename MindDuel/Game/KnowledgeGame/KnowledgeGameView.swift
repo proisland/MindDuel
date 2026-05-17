@@ -21,6 +21,7 @@ struct KnowledgeGameView: View {
     @State private var startLevel:           Int
     @State private var feedbackTask:         Task<Void, Never>? = nil
     @State private var sessionEnded         = false
+    @State private var hasRestoredSession   = false
 
     @AppStorage("game.difficulty") private var difficultyRaw: String = "normal"
     private var difficulty: GameDifficulty { GameDifficulty(rawValue: difficultyRaw) ?? .normal }
@@ -290,19 +291,16 @@ struct KnowledgeGameView: View {
     }
 
     private func restoreSavedSessionIfNeeded() {
-        guard let id = resumeRoomID,
-              let room = MultiplayerStore.shared.popStandaloneSolo(roomID: id),
-              let me = room.players.first(where: { $0.isYou }) else { return }
+        guard !hasRestoredSession, let id = resumeRoomID else { return }
+        hasRestoredSession = true
+        let room = MultiplayerStore.shared.backgroundRooms.first(where: {
+            $0.id == id || ($0.isStandaloneSolo && $0.serverModeSlug == serverMode.slug)
+        })
+        guard let room, let me = room.players.first(where: { $0.isYou }) else { return }
         startLevel = max(1, room.startLevel)
         currentQuestion = KnowledgeProblemGenerator.generate(slug: serverMode.slug, level: startLevel)
         problemCount = max(1, me.correctCount + 1)
         engine.restoreState(lives: me.lives, skips: me.skips, correctCount: me.correctCount)
-        // Re-save immediately so the session survives a crash or early dismiss.
-        _ = MultiplayerStore.shared.saveStandaloneSoloKnowledge(
-            slug: serverMode.slug, name: serverMode.name,
-            ownUsername: username, lives: me.lives, skips: me.skips,
-            score: 0, correctCount: me.correctCount, startLevel: startLevel
-        )
     }
 
     private func autoSaveIfInProgress() {
