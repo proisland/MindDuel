@@ -57,6 +57,29 @@ struct HomeView: View {
 
     private var pendingBadge: Int { social.totalPendingCount }
     private var inviteBadge: Int  { multiplayer.pendingInviteCount }
+
+    private enum FeedRow: Identifiable {
+        case game(MultiplayerActivityItem)
+        case social(SocialFeedItem)
+        var id: String {
+            switch self {
+            case .game(let g):   return g.id.uuidString
+            case .social(let s): return s.id
+            }
+        }
+        var timestamp: Date {
+            switch self {
+            case .game(let g):   return g.timestamp
+            case .social(let s): return s.createdAt
+            }
+        }
+    }
+
+    private var mergedFeed: [FeedRow] {
+        let gameRows   = multiplayer.recentActivity.map { FeedRow.game($0) }
+        let socialRows = social.socialFeed.map { FeedRow.social($0) }
+        return (gameRows + socialRows).sorted { $0.timestamp > $1.timestamp }
+    }
     private var playingRooms: [MultiplayerRoom] { multiplayer.playingRooms }
 
     var body: some View {
@@ -408,7 +431,7 @@ struct HomeView: View {
                     .mdStyle(.bodyMd)
                     .foregroundStyle(Color.mdText)
                 Spacer()
-                if !multiplayer.recentActivity.isEmpty {
+                if !mergedFeed.isEmpty {
                     Button { activeDestination = .activityList } label: {
                         Text(String(localized: "recent_activity_see_all"))
                             .mdStyle(.caption)
@@ -418,7 +441,8 @@ struct HomeView: View {
                 }
             }
 
-            if multiplayer.recentActivity.isEmpty {
+            let rows = Array(mergedFeed.prefix(3))
+            if rows.isEmpty {
                 Text(String(localized: "no_activity_yet"))
                     .mdStyle(.caption)
                     .foregroundStyle(Color.mdText3)
@@ -429,10 +453,14 @@ struct HomeView: View {
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.mdBorder2, lineWidth: 0.5))
             } else {
                 VStack(spacing: 0) {
-                    let recent = Array(multiplayer.recentActivity.prefix(3))
-                    ForEach(Array(recent.enumerated()), id: \.element.id) { idx, item in
-                        activityRow(item)
-                        if idx < recent.count - 1 {
+                    ForEach(Array(rows.enumerated()), id: \.element.id) { idx, row in
+                        Group {
+                            switch row {
+                            case .game(let item):   activityRow(item)
+                            case .social(let item): socialActivityRow(item)
+                            }
+                        }
+                        if idx < rows.count - 1 {
                             Divider().background(Color.white.opacity(0.05))
                         }
                     }
@@ -541,6 +569,92 @@ struct HomeView: View {
             }
             Spacer()
             Text(item.timeAgoString)
+                .mdStyle(.micro)
+                .foregroundStyle(Color.mdText3)
+        }
+        .padding(.vertical, 10)
+    }
+
+    @ViewBuilder
+    private func socialActivityRow(_ item: SocialFeedItem) -> some View {
+        HStack(spacing: MDSpacing.sm) {
+            switch item.type {
+            case .newFriend:
+                ZStack(alignment: .bottomTrailing) {
+                    MDAvatar(username: item.user1?.username ?? "?", size: .sm)
+                    Image(systemName: "person.2.fill")
+                        .font(.system(size: 6, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(3)
+                        .background(Color.mdGreen)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(Color.mdBg, lineWidth: 1.5))
+                        .offset(x: 2, y: 2)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    if item.isMe == true {
+                        HStack(spacing: 3) {
+                            Text(String(localized: "activity_friend_you"))
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Color.mdText)
+                            Text("@\(item.user2?.username ?? "?")")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Color.mdAccent)
+                            Text(String(localized: "activity_friend_suffix"))
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Color.mdText)
+                        }
+                    } else {
+                        HStack(spacing: 3) {
+                            Text("@\(item.user1?.username ?? "?")")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Color.mdAccent)
+                            Text(String(localized: "activity_friend_and"))
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Color.mdText)
+                            Text("@\(item.user2?.username ?? "?")")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Color.mdAccent)
+                            Text(String(localized: "activity_friend_suffix"))
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Color.mdText)
+                        }
+                    }
+                }
+            case .streak:
+                ZStack(alignment: .bottomTrailing) {
+                    MDAvatar(username: item.user?.username ?? "?", size: .sm)
+                    Text("🔥")
+                        .font(.system(size: 11))
+                        .offset(x: 3, y: 3)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 3) {
+                        if item.isMine == true {
+                            Text(String(localized: "activity_streak_you"))
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Color.mdText)
+                        } else {
+                            Text("@\(item.user?.username ?? "?")")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Color.mdAccent)
+                        }
+                        Text(String(format: String(localized: "activity_streak_days_format"),
+                                    item.streakCount ?? 0))
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Color.mdText)
+                    }
+                    if let modeName = item.modeName {
+                        Text(String(format: String(localized: "activity_streak_mode_format"), modeName))
+                            .mdStyle(.micro)
+                            .foregroundStyle(Color.mdText3)
+                    }
+                }
+            case .unknown:
+                EmptyView()
+            }
+            Spacer()
+            Text(UserProfile.relativeTime(item.createdAt))
                 .mdStyle(.micro)
                 .foregroundStyle(Color.mdText3)
         }

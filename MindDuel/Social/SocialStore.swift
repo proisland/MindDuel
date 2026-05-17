@@ -128,6 +128,7 @@ extension UserProfile {
     // Live data from API (empty until refreshed)
     @Published private(set) var apiFriends: [APIFriend] = []
     @Published private(set) var apiPendingRequests: [APIFriendRequest] = []
+    @Published private(set) var socialFeed: [SocialFeedItem] = []
 
     // Legacy local state kept for UI compatibility
     @Published private(set) var friendUsernames: Set<String> = []
@@ -142,7 +143,8 @@ extension UserProfile {
     func refresh() async {
         async let friendsTask: FriendsResponse? = try? APIClient.shared.get("friends")
         async let requestsTask: FriendRequestsResponse? = try? APIClient.shared.get("friends/requests")
-        let (friendsResp, requestsResp) = await (friendsTask, requestsTask)
+        async let feedTask: SocialFeedResponse? = try? APIClient.shared.get("activity/feed")
+        let (friendsResp, requestsResp, feedResp) = await (friendsTask, requestsTask, feedTask)
 
         let fetchedFriends = friendsResp?.friends ?? []
         apiFriends = fetchedFriends
@@ -153,6 +155,7 @@ extension UserProfile {
             sentRequestUsernames = Set(reqs.sent.compactMap(\.toUsername))
             pendingRequests = reqs.received.map { UserProfile(from: $0) }
         }
+        socialFeed = feedResp?.feed ?? []
     }
 
     // MARK: – Queries

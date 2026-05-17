@@ -49,6 +49,43 @@ struct UserSearchResult: Decodable, Identifiable {
     let isPremium: Bool
 }
 
+// MARK: – Social activity feed
+
+struct SocialFeedUserSnippet: Codable {
+    let username: String
+    let avatarEmoji: String
+}
+
+enum SocialFeedItemType: String, Codable {
+    case newFriend = "new_friend"
+    case streak
+    case unknown
+
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = SocialFeedItemType(rawValue: raw) ?? .unknown
+    }
+}
+
+struct SocialFeedItem: Identifiable, Codable {
+    let id: String
+    let type: SocialFeedItemType
+    let createdAt: Date
+    // new_friend
+    let user1: SocialFeedUserSnippet?
+    let user2: SocialFeedUserSnippet?
+    let isMe: Bool?
+    // streak
+    let user: SocialFeedUserSnippet?
+    let streakCount: Int?
+    let modeName: String?
+    let isMine: Bool?
+}
+
+struct SocialFeedResponse: Decodable {
+    let feed: [SocialFeedItem]
+}
+
 struct RoomResponse: Decodable {
     let id: String
     let code: String

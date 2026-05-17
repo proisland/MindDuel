@@ -269,6 +269,42 @@
         }
       }
     },
+    "activity_friend_and" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "and" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "og" } }
+      }
+    },
+    "activity_friend_suffix" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "became friends" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "ble venner" } }
+      }
+    },
+    "activity_friend_you" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You and" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Du og" } }
+      }
+    },
+    "activity_streak_days_format" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld-day streak" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "%lld-dagers streak" } }
+      }
+    },
+    "activity_streak_mode_format" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "in %@" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "i %@" } }
+      }
+    },
+    "activity_streak_you" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You're on a" } },
+        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Du holder" } }
+      }
+    },
     "activity_won_prefix" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -966,23 +1002,25 @@
         }
       }
     },
-    "difficulty_picker_title" : {
+    "difficulty_picker_start_action" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose Difficulty"
+            "value" : "Start"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Velg vanskelighetsgrad"
+            "value" : "Start"
           }
         }
       }
     },
     "difficulty_picker_subtitle" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -998,23 +1036,25 @@
         }
       }
     },
-    "difficulty_picker_start_action" : {
+    "difficulty_picker_title" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Start"
+            "value" : "Choose Difficulty"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Start"
+            "value" : "Velg vanskelighetsgrad"
           }
         }
       }
     },
     "difficulty_seconds_format" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

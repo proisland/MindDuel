@@ -1,15 +1,37 @@
 import SwiftUI
 
 struct ActivityListView: View {
-    @ObservedObject private var store = MultiplayerStore.shared
+    @ObservedObject private var store  = MultiplayerStore.shared
+    @ObservedObject private var social = SocialStore.shared
     @Environment(\.dismiss) private var dismiss
 
     @State private var kudosSent: Set<String> = []
 
-    // Tick every 30s so timestamps like "1m" / "2t" refresh without the user
-    // having to navigate away and back.
     @State private var nowTick = Date()
     private let tickTimer = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
+
+    private enum FeedRow: Identifiable {
+        case game(MultiplayerActivityItem)
+        case social(SocialFeedItem)
+        var id: String {
+            switch self {
+            case .game(let g):   return g.id.uuidString
+            case .social(let s): return s.id
+            }
+        }
+        var timestamp: Date {
+            switch self {
+            case .game(let g):   return g.timestamp
+            case .social(let s): return s.createdAt
+            }
+        }
+    }
+
+    private var mergedFeed: [FeedRow] {
+        let gameRows   = store.recentActivity.map { FeedRow.game($0) }
+        let socialRows = social.socialFeed.map { FeedRow.social($0) }
+        return (gameRows + socialRows).sorted { $0.timestamp > $1.timestamp }
+    }
 
     var body: some View {
         ZStack {
@@ -20,7 +42,8 @@ struct ActivityListView: View {
                     EmptyView()
                 }
 
-                if store.recentActivity.isEmpty {
+                let rows = mergedFeed
+                if rows.isEmpty {
                     Spacer()
                     VStack(spacing: MDSpacing.sm) {
                         Image(systemName: "clock.badge.xmark")
@@ -34,8 +57,11 @@ struct ActivityListView: View {
                 } else {
                     ScrollView {
                         LazyVStack(spacing: MDSpacing.xs) {
-                            ForEach(store.recentActivity) { item in
-                                activityRow(item)
+                            ForEach(rows) { row in
+                                switch row {
+                                case .game(let item):   gameRow(item)
+                                case .social(let item): socialRow(item)
+                                }
                             }
                         }
                         .padding(.horizontal, MDSpacing.md)
@@ -47,7 +73,7 @@ struct ActivityListView: View {
         .onReceive(tickTimer) { nowTick = $0 }
     }
 
-    private func activityRow(_ item: MultiplayerActivityItem) -> some View {
+    private func gameRow(_ item: MultiplayerActivityItem) -> some View {
         HStack(spacing: MDSpacing.sm) {
             ZStack(alignment: .bottomTrailing) {
                 MDAvatar(username: item.opponentUsername, size: .sm)
@@ -86,6 +112,64 @@ struct ActivityListView: View {
                 .buttonStyle(.plain)
                 .disabled(alreadySent)
             }
+        }
+        .padding(MDSpacing.sm)
+        .background(Color.mdSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.mdBorder2, lineWidth: 0.5))
+    }
+
+    @ViewBuilder
+    private func socialRow(_ item: SocialFeedItem) -> some View {
+        HStack(spacing: MDSpacing.sm) {
+            switch item.type {
+            case .newFriend:
+                ZStack(alignment: .bottomTrailing) {
+                    MDAvatar(username: item.user1?.username ?? "?", size: .sm)
+                    Image(systemName: "person.2.fill")
+                        .font(.system(size: 6, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(3)
+                        .background(Color.mdGreen)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(Color.mdBg, lineWidth: 1.5))
+                        .offset(x: 2, y: 2)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    if item.isMe == true {
+                        Text("Du og @\(item.user2?.username ?? "?") ble venner")
+                            .mdStyle(.caption)
+                            .foregroundStyle(Color.mdText)
+                    } else {
+                        Text("@\(item.user1?.username ?? "?") og @\(item.user2?.username ?? "?") ble venner")
+                            .mdStyle(.caption)
+                            .foregroundStyle(Color.mdText)
+                    }
+                }
+            case .streak:
+                ZStack(alignment: .bottomTrailing) {
+                    MDAvatar(username: item.user?.username ?? "?", size: .sm)
+                    Text("🔥").font(.system(size: 11)).offset(x: 3, y: 3)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    let who = item.isMine == true ? "Du" : "@\(item.user?.username ?? "?")"
+                    Text("\(who) holder \(item.streakCount ?? 0)-dagers streak")
+                        .mdStyle(.caption)
+                        .foregroundStyle(Color.mdText)
+                    if let modeName = item.modeName {
+                        Text("i \(modeName)")
+                            .mdStyle(.micro)
+                            .foregroundStyle(Color.mdText3)
+                    }
+                }
+            case .unknown:
+                EmptyView()
+            }
+            Spacer()
+            Text(UserProfile.relativeTime(item.createdAt))
+                .mdStyle(.micro)
+                .foregroundStyle(Color.mdText3)
+                .id(nowTick)
         }
         .padding(MDSpacing.sm)
         .background(Color.mdSurface)
