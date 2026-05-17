@@ -5,6 +5,7 @@ struct RootView: View {
     @EnvironmentObject private var authState: AuthState
     @ObservedObject private var social = SocialStore.shared
     @ObservedObject private var multiplayer = MultiplayerStore.shared
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         Group {
@@ -24,6 +25,9 @@ struct RootView: View {
             updateAppBadge()
         }
         .onChange(of: authPhaseDescription) { _ in syncOwnUsername() }
+        .onChange(of: scenePhase) { _ in
+            if scenePhase == .active { Task { await social.refresh() } }
+        }
         .onChange(of: social.pendingRequests.count) { _ in updateAppBadge() }
         .onChange(of: multiplayer.pendingInvites.count) { _ in updateAppBadge() }
         .onChange(of: myTurnCount) { _ in updateAppBadge() }

@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
+import { sendPush } from '../../lib/apns'
 
 const requestBody = z.object({ username: z.string().min(1) })
 const respondBody = z.object({
@@ -79,10 +80,10 @@ export default async function friendsRoutes(app: FastifyInstance) {
     const body = requestBody.safeParse(request.body)
     if (!body.success) return reply.status(400).send({ error: 'Invalid body' })
 
-    const target = await app.prisma.user.findUnique({
-      where: { username: body.data.username },
-      select: { id: true },
-    })
+    const [target, sender] = await Promise.all([
+      app.prisma.user.findUnique({ where: { username: body.data.username }, select: { id: true } }),
+      app.prisma.user.findUnique({ where: { id: request.userId }, select: { username: true } }),
+    ])
     if (!target) return reply.status(404).send({ error: 'User not found' })
     if (target.id === request.userId) return reply.status(400).send({ error: 'Cannot add yourself' })
 
@@ -114,12 +115,27 @@ export default async function friendsRoutes(app: FastifyInstance) {
           data: { senderId: target.id, receiverId: request.userId },
         })
       })
+      // Notify both users that they are now friends
+      const senderName = sender?.username ?? 'Noen'
+      app.prisma.pushToken.findMany({ where: { userId: target.id } }).then(tokens => {
+        tokens.forEach(({ deviceToken }) =>
+          sendPush(deviceToken, 'Ny venn! 🎉', `${senderName} og du er nå venner`).catch(() => {}),
+        )
+      }).catch(() => {})
       return reply.status(201).send({ friendshipCreated: true })
     }
 
     await app.prisma.friendRequest.create({
       data: { fromUserId: request.userId, toUserId: target.id },
     })
+
+    // Fire-and-forget push notification to the request recipient
+    const senderName = sender?.username ?? 'Noen'
+    app.prisma.pushToken.findMany({ where: { userId: target.id } }).then(tokens => {
+      tokens.forEach(({ deviceToken }) =>
+        sendPush(deviceToken, 'Venneforespørsel', `${senderName} vil være venner med deg`).catch(() => {}),
+      )
+    }).catch(() => {})
 
     return reply.status(201).send({ message: 'Request sent' })
   })
