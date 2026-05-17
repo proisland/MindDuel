@@ -36,10 +36,15 @@ struct StandardGameView: View {
         _startLevel = State(initialValue: lvl)
         Self.resetRoundHistory(mode: mode)
         _problem = State(initialValue: Self.generate(mode: mode, level: lvl))
-        if let id = resumeRoomID,
-           let room = MultiplayerStore.shared.backgroundRooms.first(where: { $0.id == id }),
-           let me = room.players.first(where: { $0.isYou }) {
-            _engine = StateObject(wrappedValue: GameEngine(lives: me.lives, skips: me.skips, correctCount: me.correctCount))
+        if resumeRoomID != nil {
+            // Look up by mode rather than ID — the ID may have drifted after a re-save.
+            let resumeMode = mode
+            let savedRoom = MultiplayerStore.shared.backgroundRooms.first(where: { room in
+                room.isStandaloneSolo && room.mode == resumeMode && room.serverModeSlug == nil
+            })
+            if let me = savedRoom?.players.first(where: { $0.isYou }) {
+                _engine = StateObject(wrappedValue: GameEngine(lives: me.lives, skips: me.skips, correctCount: me.correctCount))
+            }
         }
     }
 
@@ -101,9 +106,11 @@ struct StandardGameView: View {
     // MARK: – Session restore / save
 
     private func restoreSavedSessionIfNeeded() {
-        guard let id = resumeRoomID,
-              let room = MultiplayerStore.shared.popStandaloneSolo(roomID: id),
-              let me = room.players.first(where: { $0.isYou }) else { return }
+        guard resumeRoomID != nil else { return }
+        // Fall back to mode-based lookup when the ID has drifted after a re-save.
+        let popped = MultiplayerStore.shared.popStandaloneSolo(roomID: resumeRoomID!)
+            ?? MultiplayerStore.shared.popStandaloneSoloByMode(mode)
+        guard let room = popped, let me = room.players.first(where: { $0.isYou }) else { return }
         startLevel   = max(1, room.startLevel)
         problem      = Self.generate(mode: mode, level: progression.level(for: mode))
         problemCount = max(1, me.correctCount + 1)

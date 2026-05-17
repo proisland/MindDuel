@@ -54,7 +54,9 @@ struct RootView: View {
     /// invites + rooms where it's currently the user's turn in the
     /// background. Anything that warrants the user picking up the phone.
     private var myTurnCount: Int {
-        multiplayer.backgroundRooms.filter { $0.status == .playing && $0.isMyTurn }.count
+        multiplayer.backgroundRooms.filter {
+            $0.status == .playing && $0.isMyTurn && !$0.isStandaloneSolo
+        }.count
     }
 
     private func updateAppBadge() {

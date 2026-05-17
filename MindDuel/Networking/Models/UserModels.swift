@@ -39,6 +39,7 @@ struct PublicUserProfile: Decodable {
     let id: String
     let username: String
     let avatarEmoji: String
+    let avatarUrl: String?
     let isPremium: Bool
     let isFlagged: Bool
     let lastActiveAt: Date?

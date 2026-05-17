@@ -33,6 +33,7 @@ struct UserProfile: Identifiable {
     var isFriend: Bool
     var isFlagged: Bool
     var isPremium: Bool = false
+    var avatarUrl: String? = nil
     /// Average answer time in seconds (#57). 0 = unknown / no data.
     var avgAnswerTime: Double = 0
     /// Score from the scoreboard API (avgScore). Used for server-only modes
@@ -89,7 +90,8 @@ extension UserProfile {
             roundsPlayed: 0, age: nil, city: nil,
             memberSince: "–",
             lastActive: friend.lastActiveAt.map { Self.relativeTime($0) } ?? "–",
-            isFriend: true, isFlagged: false, isPremium: friend.isPremium
+            isFriend: true, isFlagged: false, isPremium: friend.isPremium,
+            avatarUrl: friend.avatarUrl
         )
     }
 

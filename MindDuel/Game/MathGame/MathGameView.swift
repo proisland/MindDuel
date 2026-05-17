@@ -37,10 +37,14 @@ struct MathGameView: View {
         let lvl = isPractice ? practiceStartLevel : ProgressionStore.shared.mathLevel
         _startLevel = State(initialValue: lvl)
         _problem    = State(initialValue: MathProblemGenerator.generate(level: lvl))
-        if let id = resumeRoomID,
-           let room = MultiplayerStore.shared.backgroundRooms.first(where: { $0.id == id }),
-           let me = room.players.first(where: { $0.isYou }) {
-            _engine = StateObject(wrappedValue: GameEngine(lives: me.lives, skips: me.skips, correctCount: me.correctCount))
+        if resumeRoomID != nil {
+            // Look up by mode — the ID may have drifted after a re-save.
+            let savedRoom = MultiplayerStore.shared.backgroundRooms.first(where: { room in
+                room.isStandaloneSolo && room.mode == .math && room.serverModeSlug == nil
+            })
+            if let me = savedRoom?.players.first(where: { $0.isYou }) {
+                _engine = StateObject(wrappedValue: GameEngine(lives: me.lives, skips: me.skips, correctCount: me.correctCount))
+            }
         }
     }
 
@@ -104,9 +108,11 @@ struct MathGameView: View {
     // MARK: – Session restore / save
 
     private func restoreSavedSessionIfNeeded() {
-        guard let id = resumeRoomID,
-              let room = MultiplayerStore.shared.popStandaloneSolo(roomID: id),
-              let me = room.players.first(where: { $0.isYou }) else { return }
+        guard resumeRoomID != nil else { return }
+        // Fall back to mode-based lookup when the ID has drifted after a re-save.
+        let popped = MultiplayerStore.shared.popStandaloneSolo(roomID: resumeRoomID!)
+            ?? MultiplayerStore.shared.popStandaloneSoloByMode(.math)
+        guard let room = popped, let me = room.players.first(where: { $0.isYou }) else { return }
         startLevel = max(1, room.startLevel)
         problem    = MathProblemGenerator.generate(level: progression.mathLevel)
         problemCount = max(1, me.correctCount + 1)

@@ -295,7 +295,8 @@ struct MultiplayerGameView: View {
             .padding(.horizontal, MDSpacing.md)
             .padding(.top, MDSpacing.md)
 
-            CountdownTimer(elapsedSeconds: elapsedSeconds)
+            CountdownTimer(elapsedSeconds: elapsedSeconds,
+                           maxSeconds: GameDifficulty.stored.timerSeconds)
                 .padding(.top, MDSpacing.sm)
 
             questionCard(room: room)
@@ -899,8 +900,9 @@ struct MultiplayerGameView: View {
             elapsedSeconds = 0
             return
         }
-        elapsedSeconds = min(elapsedSeconds + 0.1, 10.0)
-        if elapsedSeconds >= 10.0 { handleSkip() }
+        let maxSec = GameDifficulty.stored.timerSeconds
+        elapsedSeconds = min(elapsedSeconds + 0.1, maxSec)
+        if elapsedSeconds >= maxSec { handleSkip() }
     }
 
     private func refreshMathProblem() {

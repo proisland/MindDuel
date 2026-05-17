@@ -17,14 +17,21 @@ export default async function friendsRoutes(app: FastifyInstance) {
         OR: [{ senderId: request.userId }, { receiverId: request.userId }],
       },
       include: {
-        sender:   { select: { id: true, username: true, avatarEmoji: true, isPremium: true, lastActiveAt: true } },
-        receiver: { select: { id: true, username: true, avatarEmoji: true, isPremium: true, lastActiveAt: true } },
+        sender:   { select: { id: true, username: true, avatarEmoji: true, avatarUrl: true, isPremium: true, lastActiveAt: true } },
+        receiver: { select: { id: true, username: true, avatarEmoji: true, avatarUrl: true, isPremium: true, lastActiveAt: true } },
       },
     })
 
     const friends = friendships.map(f => {
       const friend = f.senderId === request.userId ? f.receiver : f.sender
-      return friend
+      return {
+        id: friend.id,
+        username: friend.username,
+        avatarEmoji: friend.avatarEmoji,
+        avatarUrl: (friend as any).avatarUrl ?? null,
+        isPremium: friend.isPremium,
+        lastActiveAt: friend.lastActiveAt,
+      }
     })
 
     return reply.send({ friends })
@@ -90,11 +97,25 @@ export default async function friendsRoutes(app: FastifyInstance) {
     })
     if (existing) return reply.status(409).send({ error: 'Already friends' })
 
-    // Already requested?
+    // Already requested (same direction)?
     const pending = await app.prisma.friendRequest.findUnique({
       where: { fromUserId_toUserId: { fromUserId: request.userId, toUserId: target.id } },
     })
     if (pending) return reply.status(409).send({ error: 'Request already sent' })
+
+    // Reverse request exists — auto-accept to create friendship immediately
+    const reverseRequest = await app.prisma.friendRequest.findUnique({
+      where: { fromUserId_toUserId: { fromUserId: target.id, toUserId: request.userId } },
+    })
+    if (reverseRequest) {
+      await app.prisma.$transaction(async (tx) => {
+        await tx.friendRequest.delete({ where: { id: reverseRequest.id } })
+        await tx.friendship.create({
+          data: { senderId: target.id, receiverId: request.userId },
+        })
+      })
+      return reply.status(201).send({ friendshipCreated: true })
+    }
 
     await app.prisma.friendRequest.create({
       data: { fromUserId: request.userId, toUserId: target.id },

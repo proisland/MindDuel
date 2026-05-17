@@ -42,9 +42,6 @@
         }
       }
     },
-    "%@d" : {
-
-    },
     "∑" : {
 
     },
@@ -914,6 +911,121 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Avslå"
+          }
+        }
+      }
+    },
+    "difficulty_easy" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Easy"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lett"
+          }
+        }
+      }
+    },
+    "difficulty_hard" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hard"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vanskelig"
+          }
+        }
+      }
+    },
+    "difficulty_normal" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        }
+      }
+    },
+    "difficulty_picker_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Difficulty"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Velg vanskelighetsgrad"
+          }
+        }
+      }
+    },
+    "difficulty_picker_subtitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How many seconds per question?"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hvor mange sekunder per spørsmål?"
+          }
+        }
+      }
+    },
+    "difficulty_picker_start_action" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start"
+          }
+        }
+      }
+    },
+    "difficulty_seconds_format" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d seconds per question"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d sekunder per spørsmål"
           }
         }
       }
@@ -4290,6 +4402,40 @@
         }
       }
     },
+    "settings_difficulty_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Difficulty"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vanskelighetsgrad"
+          }
+        }
+      }
+    },
+    "settings_difficulty_section" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gameplay"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spillinnstillinger"
+          }
+        }
+      }
+    },
     "settings_feedback_label" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4526,36 +4672,6 @@
             "value" : "Logg ut"
           }
         }
-      }
-    },
-    "settings_difficulty_section" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Gameplay" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Spillinnstillinger" } }
-      }
-    },
-    "settings_difficulty_label" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Difficulty" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Vanskelighetsgrad" } }
-      }
-    },
-    "difficulty_easy" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Easy" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Lett" } }
-      }
-    },
-    "difficulty_normal" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Normal" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Normal" } }
-      }
-    },
-    "difficulty_hard" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hard" } },
-        "nb" : { "stringUnit" : { "state" : "translated", "value" : "Vanskelig" } }
       }
     },
     "settings_subscription_section" : {

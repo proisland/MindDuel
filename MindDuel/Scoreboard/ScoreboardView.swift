@@ -516,7 +516,8 @@ struct ScoreboardView: View {
                 .frame(width: 24, alignment: .center)
 
                 MDAvatar(username: profile.username, size: .sm,
-                         customEmoji: profile.avatarEmoji == "🧠" ? nil : profile.avatarEmoji)
+                         customEmoji: profile.avatarEmoji == "🧠" ? nil : profile.avatarEmoji,
+                         avatarUrl: profile.avatarUrl)
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: MDSpacing.xxs) {

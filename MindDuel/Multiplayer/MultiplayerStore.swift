@@ -610,10 +610,19 @@ import UserNotifications
         return id
     }
 
-    /// Remove and return a standalone solo room (used when resuming).
+    /// Remove and return a standalone solo room by exact ID (used when resuming).
     func popStandaloneSolo(roomID: String) -> MultiplayerRoom? {
         guard let idx = backgroundRooms.firstIndex(where: { $0.id == roomID && $0.isStandaloneSolo })
         else { return nil }
+        return backgroundRooms.remove(at: idx)
+    }
+
+    /// Remove and return a standalone solo room by mode — fallback when the ID has drifted
+    /// after a re-save (e.g. restoreSavedSessionIfNeeded creates a new room with a new UUID).
+    func popStandaloneSoloByMode(_ mode: GameMode) -> MultiplayerRoom? {
+        guard let idx = backgroundRooms.firstIndex(where: {
+            $0.isStandaloneSolo && $0.mode == mode && $0.serverModeSlug == nil
+        }) else { return nil }
         return backgroundRooms.remove(at: idx)
     }
 

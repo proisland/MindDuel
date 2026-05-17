@@ -16,6 +16,7 @@ model User {
   username                String?   @unique
   birthDate               DateTime?
   avatarEmoji             String    @default("🧠")
+  avatarUrl               String?
   isPremium               Boolean   @default(false)
   isFlagged               Boolean   @default(false)
   isSuspended             Boolean   @default(false)

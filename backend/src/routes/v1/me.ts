@@ -1,5 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
+import { PutObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { config } from '../../config'
 import { revokeAllRefreshTokens } from '../../lib/tokens'
 
@@ -9,6 +11,7 @@ const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
 const patchBody = z.object({
   username: z.string().regex(USERNAME_RE).optional(),
   avatarEmoji: z.string().emoji().optional(),
+  avatarUrl: z.string().url().nullable().optional(),
   birthDate: z.string().datetime().optional(),
   locale: z.string().max(20).optional(),
 })
@@ -41,6 +44,7 @@ export default async function meRoutes(app: FastifyInstance) {
       id: user.id,
       username: user.username,
       avatarEmoji: user.avatarEmoji,
+      avatarUrl: (user as any).avatarUrl ?? null,
       birthDate: user.birthDate?.toISOString() ?? null,
       isPremium: user.isPremium,
       isFlagged: user.isFlagged,
@@ -102,7 +106,7 @@ export default async function meRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'Invalid body', details: body.error.flatten() })
     }
 
-    const { username, avatarEmoji, birthDate, locale } = body.data
+    const { username, avatarEmoji, avatarUrl, birthDate, locale } = body.data
 
     if (username) {
       if (RESERVED_USERNAMES.has(username.toLowerCase())) {
@@ -122,14 +126,28 @@ export default async function meRoutes(app: FastifyInstance) {
     const prismaData: Record<string, unknown> = {
       ...(username && { username }),
       ...(avatarEmoji && { avatarEmoji }),
+      ...(avatarUrl !== undefined && { avatarUrl }),
       ...(birthDate && { birthDate: new Date(birthDate) }),
     }
 
     const user = Object.keys(prismaData).length > 0
-      ? await app.prisma.user.update({ where: { id: request.userId }, data: prismaData })
-      : await app.prisma.user.findUniqueOrThrow({ where: { id: request.userId } })
+      ? await (app.prisma.user as any).update({ where: { id: request.userId }, data: prismaData })
+      : await (app.prisma.user as any).findUniqueOrThrow({ where: { id: request.userId } })
 
-    return reply.send({ id: user.id, username: user.username, avatarEmoji: user.avatarEmoji })
+    return reply.send({ id: user.id, username: user.username, avatarEmoji: user.avatarEmoji, avatarUrl: user.avatarUrl ?? null })
+  })
+
+  // POST /v1/me/avatar/upload-url — presigned S3 PUT URL for profile photo
+  app.post('/avatar/upload-url', auth, async (request, reply) => {
+    const key = `avatars/${request.userId}.jpg`
+    const command = new PutObjectCommand({
+      Bucket:      config.s3.bucket,
+      Key:         key,
+      ContentType: 'image/jpeg',
+    })
+    const uploadUrl = await getSignedUrl(app.s3, command, { expiresIn: 300 })
+    const publicUrl = `${config.s3.publicUrl}/${key}`
+    return reply.send({ uploadUrl, publicUrl })
   })
 
   // POST /v1/me/push-token

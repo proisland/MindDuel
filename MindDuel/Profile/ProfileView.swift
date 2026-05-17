@@ -217,7 +217,8 @@ struct ProfileView: View {
                     ForEach(searchResults) { result in
                         HStack(spacing: MDSpacing.sm) {
                             MDAvatar(username: result.username, size: .sm,
-                                     customEmoji: result.avatarEmoji == "🧠" ? nil : result.avatarEmoji)
+                                     customEmoji: result.avatarEmoji == "🧠" ? nil : result.avatarEmoji,
+                                     avatarUrl: result.avatarUrl)
                             Text(result.username)
                                 .mdStyle(.caption)
                                 .foregroundStyle(Color.mdText)
@@ -293,7 +294,8 @@ struct ProfileView: View {
                         ForEach(social.friends) { friend in
                             Button { selectedFriend = friend } label: {
                                 VStack(spacing: MDSpacing.xxs) {
-                                    MDAvatar(username: friend.username, size: .sm)
+                                    MDAvatar(username: friend.username, size: .sm,
+                                                 avatarUrl: friend.avatarUrl)
                                     Text("\(friend.username)")
                                         .mdStyle(.micro)
                                         .foregroundStyle(Color.mdText3)

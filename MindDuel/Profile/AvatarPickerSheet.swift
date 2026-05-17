@@ -73,6 +73,8 @@ struct AvatarPickerSheet: View {
                         store.emoji = nil
                         store.imageData = resized
                     }
+                    // Upload in background so other users see the photo.
+                    await store.uploadAvatar(imageData: resized)
                 }
             }
         }

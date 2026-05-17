@@ -51,6 +51,9 @@ struct HomeView: View {
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var showOnboarding = false
     @State private var practiceMode: GameMode? = nil
+    @State private var pendingGameMode: GameMode? = nil
+    @AppStorage("game.difficulty") private var difficultyRaw: String = "normal"
+    private var difficulty: GameDifficulty { GameDifficulty(rawValue: difficultyRaw) ?? .normal }
 
     private var pendingBadge: Int { social.totalPendingCount }
     private var inviteBadge: Int  { multiplayer.pendingInviteCount }
@@ -174,6 +177,12 @@ struct HomeView: View {
             PracticeSetupSheet(mode: mode) { startLevel in
                 gamePath.append(GameModeRoute(mode: mode, resumeRoomID: nil,
                                              isPractice: true, practiceStartLevel: startLevel))
+            }
+        }
+        .sheet(item: $pendingGameMode) { mode in
+            DifficultyPickerSheet(difficulty: $difficultyRaw) {
+                pendingGameMode = nil
+                gamePath.append(GameModeRoute(mode: mode, resumeRoomID: nil))
             }
         }
     }
@@ -467,7 +476,11 @@ struct HomeView: View {
         let resumeRoomID = multiplayer.backgroundRooms.first(where: {
             $0.isStandaloneSolo && $0.mode == mode && $0.serverModeSlug == nil && $0.status == .playing
         })?.id
-        gamePath.append(GameModeRoute(mode: mode, resumeRoomID: resumeRoomID))
+        if resumeRoomID != nil {
+            gamePath.append(GameModeRoute(mode: mode, resumeRoomID: resumeRoomID))
+        } else {
+            pendingGameMode = mode
+        }
     }
 
     private func startPractice(_ mode: GameMode) {
