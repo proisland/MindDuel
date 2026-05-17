@@ -28,7 +28,7 @@ struct MathGameView: View {
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(username: String, resumeRoomID: String? = nil,
+    @MainActor init(username: String, resumeRoomID: String? = nil,
          isPractice: Bool = false, practiceStartLevel: Int = 1) {
         self.username = username
         self.resumeRoomID = resumeRoomID

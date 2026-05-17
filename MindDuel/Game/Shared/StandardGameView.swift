@@ -28,7 +28,7 @@ struct StandardGameView: View {
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(mode: GameMode, username: String, resumeRoomID: String? = nil) {
+    @MainActor init(mode: GameMode, username: String, resumeRoomID: String? = nil) {
         self.mode = mode
         self.username = username
         self.resumeRoomID = resumeRoomID

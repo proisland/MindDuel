@@ -18,7 +18,7 @@ enum RoundEndReason {
     @Published private(set) var phase: GamePhase = .playing
     @Published private(set) var correctCount: Int
 
-    nonisolated init(lives: Int = 5, skips: Int = 5, correctCount: Int = 0) {
+    init(lives: Int = 5, skips: Int = 5, correctCount: Int = 0) {
         _lives        = Published(initialValue: lives)
         _skips        = Published(initialValue: skips)
         _correctCount = Published(initialValue: correctCount)

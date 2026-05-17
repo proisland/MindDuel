@@ -28,7 +28,7 @@ struct PiGameView: View {
 
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
-    init(username: String, resumeRoomID: String? = nil,
+    @MainActor init(username: String, resumeRoomID: String? = nil,
          isPractice: Bool = false, practiceStartDigit: Int = 0) {
         self.username = username
         self.resumeRoomID = resumeRoomID

@@ -30,7 +30,7 @@ struct KnowledgeGameView: View {
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(serverMode: ServerMode, username: String, resumeRoomID: String? = nil) {
+    @MainActor init(serverMode: ServerMode, username: String, resumeRoomID: String? = nil) {
         self.serverMode   = serverMode
         self.username     = username
         self.resumeRoomID = resumeRoomID
