@@ -38,13 +38,14 @@ actor QuestionPackCache {
     private let cacheDir: URL
     private let versionsKey = "questionPackVersions"
 
-    /// The two-letter language code derived from the app's preferred localisation.
-    /// Supported values match the backend: "no" or "en". Any unsupported locale
-    /// falls back to "en" per the product spec.
+    /// The two-letter language code for question fetching.
+    /// Respects the user's in-app language selection; falls back to system locale.
     nonisolated static var appLanguage: String {
+        let stored = UserDefaults.standard.string(forKey: "selectedLanguageCode") ?? "system"
+        if stored == "en" { return "en" }
+        if stored == "no" { return "no" }
         let raw = Bundle.main.preferredLocalizations.first ?? "en"
         let code = Locale(identifier: raw).language.languageCode?.identifier ?? "en"
-        // Norwegian Bokmål ("nb") and Nynorsk ("nn") both map to "no".
         switch code {
         case "no", "nb", "nn": return "no"
         case "en":             return "en"

@@ -10,8 +10,7 @@ struct DailyChallengeCard: View {
     }
 
     private var modeName: String {
-        let lang = Bundle.main.preferredLocalizations.first ?? "no"
-        if lang.hasPrefix("en"), !challenge.mode.nameEn.isEmpty { return challenge.mode.nameEn }
+        if QuestionPackCache.appLanguage == "en", !challenge.mode.nameEn.isEmpty { return challenge.mode.nameEn }
         return challenge.mode.nameNo.isEmpty ? challenge.mode.nameEn : challenge.mode.nameNo
     }
 

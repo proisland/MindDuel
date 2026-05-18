@@ -13,7 +13,7 @@ export default async function usersRoutes(app: FastifyInstance) {
         username: { contains: q, mode: 'insensitive' },
         isSuspended: false,
       },
-      select: { id: true, username: true, avatarEmoji: true, isPremium: true },
+      select: { id: true, username: true, avatarEmoji: true, avatarUrl: true, isPremium: true },
       take: 20,
     })
 
@@ -30,6 +30,7 @@ export default async function usersRoutes(app: FastifyInstance) {
         id: true,
         username: true,
         avatarEmoji: true,
+        avatarUrl: true,
         isPremium: true,
         isFlagged: true,
         lastActiveAt: true,
@@ -53,6 +54,7 @@ export default async function usersRoutes(app: FastifyInstance) {
       id: user.id,
       username: user.username,
       avatarEmoji: user.avatarEmoji,
+      avatarUrl: user.avatarUrl,
       isPremium: user.isPremium,
       isFlagged: user.isFlagged,
       lastActiveAt: user.lastActiveAt,

@@ -340,7 +340,8 @@ struct StandardGameView: View {
 
     private func handleTimerTick() {
         guard !engine.isRoundOver, !engine.isWaitingAfterSkip,
-              feedbackIsCorrect == nil, !progression.isQuotaExhausted else { return }
+              feedbackIsCorrect == nil, !progression.isQuotaExhausted,
+              !showQuitModal else { return }
         elapsedSeconds = min(elapsedSeconds + 0.1, difficulty.timerSeconds)
         if elapsedSeconds >= difficulty.timerSeconds { handleSkip() }
     }

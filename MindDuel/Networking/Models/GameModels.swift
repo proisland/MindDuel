@@ -142,8 +142,7 @@ struct ServerMode: Codable, Identifiable, Equatable, Hashable {
     /// falling back to the legacy `name` field for old backend responses.
     var name: String {
         if let no = nameNo, let en = nameEn {
-            let lang = Bundle.main.preferredLocalizations.first ?? "no"
-            if lang.hasPrefix("en") && !en.isEmpty { return en }
+            if QuestionPackCache.appLanguage == "en" && !en.isEmpty { return en }
             return no.isEmpty ? en : no
         }
         return legacyName ?? ""
