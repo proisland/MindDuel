@@ -31,7 +31,7 @@ COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nodejs:nodejs /app/views ./views
 COPY --from=builder --chown=nodejs:nodejs /app/public ./public
 COPY --chown=nodejs:nodejs start.sh ./start.sh
-RUN chmod +x start.sh
+RUN chmod +x start.sh && head -1 start.sh
 USER nodejs
 EXPOSE 3000
 CMD ["./start.sh"]
