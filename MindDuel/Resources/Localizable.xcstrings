@@ -52,16 +52,6 @@
         }
       }
     },
-    "%@ holder %@-dagers streak%@" : {
-      "localizations" : {
-        "nb" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ holder %2$@-dagers streak%3$@"
-          }
-        }
-      }
-    },
     "∑" : {
 
     },
