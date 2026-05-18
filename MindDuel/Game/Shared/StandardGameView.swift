@@ -149,7 +149,7 @@ struct StandardGameView: View {
 
     private func autoSaveIfInProgress() {
         guard !engine.isRoundOver, roundResult == nil,
-              engine.correctCount > 0 || engine.lives < 5 || engine.skips < 5 else { return }
+              engine.correctCount > 0 || engine.lives < 10 || engine.skips < 10 else { return }
         _ = MultiplayerStore.shared.saveStandaloneSolo(
             mode: mode, ownUsername: username,
             lives: engine.lives, skips: engine.skips, score: 0,
@@ -306,7 +306,7 @@ struct StandardGameView: View {
         let correct       = problem.options[index] == problem.correctAnswer
         feedbackIsCorrect = correct
         let answeredAt    = ISO8601DateFormatter.ms.string(from: Date())
-        Task { try? await sessionService.submitAnswer(answeredAt: answeredAt, questionId: "\(mode.slug)-\(problemCount)", answer: problem.options[index], isCorrect: correct) }
+        Task { try? await sessionService.submitAnswer(answeredAt: answeredAt, questionId: problem.prompt, answer: problem.options[index], isCorrect: correct) }
 
         Task {
             try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)

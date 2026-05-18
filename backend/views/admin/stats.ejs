@@ -117,16 +117,16 @@
 <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
   <h2 class="font-semibold mb-4">Spilløkter over tid (siste 30 dager)</h2>
   <div class="overflow-x-auto">
-    <div class="flex items-end gap-1 min-w-max" style="height: 140px; padding-bottom: 28px;">
+    <div class="flex items-end gap-1 min-w-max">
       <% var maxSessions = Math.max(...sessionTimeSeries.map(function(d){ return d.single + d.multiplayer }), 1) %>
       <% sessionTimeSeries.forEach(function(d) { %>
-        <div class="flex flex-col items-center gap-0.5 group relative" title="<%= d.date %>: <%= d.single %> singel, <%= d.multiplayer %> flerspiller"
+        <div class="flex flex-col items-center" title="<%= d.date %>: <%= d.single %> singel, <%= d.multiplayer %> flerspiller"
           style="<%= d.isMonday ? 'border-left: 1px solid rgba(99,102,241,0.3);' : '' %>">
           <div class="w-5 flex flex-col justify-end rounded-t-sm overflow-hidden" style="height: 96px;">
             <div class="bg-indigo-500 w-full" style="height: <%= Math.round(d.single / maxSessions * 100) %>%"></div>
             <div class="bg-purple-500 w-full" style="height: <%= Math.round(d.multiplayer / maxSessions * 100) %>%"></div>
           </div>
-          <span class="text-gray-500 text-xs mt-1 whitespace-nowrap" style="transform: rotate(-45deg); transform-origin: top left; position: absolute; bottom: 0; left: 6px; font-size: 9px;"><%= d.label %></span>
+          <span class="text-gray-500" style="writing-mode: vertical-rl; transform: rotate(180deg); font-size: 9px; height: 40px; line-height: 20px;"><%= d.label %></span>
         </div>
       <% }) %>
     </div>
@@ -144,12 +144,12 @@
   <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
     <h2 class="font-semibold mb-4">Aktive brukere per time (siste 24t)</h2>
     <div class="overflow-x-auto">
-      <div class="flex items-end gap-1 min-w-max" style="height: 80px; padding-bottom: 20px;">
+      <div class="flex items-end gap-1 min-w-max">
         <% var maxHourlyU = Math.max(...hourlyActiveUsers.map(function(h){ return h.users }), 1) %>
         <% hourlyActiveUsers.forEach(function(h) { %>
-          <div class="flex flex-col items-center relative" title="<%= h.hour %>: <%= h.users %> brukere">
+          <div class="flex flex-col items-center" title="<%= h.hour %>: <%= h.users %> brukere">
             <div class="w-5 bg-indigo-500 rounded-t-sm" style="height: <%= Math.round(h.users / maxHourlyU * 52) %>px; min-height: 2px;"></div>
-            <span style="transform: rotate(-45deg); transform-origin: top left; position: absolute; bottom: 0; left: 6px; font-size: 9px;" class="text-gray-500"><%= h.hour %></span>
+            <span class="text-gray-500" style="writing-mode: vertical-rl; transform: rotate(180deg); font-size: 9px; height: 32px; line-height: 20px;"><%= h.hour %></span>
           </div>
         <% }) %>
       </div>
@@ -159,15 +159,15 @@
   <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
     <h2 class="font-semibold mb-4">Spilløkter per time (siste 24t)</h2>
     <div class="overflow-x-auto">
-      <div class="flex items-end gap-1 min-w-max" style="height: 80px; padding-bottom: 20px;">
+      <div class="flex items-end gap-1 min-w-max">
         <% var maxHourlyS = Math.max(...hourlySessionsRaw.map(function(h){ return h.single + h.multiplayer }), 1) %>
         <% hourlySessionsRaw.forEach(function(h) { %>
-          <div class="flex flex-col items-center relative" title="<%= h.hour %>: <%= h.single %> singel, <%= h.multiplayer %> flerspiller">
+          <div class="flex flex-col items-center" title="<%= h.hour %>: <%= h.single %> singel, <%= h.multiplayer %> flerspiller">
             <div class="w-5 flex flex-col justify-end rounded-t-sm overflow-hidden" style="height: <%= Math.round((h.single + h.multiplayer) / maxHourlyS * 52) %>px; min-height: 2px;">
               <div class="bg-indigo-500 w-full" style="height: <%= (h.single + h.multiplayer) > 0 ? Math.round(h.single / (h.single + h.multiplayer) * 100) : 0 %>%"></div>
               <div class="bg-purple-500 w-full" style="height: <%= (h.single + h.multiplayer) > 0 ? Math.round(h.multiplayer / (h.single + h.multiplayer) * 100) : 0 %>%"></div>
             </div>
-            <span style="transform: rotate(-45deg); transform-origin: top left; position: absolute; bottom: 0; left: 6px; font-size: 9px;" class="text-gray-500"><%= h.hour %></span>
+            <span class="text-gray-500" style="writing-mode: vertical-rl; transform: rotate(180deg); font-size: 9px; height: 32px; line-height: 20px;"><%= h.hour %></span>
           </div>
         <% }) %>
       </div>
@@ -305,7 +305,7 @@
       <tr>
         <th class="text-left px-4 py-2">#</th>
         <th class="text-left px-4 py-2">Modus</th>
-        <th class="text-left px-4 py-2">Spørsmål-ref</th>
+        <th class="text-left px-4 py-2">Spørsmål</th>
         <th class="text-left px-4 py-2">Vanligste feil-svar</th>
         <th class="text-right px-4 py-2">Feil</th>
         <th class="text-right px-4 py-2">Totalt</th>

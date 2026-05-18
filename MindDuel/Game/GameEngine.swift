@@ -18,7 +18,7 @@ enum RoundEndReason {
     @Published private(set) var phase: GamePhase = .playing
     @Published private(set) var correctCount: Int
 
-    init(lives: Int = 5, skips: Int = 5, correctCount: Int = 0) {
+    init(lives: Int = 10, skips: Int = 10, correctCount: Int = 0) {
         _lives        = Published(initialValue: lives)
         _skips        = Published(initialValue: skips)
         _correctCount = Published(initialValue: correctCount)
@@ -65,8 +65,8 @@ enum RoundEndReason {
     }
 
     func restart() {
-        lives = 5
-        skips = 5
+        lives = 10
+        skips = 10
         correctCount = 0
         phase = .playing
     }

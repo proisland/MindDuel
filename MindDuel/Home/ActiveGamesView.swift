@@ -139,14 +139,14 @@ struct ActiveGamesView: View {
                 if room.isStandaloneSolo, let sm = cachedServerMode {
                     resumeServerState = ServerResumeState(
                         serverMode: sm, roomID: room.id,
-                        lives: me?.lives ?? 5, skips: me?.skips ?? 5,
+                        lives: me?.lives ?? 10, skips: me?.skips ?? 10,
                         correctCount: me?.correctCount ?? 0, startLevel: room.startLevel
                     )
                 } else if room.isStandaloneSolo {
                     let position = room.mode == .pi ? room.myPiDigitIndex : room.startLevel
                     resumeSoloState = SoloResumeState(
                         mode: room.mode, roomID: room.id,
-                        lives: me?.lives ?? 5, skips: me?.skips ?? 5,
+                        lives: me?.lives ?? 10, skips: me?.skips ?? 10,
                         correctCount: me?.correctCount ?? 0, startLevel: position
                     )
                 } else {

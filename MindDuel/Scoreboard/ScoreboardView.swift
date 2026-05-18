@@ -235,9 +235,9 @@ struct ScoreboardView: View {
 
     private func effectiveScore(for profile: UserProfile) -> Int {
         if useTotalScore {
-            // API entries carry avgScore in apiScore; own entry built from local
-            // store carries per-mode best scores in totalScore. Use whichever is
-            // available — prefer apiScore when the user appears in the API list.
+            if profile.username == ownUsername {
+                return max(profile.apiScore, profile.totalScore)
+            }
             return profile.apiScore > 0 ? profile.apiScore : profile.totalScore
         }
         switch scoreMode {

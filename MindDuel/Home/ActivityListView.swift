@@ -165,19 +165,20 @@ struct ActivityListView: View {
                     }
                 }
             case .streak:
-                let streakUser = item.user?.username ?? "?"
-                Button { if item.isMine != true { selectedUsername = streakUser } } label: {
+                let streakUser = item.user?.username ?? (item.isMine == true ? ownUsername : "")
+                Button { if item.isMine != true, !streakUser.isEmpty { selectedUsername = streakUser } } label: {
                     ZStack(alignment: .bottomTrailing) {
-                        MDAvatar(username: streakUser, size: .sm)
+                        MDAvatar(username: streakUser.isEmpty ? ownUsername : streakUser, size: .sm)
                         Text("🔥").font(.system(size: 11)).offset(x: 3, y: 3)
                     }
                 }
                 .buttonStyle(.plain)
                 .disabled(item.isMine == true)
                 VStack(alignment: .leading, spacing: 2) {
-                    let who = item.isMine == true ? "Du" : "@\(item.user?.username ?? "?")"
+                    let who = item.isMine == true ? "Du" : "@\(streakUser)"
                     let modeStr = item.modeName.map { " i \($0)" } ?? ""
-                    Text("\(who) holder \(item.streakCount ?? 0)-dagers streak\(modeStr)")
+                    let streakText = "\(who) holder \(item.streakCount ?? 0)-dagers streak\(modeStr)"
+                    Text(verbatim: streakText)
                         .mdStyle(.caption)
                         .foregroundStyle(Color.mdText)
                         .lineLimit(2)
