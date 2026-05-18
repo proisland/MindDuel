@@ -78,9 +78,8 @@ export default async function feedbackRoutes(app: FastifyInstance) {
   app.post('/upload-url', auth, async (request, reply) => {
     const key = `feedback/${request.userId}/${Date.now()}.jpg`
     const command = new PutObjectCommand({
-      Bucket:      config.s3.bucket,
-      Key:         key,
-      ContentType: 'image/jpeg',
+      Bucket: config.s3.bucket,
+      Key:    key,
     })
     const uploadUrl = await getSignedUrl(app.s3, command, { expiresIn: 300 })
     const publicUrl = `${config.s3.publicUrl}/${key}`

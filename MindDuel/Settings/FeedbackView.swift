@@ -1,5 +1,8 @@
 import SwiftUI
 import PhotosUI
+import OSLog
+
+private let logger = Logger(subsystem: "no.mindduel.app", category: "FeedbackUpload")
 
 struct FeedbackView: View {
     @Environment(\.dismiss) private var dismiss
@@ -119,7 +122,12 @@ struct FeedbackView: View {
                         }
                         .onChange(of: selectedPhotoItem) { newItem in
                             Task {
-                                selectedImageData = try? await newItem?.loadTransferable(type: Data.self)
+                                if let data = try? await newItem?.loadTransferable(type: Data.self),
+                                   let uiImage = UIImage(data: data) {
+                                    selectedImageData = uiImage.jpegData(compressionQuality: 0.7)
+                                } else {
+                                    selectedImageData = nil
+                                }
                             }
                         }
 
@@ -196,23 +204,16 @@ struct FeedbackView: View {
         do {
             // Upload image if selected — failure is non-fatal; submit without image
             var imageUrl: String? = nil
-            print("[FeedbackUpload] imageData størrelse: \(selectedImageData?.count ?? -1) bytes")
+            logger.info("imageData størrelse: \(selectedImageData?.count ?? -1) bytes")
             if let imageData = selectedImageData {
                 do {
                     struct UploadUrlResponse: Decodable { let uploadUrl: String; let publicUrl: String }
                     let urls: UploadUrlResponse = try await APIClient.shared.post("feedback/upload-url", body: Empty())
-                    var request = URLRequest(url: URL(string: urls.uploadUrl)!)
-                    request.httpMethod = "PUT"
-                    request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
-                    let (_, uploadResponse) = try await URLSession.shared.upload(for: request, from: imageData)
-                    let httpStatus = (uploadResponse as? HTTPURLResponse)?.statusCode ?? 0
-                    if httpStatus == 200 {
-                        imageUrl = urls.publicUrl
-                    } else {
-                        print("[FeedbackUpload] R2 PUT feila med status \(httpStatus)")
-                    }
+                    guard let uploadURL = URL(string: urls.uploadUrl) else { throw URLError(.badURL) }
+                    try await APIClient.shared.putData(to: uploadURL, data: imageData, contentType: "image/jpeg")
+                    imageUrl = urls.publicUrl
                 } catch {
-                    print("[FeedbackUpload] Nettverksfeil: \(error)")
+                    logger.error("Nettverksfeil: \(error)")
                 }
             }
 

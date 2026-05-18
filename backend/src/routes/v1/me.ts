@@ -141,9 +141,8 @@ export default async function meRoutes(app: FastifyInstance) {
   app.post('/avatar/upload-url', auth, async (request, reply) => {
     const key = `avatars/${request.userId}.jpg`
     const command = new PutObjectCommand({
-      Bucket:      config.s3.bucket,
-      Key:         key,
-      ContentType: 'image/jpeg',
+      Bucket: config.s3.bucket,
+      Key:    key,
     })
     const uploadUrl = await getSignedUrl(app.s3, command, { expiresIn: 300 })
     const publicUrl = `${config.s3.publicUrl}/${key}`
