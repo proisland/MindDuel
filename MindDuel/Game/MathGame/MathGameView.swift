@@ -5,6 +5,7 @@ struct MathGameView: View {
     let resumeRoomID: String?
     let isPractice: Bool
     let practiceStartLevel: Int
+    private let hasDirectResumeState: Bool
 
     @StateObject private var engine      = GameEngine()
     @ObservedObject private var progression = ProgressionStore.shared
@@ -30,21 +31,33 @@ struct MathGameView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @MainActor init(username: String, resumeRoomID: String? = nil,
-         isPractice: Bool = false, practiceStartLevel: Int = 1) {
+         isPractice: Bool = false, practiceStartLevel: Int = 1,
+         resumeLives: Int? = nil, resumeSkips: Int? = nil,
+         resumeCorrectCount: Int? = nil, resumeStartLevel: Int? = nil) {
         self.username = username
         self.resumeRoomID = resumeRoomID
         self.isPractice = isPractice
         self.practiceStartLevel = practiceStartLevel
-        let lvl = isPractice ? practiceStartLevel : ProgressionStore.shared.mathLevel
-        _startLevel = State(initialValue: lvl)
-        _problem    = State(initialValue: MathProblemGenerator.generate(level: lvl))
-        if resumeRoomID != nil {
-            // Look up by mode — the ID may have drifted after a re-save.
-            let savedRoom = MultiplayerStore.shared.backgroundRooms.first(where: { room in
-                room.isStandaloneSolo && room.mode == .math && room.serverModeSlug == nil
-            })
-            if let me = savedRoom?.players.first(where: { $0.isYou }) {
-                _engine = StateObject(wrappedValue: GameEngine(lives: me.lives, skips: me.skips, correctCount: me.correctCount))
+        self.hasDirectResumeState = resumeLives != nil
+
+        if !isPractice, let rsLevel = resumeStartLevel, let rsLives = resumeLives,
+           let rsSkips = resumeSkips, let rsCount = resumeCorrectCount {
+            let lvl = max(1, rsLevel)
+            _startLevel   = State(initialValue: lvl)
+            _problemCount = State(initialValue: max(1, rsCount + 1))
+            _problem = State(initialValue: MathProblemGenerator.generate(level: ProgressionStore.shared.mathLevel))
+            _engine = StateObject(wrappedValue: GameEngine(lives: rsLives, skips: rsSkips, correctCount: rsCount))
+        } else {
+            let lvl = isPractice ? practiceStartLevel : ProgressionStore.shared.mathLevel
+            _startLevel = State(initialValue: lvl)
+            _problem = State(initialValue: MathProblemGenerator.generate(level: lvl))
+            if !isPractice, resumeRoomID != nil {
+                let savedRoom = MultiplayerStore.shared.backgroundRooms.first(where: { room in
+                    room.isStandaloneSolo && room.mode == .math && room.serverModeSlug == nil
+                })
+                if let me = savedRoom?.players.first(where: { $0.isYou }) {
+                    _engine = StateObject(wrappedValue: GameEngine(lives: me.lives, skips: me.skips, correctCount: me.correctCount))
+                }
             }
         }
     }
@@ -109,9 +122,9 @@ struct MathGameView: View {
     // MARK: – Session restore / save
 
     private func restoreSavedSessionIfNeeded() {
+        guard !hasDirectResumeState else { return }
         guard !hasRestoredSession, resumeRoomID != nil else { return }
         hasRestoredSession = true
-        // Use mode-based lookup (ID may have drifted after a re-save).
         let room = MultiplayerStore.shared.backgroundRooms.first(where: {
             $0.isStandaloneSolo && $0.mode == .math && $0.serverModeSlug == nil
         })

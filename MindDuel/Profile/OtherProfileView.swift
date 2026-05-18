@@ -67,18 +67,19 @@ struct OtherProfileView: View {
                         }
                         .padding(.top, MDSpacing.lg)
 
-                        // Mode cards — same compact horizontal layout as the
-                        // home screen's favorites grid.
-                        let playedModes = GameMode.allCases.filter { profile.score(for: $0) > 0 }
-                        if !playedModes.isEmpty {
+                        // Mode cards — populated from server progressions.
+                        let progressionModes: [(GameMode, Int)] = (loadedProfile?.progressions ?? [])
+                            .compactMap { prog in
+                                guard let mode = GameMode(slug: prog.mode) else { return nil }
+                                return (mode, Int(prog.position))
+                            }
+                        if !progressionModes.isEmpty {
                             sectionContainer(String(localized: "progress_section_title")) {
                                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
                                                     GridItem(.flexible(), spacing: 10)],
                                           spacing: 10) {
-                                    ForEach(playedModes) { mode in
-                                        MDFeaturedCard(mode: mode,
-                                                       score: profile.score(for: mode),
-                                                       level: profile.level(for: mode))
+                                    ForEach(progressionModes, id: \.0) { mode, level in
+                                        MDFeaturedCard(mode: mode, score: 0, level: level)
                                     }
                                 }
                             }

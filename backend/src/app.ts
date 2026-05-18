@@ -72,15 +72,19 @@ export async function buildApp() {
   })
 
   // ── Views (admin) ───────────────────────────────────────────────────────────
+  const TZ = 'Europe/Oslo'
   const fmtDate = (d: Date | string | null | undefined) => {
     if (!d) return '–'
-    const dt = new Date(d)
-    return `${String(dt.getDate()).padStart(2, '0')}.${String(dt.getMonth() + 1).padStart(2, '0')}.${dt.getFullYear()}`
+    return new Intl.DateTimeFormat('nb-NO', { timeZone: TZ, day: '2-digit', month: '2-digit', year: 'numeric' })
+      .format(new Date(d))
   }
   const fmtDateTime = (d: Date | string | null | undefined) => {
     if (!d) return '–'
-    const dt = new Date(d)
-    return `${String(dt.getDate()).padStart(2, '0')}.${String(dt.getMonth() + 1).padStart(2, '0')}.${dt.getFullYear()} ${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`
+    return new Intl.DateTimeFormat('nb-NO', {
+      timeZone: TZ,
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    }).format(new Date(d))
   }
 
   await app.register(fastifyView, {

@@ -234,7 +234,12 @@ struct ScoreboardView: View {
     }
 
     private func effectiveScore(for profile: UserProfile) -> Int {
-        if useTotalScore { return profile.totalScore }
+        if useTotalScore {
+            // API entries carry avgScore in apiScore; own entry built from local
+            // store carries per-mode best scores in totalScore. Use whichever is
+            // available — prefer apiScore when the user appears in the API list.
+            return profile.apiScore > 0 ? profile.apiScore : profile.totalScore
+        }
         switch scoreMode {
         case .known(let gm): return profile.score(for: gm)
         case .server:        return profile.apiScore
@@ -553,7 +558,7 @@ struct ScoreboardView: View {
                     if !isOwn { addFriendButton(for: profile) }
                     else { Color.clear }
                 }
-                .frame(width: 64, alignment: .trailing)
+                .frame(width: 80, alignment: .trailing)
             }
             .padding(.horizontal, MDSpacing.md)
             .padding(.vertical, MDSpacing.sm)
@@ -625,7 +630,17 @@ struct ScoreboardView: View {
     private func buildRanked(_ list: [UserProfile], own: UserProfile) -> [RankedEntry] {
         var combined = list
         if !combined.contains(where: { $0.username == own.username }) {
+            // Own user is not in the API list — inject local entry.
             combined.append(own)
+        }
+        // If own user IS in the list (from API), their per-mode scores are 0
+        // but apiScore is correct. Patch in the local per-mode scores so both
+        // Total (apiScore) and per-mode tabs work correctly for the own row.
+        combined = combined.map { p -> UserProfile in
+            guard p.username == own.username, p.apiScore > 0 else { return p }
+            var patched = own          // bring in per-mode local scores
+            patched.apiScore = p.apiScore  // keep the server-side avgScore
+            return patched
         }
         return combined
             .sorted { effectiveScore(for: $0) > effectiveScore(for: $1) }

@@ -11,7 +11,7 @@ import Foundation
 /// the four-button grid never renders an ambiguous choice.
 enum ScienceQuestionBank {
 
-    typealias Raw = ScienceProblemGenerator.Raw
+    typealias Raw = QuizProblemGenerator.Raw
 
     static func questions(forLevel level: Int) -> [Raw] {
         switch max(1, min(20, level)) {

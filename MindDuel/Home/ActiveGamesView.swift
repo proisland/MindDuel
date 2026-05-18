@@ -1,15 +1,35 @@
 import SwiftUI
 
+// Carries all saved state at the moment the user taps, so game view init
+// never races against backgroundRooms lookup timing.
+private struct SoloResumeState: Identifiable {
+    let id = UUID()
+    let mode: GameMode
+    let roomID: String
+    let lives: Int
+    let skips: Int
+    let correctCount: Int
+    let startLevel: Int   // for .pi: digit index; for others: start level
+}
+
+private struct ServerResumeState: Identifiable {
+    let id = UUID()
+    let serverMode: ServerMode
+    let roomID: String
+    let lives: Int
+    let skips: Int
+    let correctCount: Int
+    let startLevel: Int
+}
+
 struct ActiveGamesView: View {
     let ownUsername: String
     @ObservedObject private var store = MultiplayerStore.shared
     @ObservedObject private var modeCache = ModeConfigCache.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showGame = false
-    @State private var resumeSoloMode: GameMode? = nil
-    @State private var resumeSoloRoomID: String? = nil
-    @State private var resumeServerMode: ServerMode? = nil
-    @State private var resumeServerRoomID: String? = nil
+    @State private var resumeSoloState: SoloResumeState? = nil
+    @State private var resumeServerState: ServerResumeState? = nil
 
     var body: some View {
         ZStack {
@@ -54,19 +74,35 @@ struct ActiveGamesView: View {
         .fullScreenCover(isPresented: $showGame) {
             MultiplayerGameView(ownUsername: ownUsername)
         }
-        .fullScreenCover(item: $resumeSoloMode) { mode in
-            switch mode {
-            case .pi:   PiGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
-            case .math: MathGameView(username: ownUsername, resumeRoomID: resumeSoloRoomID)
-            default:    StandardGameView(mode: mode, username: ownUsername, resumeRoomID: resumeSoloRoomID)
+        .fullScreenCover(item: $resumeSoloState) { state in
+            switch state.mode {
+            case .pi:
+                PiGameView(
+                    username: ownUsername, resumeRoomID: state.roomID,
+                    resumeLives: state.lives, resumeSkips: state.skips,
+                    resumeCorrectCount: state.correctCount, resumeDigitIndex: state.startLevel
+                )
+            case .math:
+                MathGameView(
+                    username: ownUsername, resumeRoomID: state.roomID,
+                    resumeLives: state.lives, resumeSkips: state.skips,
+                    resumeCorrectCount: state.correctCount, resumeStartLevel: state.startLevel
+                )
+            default:
+                StandardGameView(
+                    mode: state.mode, username: ownUsername, resumeRoomID: state.roomID,
+                    resumeLives: state.lives, resumeSkips: state.skips,
+                    resumeCorrectCount: state.correctCount, resumeStartLevel: state.startLevel
+                )
             }
         }
-        .fullScreenCover(item: $resumeServerMode) { serverMode in
-            KnowledgeGameView(serverMode: serverMode, username: ownUsername,
-                              resumeRoomID: resumeServerRoomID)
-        }
-        .onChange(of: resumeServerMode) { mode in
-            if mode == nil { resumeServerRoomID = nil }
+        .fullScreenCover(item: $resumeServerState) { state in
+            KnowledgeGameView(
+                serverMode: state.serverMode, username: ownUsername,
+                resumeRoomID: state.roomID,
+                resumeLives: state.lives, resumeSkips: state.skips,
+                resumeCorrectCount: state.correctCount, resumeStartLevel: state.startLevel
+            )
         }
     }
 
@@ -99,12 +135,20 @@ struct ActiveGamesView: View {
         return HStack(spacing: MDSpacing.sm) {
             // Tappable main area: rejoin / resume
             Button {
+                let me = room.players.first(where: { $0.isYou })
                 if room.isStandaloneSolo, let sm = cachedServerMode {
-                    resumeServerRoomID = room.id
-                    resumeServerMode   = sm
+                    resumeServerState = ServerResumeState(
+                        serverMode: sm, roomID: room.id,
+                        lives: me?.lives ?? 5, skips: me?.skips ?? 5,
+                        correctCount: me?.correctCount ?? 0, startLevel: room.startLevel
+                    )
                 } else if room.isStandaloneSolo {
-                    resumeSoloRoomID = room.id
-                    resumeSoloMode = room.mode
+                    let position = room.mode == .pi ? room.myPiDigitIndex : room.startLevel
+                    resumeSoloState = SoloResumeState(
+                        mode: room.mode, roomID: room.id,
+                        lives: me?.lives ?? 5, skips: me?.skips ?? 5,
+                        correctCount: me?.correctCount ?? 0, startLevel: position
+                    )
                 } else {
                     store.rejoin(roomID: room.id)
                     showGame = true

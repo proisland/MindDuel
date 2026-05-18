@@ -52,12 +52,12 @@
         }
       }
     },
-    "%@ holder %@-dagers streak" : {
+    "%@ holder %@-dagers streak%@" : {
       "localizations" : {
         "nb" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$@ holder %2$@-dagers streak"
+            "value" : "%1$@ holder %2$@-dagers streak%3$@"
           }
         }
       }
@@ -1807,9 +1807,6 @@
           }
         }
       }
-    },
-    "i %@" : {
-
     },
     "last_active_now" : {
       "extractionState" : "stale",

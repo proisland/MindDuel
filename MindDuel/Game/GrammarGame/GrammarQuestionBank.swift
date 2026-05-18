@@ -6,7 +6,7 @@ import Foundation
 /// syntaks, fonologi, semantikk, lingvistisk teori).
 enum GrammarQuestionBank {
 
-    typealias Raw = GrammarProblemGenerator.Raw
+    typealias Raw = QuizProblemGenerator.Raw
 
     static func questions(forLevel level: Int) -> [Raw] {
         switch max(1, min(20, level)) {

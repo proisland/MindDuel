@@ -5,11 +5,21 @@ private struct GameModeRoute: Hashable {
     let resumeRoomID: String?
     var isPractice: Bool = false
     var practiceStartLevel: Int = 1
+    // Saved state passed at tap time so game view init never needs a store lookup.
+    // For .pi, resumeStartLevel holds the digit index; for others it holds the level.
+    var resumeLives: Int? = nil
+    var resumeSkips: Int? = nil
+    var resumeCorrectCount: Int? = nil
+    var resumeStartLevel: Int? = nil
 }
 
 private struct ServerModeRoute: Hashable {
     let serverMode: ServerMode
     let resumeRoomID: String?
+    var resumeLives: Int? = nil
+    var resumeSkips: Int? = nil
+    var resumeCorrectCount: Int? = nil
+    var resumeStartLevel: Int? = nil
 }
 
 private enum HomeDestination: Identifiable {
@@ -171,7 +181,7 @@ struct HomeView: View {
                 }
             case .multiplayerLobbyJoined:
                 MultiplayerLobbyView(ownUsername: username, startAsHost: false)
-            case .activityList:    ActivityListView()
+            case .activityList:    ActivityListView(ownUsername: username)
             case .multiplayerGame: MultiplayerGameView(ownUsername: username)
             case .activeGames:     ActiveGamesView(ownUsername: username)
             case .allModes:
@@ -187,9 +197,14 @@ struct HomeView: View {
                 .toolbar(.hidden, for: .navigationBar)
         }
         .navigationDestination(for: ServerModeRoute.self) { route in
-            KnowledgeGameView(serverMode: route.serverMode, username: username,
-                              resumeRoomID: route.resumeRoomID)
-                .toolbar(.hidden, for: .navigationBar)
+            KnowledgeGameView(
+                serverMode: route.serverMode, username: username,
+                resumeRoomID: route.resumeRoomID,
+                resumeLives: route.resumeLives, resumeSkips: route.resumeSkips,
+                resumeCorrectCount: route.resumeCorrectCount,
+                resumeStartLevel: route.resumeStartLevel
+            )
+            .toolbar(.hidden, for: .navigationBar)
         }
         }
         .fullScreenCover(isPresented: $showOnboarding) {
@@ -299,12 +314,22 @@ struct HomeView: View {
         return Button {
             if playingRooms.count == 1 {
                 let room = playingRooms[0]
+                let me = room.players.first(where: { $0.isYou })
                 if room.isStandaloneSolo, let slug = room.serverModeSlug,
                    let serverMode = modeCache.serverOnlyModes.first(where: { $0.slug == slug }) {
-                    gamePath.append(ServerModeRoute(serverMode: serverMode, resumeRoomID: room.id))
+                    gamePath.append(ServerModeRoute(
+                        serverMode: serverMode, resumeRoomID: room.id,
+                        resumeLives: me?.lives, resumeSkips: me?.skips,
+                        resumeCorrectCount: me?.correctCount, resumeStartLevel: room.startLevel
+                    ))
                 } else if room.isStandaloneSolo, room.serverModeSlug == nil {
                     let mode = room.mode
-                    gamePath.append(GameModeRoute(mode: mode, resumeRoomID: room.id))
+                    let position = mode == .pi ? room.myPiDigitIndex : room.startLevel
+                    gamePath.append(GameModeRoute(
+                        mode: mode, resumeRoomID: room.id,
+                        resumeLives: me?.lives, resumeSkips: me?.skips,
+                        resumeCorrectCount: me?.correctCount, resumeStartLevel: position
+                    ))
                 } else {
                     multiplayer.rejoin(roomID: room.id)
                     activeDestination = .multiplayerGame
@@ -393,7 +418,7 @@ struct HomeView: View {
         .padding(MDSpacing.md)
         .background(Color.mdSurface)
         .clipShape(RoundedRectangle(cornerRadius: 20))
-        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.mdBorder2, lineWidth: 0.5))
+        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.mdBorder2, lineWidth: 1))
     }
 
     // MARK: – Scoreboard card (redesigned)
@@ -427,7 +452,7 @@ struct HomeView: View {
             .padding(MDSpacing.md)
             .background(Color.mdSurface)
             .clipShape(RoundedRectangle(cornerRadius: 20))
-            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.mdBorder2, lineWidth: 0.5))
+            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.mdBorder2, lineWidth: 1))
         }
         .buttonStyle(.plain)
     }
@@ -511,11 +536,18 @@ struct HomeView: View {
     }
 
     private func startOrResume(_ mode: GameMode) {
-        let resumeRoomID = multiplayer.backgroundRooms.first(where: {
+        if let room = multiplayer.backgroundRooms.first(where: {
             $0.isStandaloneSolo && $0.mode == mode && $0.serverModeSlug == nil && $0.status == .playing
-        })?.id
-        if resumeRoomID != nil {
-            gamePath.append(GameModeRoute(mode: mode, resumeRoomID: resumeRoomID))
+        }), let me = room.players.first(where: { $0.isYou }) {
+            let position = mode == .pi ? room.myPiDigitIndex : room.startLevel
+            gamePath.append(GameModeRoute(
+                mode: mode,
+                resumeRoomID: room.id,
+                resumeLives: me.lives,
+                resumeSkips: me.skips,
+                resumeCorrectCount: me.correctCount,
+                resumeStartLevel: position
+            ))
         } else {
             pendingGameMode = mode
         }
@@ -526,23 +558,48 @@ struct HomeView: View {
     }
 
     private func startOrResumeServer(_ serverMode: ServerMode) {
-        let resumeRoomID = multiplayer.backgroundRooms.first(where: {
+        if let room = multiplayer.backgroundRooms.first(where: {
             $0.isStandaloneSolo && $0.serverModeSlug == serverMode.slug && $0.status == .playing
-        })?.id
-        gamePath.append(ServerModeRoute(serverMode: serverMode, resumeRoomID: resumeRoomID))
+        }), let me = room.players.first(where: { $0.isYou }) {
+            gamePath.append(ServerModeRoute(
+                serverMode: serverMode,
+                resumeRoomID: room.id,
+                resumeLives: me.lives,
+                resumeSkips: me.skips,
+                resumeCorrectCount: me.correctCount,
+                resumeStartLevel: room.startLevel
+            ))
+        } else {
+            gamePath.append(ServerModeRoute(serverMode: serverMode, resumeRoomID: nil))
+        }
     }
 
     @ViewBuilder
     private func soloGameView(route: GameModeRoute) -> some View {
         switch route.mode {
         case .pi:
-            PiGameView(username: username, resumeRoomID: route.resumeRoomID,
-                       isPractice: route.isPractice, practiceStartDigit: route.practiceStartLevel)
+            PiGameView(
+                username: username, resumeRoomID: route.resumeRoomID,
+                isPractice: route.isPractice, practiceStartDigit: route.practiceStartLevel,
+                resumeLives: route.resumeLives, resumeSkips: route.resumeSkips,
+                resumeCorrectCount: route.resumeCorrectCount,
+                resumeDigitIndex: route.resumeStartLevel
+            )
         case .math:
-            MathGameView(username: username, resumeRoomID: route.resumeRoomID,
-                         isPractice: route.isPractice, practiceStartLevel: route.practiceStartLevel)
+            MathGameView(
+                username: username, resumeRoomID: route.resumeRoomID,
+                isPractice: route.isPractice, practiceStartLevel: route.practiceStartLevel,
+                resumeLives: route.resumeLives, resumeSkips: route.resumeSkips,
+                resumeCorrectCount: route.resumeCorrectCount,
+                resumeStartLevel: route.resumeStartLevel
+            )
         default:
-            StandardGameView(mode: route.mode, username: username, resumeRoomID: route.resumeRoomID)
+            StandardGameView(
+                mode: route.mode, username: username, resumeRoomID: route.resumeRoomID,
+                resumeLives: route.resumeLives, resumeSkips: route.resumeSkips,
+                resumeCorrectCount: route.resumeCorrectCount,
+                resumeStartLevel: route.resumeStartLevel
+            )
         }
     }
 

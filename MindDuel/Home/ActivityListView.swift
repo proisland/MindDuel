@@ -1,11 +1,14 @@
 import SwiftUI
 
 struct ActivityListView: View {
+    let ownUsername: String
+
     @ObservedObject private var store  = MultiplayerStore.shared
     @ObservedObject private var social = SocialStore.shared
     @Environment(\.dismiss) private var dismiss
 
     @State private var kudosSent: Set<String> = []
+    @State private var selectedUsername: String? = nil
 
     @State private var nowTick = Date()
     private let tickTimer = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
@@ -71,17 +74,26 @@ struct ActivityListView: View {
             }
         }
         .onReceive(tickTimer) { nowTick = $0 }
+        .fullScreenCover(item: Binding(
+            get: { selectedUsername.map { UserProfile.stub(username: $0) } },
+            set: { selectedUsername = $0?.username }
+        )) { profile in
+            OtherProfileView(profile: profile, ownUsername: ownUsername)
+        }
     }
 
     private func gameRow(_ item: MultiplayerActivityItem) -> some View {
         HStack(spacing: MDSpacing.sm) {
-            ZStack(alignment: .bottomTrailing) {
-                MDAvatar(username: item.opponentUsername, size: .sm)
-                Circle()
-                    .fill(item.didWin ? Color.mdGreen : Color.mdRed)
-                    .frame(width: 8, height: 8)
-                    .offset(x: 2, y: 2)
+            Button { selectedUsername = item.opponentUsername } label: {
+                ZStack(alignment: .bottomTrailing) {
+                    MDAvatar(username: item.opponentUsername, size: .sm)
+                    Circle()
+                        .fill(item.didWin ? Color.mdGreen : Color.mdRed)
+                        .frame(width: 8, height: 8)
+                        .offset(x: 2, y: 2)
+                }
             }
+            .buttonStyle(.plain)
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.didWin
                      ? String(format: String(localized: "activity_won_format"), item.opponentUsername)
@@ -124,17 +136,23 @@ struct ActivityListView: View {
         HStack(spacing: MDSpacing.sm) {
             switch item.type {
             case .newFriend:
-                ZStack(alignment: .bottomTrailing) {
-                    MDAvatar(username: item.user1?.username ?? "?", size: .sm)
-                    Image(systemName: "person.2.fill")
-                        .font(.system(size: 6, weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(3)
-                        .background(Color.mdGreen)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(Color.mdBg, lineWidth: 1.5))
-                        .offset(x: 2, y: 2)
+                let friendUsername = item.isMe == true
+                    ? (item.user2?.username ?? "?")
+                    : (item.user1?.username ?? "?")
+                Button { selectedUsername = friendUsername } label: {
+                    ZStack(alignment: .bottomTrailing) {
+                        MDAvatar(username: item.user1?.username ?? "?", size: .sm)
+                        Image(systemName: "person.2.fill")
+                            .font(.system(size: 6, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(3)
+                            .background(Color.mdGreen)
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(Color.mdBg, lineWidth: 1.5))
+                            .offset(x: 2, y: 2)
+                    }
                 }
+                .buttonStyle(.plain)
                 VStack(alignment: .leading, spacing: 2) {
                     if item.isMe == true {
                         Text("Du og @\(item.user2?.username ?? "?") ble venner")
@@ -147,20 +165,23 @@ struct ActivityListView: View {
                     }
                 }
             case .streak:
-                ZStack(alignment: .bottomTrailing) {
-                    MDAvatar(username: item.user?.username ?? "?", size: .sm)
-                    Text("🔥").font(.system(size: 11)).offset(x: 3, y: 3)
+                let streakUser = item.user?.username ?? "?"
+                Button { if item.isMine != true { selectedUsername = streakUser } } label: {
+                    ZStack(alignment: .bottomTrailing) {
+                        MDAvatar(username: streakUser, size: .sm)
+                        Text("🔥").font(.system(size: 11)).offset(x: 3, y: 3)
+                    }
                 }
+                .buttonStyle(.plain)
+                .disabled(item.isMine == true)
                 VStack(alignment: .leading, spacing: 2) {
                     let who = item.isMine == true ? "Du" : "@\(item.user?.username ?? "?")"
-                    Text("\(who) holder \(item.streakCount ?? 0)-dagers streak")
+                    let modeStr = item.modeName.map { " i \($0)" } ?? ""
+                    Text("\(who) holder \(item.streakCount ?? 0)-dagers streak\(modeStr)")
                         .mdStyle(.caption)
                         .foregroundStyle(Color.mdText)
-                    if let modeName = item.modeName {
-                        Text("i \(modeName)")
-                            .mdStyle(.micro)
-                            .foregroundStyle(Color.mdText3)
-                    }
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             case .unknown:
                 EmptyView()

@@ -7,6 +7,7 @@ struct KnowledgeGameView: View {
     let serverMode: ServerMode
     let username: String
     var resumeRoomID: String? = nil
+    private let hasDirectResumeState: Bool
 
     @StateObject private var engine          = GameEngine()
     @ObservedObject private var progression  = ProgressionStore.shared
@@ -31,17 +32,30 @@ struct KnowledgeGameView: View {
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @MainActor init(serverMode: ServerMode, username: String, resumeRoomID: String? = nil) {
+    @MainActor init(serverMode: ServerMode, username: String, resumeRoomID: String? = nil,
+         resumeLives: Int? = nil, resumeSkips: Int? = nil,
+         resumeCorrectCount: Int? = nil, resumeStartLevel: Int? = nil) {
         self.serverMode   = serverMode
         self.username     = username
         self.resumeRoomID = resumeRoomID
-        let lvl = ProgressionStore.shared.level(forSlug: serverMode.slug)
-        _startLevel       = State(initialValue: lvl)
-        _currentQuestion  = State(initialValue: KnowledgeProblemGenerator.generate(slug: serverMode.slug, level: lvl))
-        if let id = resumeRoomID,
-           let room = MultiplayerStore.shared.backgroundRooms.first(where: { $0.id == id }),
-           let me = room.players.first(where: { $0.isYou }) {
-            _engine = StateObject(wrappedValue: GameEngine(lives: me.lives, skips: me.skips, correctCount: me.correctCount))
+        self.hasDirectResumeState = resumeLives != nil
+
+        if let rsLevel = resumeStartLevel, let rsLives = resumeLives,
+           let rsSkips = resumeSkips, let rsCount = resumeCorrectCount {
+            let lvl = max(1, rsLevel)
+            _startLevel      = State(initialValue: lvl)
+            _problemCount    = State(initialValue: max(1, rsCount + 1))
+            _currentQuestion = State(initialValue: KnowledgeProblemGenerator.generate(slug: serverMode.slug, level: lvl))
+            _engine = StateObject(wrappedValue: GameEngine(lives: rsLives, skips: rsSkips, correctCount: rsCount))
+        } else {
+            let lvl = ProgressionStore.shared.level(forSlug: serverMode.slug)
+            _startLevel      = State(initialValue: lvl)
+            _currentQuestion = State(initialValue: KnowledgeProblemGenerator.generate(slug: serverMode.slug, level: lvl))
+            if let id = resumeRoomID,
+               let room = MultiplayerStore.shared.backgroundRooms.first(where: { $0.id == id }),
+               let me = room.players.first(where: { $0.isYou }) {
+                _engine = StateObject(wrappedValue: GameEngine(lives: me.lives, skips: me.skips, correctCount: me.correctCount))
+            }
         }
     }
 
@@ -291,6 +305,7 @@ struct KnowledgeGameView: View {
     }
 
     private func restoreSavedSessionIfNeeded() {
+        guard !hasDirectResumeState else { return }
         guard !hasRestoredSession, let id = resumeRoomID else { return }
         hasRestoredSession = true
         let room = MultiplayerStore.shared.backgroundRooms.first(where: {

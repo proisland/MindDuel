@@ -6,7 +6,7 @@ import Foundation
 /// elektrisitet, magnetisme, moderne fysikk, relativitet, kvantemekanikk.
 enum PhysicsQuestionBank {
 
-    typealias Raw = PhysicsProblemGenerator.Raw
+    typealias Raw = QuizProblemGenerator.Raw
 
     static func questions(forLevel level: Int) -> [Raw] {
         switch max(1, min(20, level)) {

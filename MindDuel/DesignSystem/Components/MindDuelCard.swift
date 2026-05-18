@@ -15,7 +15,7 @@ struct MDPrimaryCard<Content: View>: View {
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.mdBorder2, lineWidth: 0.5)
+                    .stroke(Color.mdBorder2, lineWidth: 1)
             )
     }
 }
@@ -35,7 +35,7 @@ struct MDSecondaryCard<Content: View>: View {
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
-                    .stroke(Color.mdBorder2, lineWidth: 0.5)
+                    .stroke(Color.mdBorder2, lineWidth: 1)
             )
     }
 }

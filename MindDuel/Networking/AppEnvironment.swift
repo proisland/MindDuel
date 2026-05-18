@@ -10,8 +10,8 @@ enum AppEnvironment: String, CaseIterable {
 
     static var current: AppEnvironment {
         get {
-            let raw = UserDefaults.standard.string(forKey: key) ?? "local"
-            return AppEnvironment(rawValue: raw) ?? .local
+            let raw = UserDefaults.standard.string(forKey: key) ?? "production"
+            return AppEnvironment(rawValue: raw) ?? .production
         }
         set {
             UserDefaults.standard.set(newValue.rawValue, forKey: key)

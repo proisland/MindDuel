@@ -5,6 +5,8 @@ struct PiGameView: View {
     var resumeRoomID: String? = nil
     let isPractice: Bool
     let practiceStartDigit: Int
+    private let hasDirectResumeState: Bool
+    private let directSessionStartIndex: Int
 
     @StateObject private var engine      = GameEngine()
     @ObservedObject private var progression = ProgressionStore.shared
@@ -30,13 +32,20 @@ struct PiGameView: View {
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
     @MainActor init(username: String, resumeRoomID: String? = nil,
-         isPractice: Bool = false, practiceStartDigit: Int = 0) {
+         isPractice: Bool = false, practiceStartDigit: Int = 0,
+         resumeLives: Int? = nil, resumeSkips: Int? = nil,
+         resumeCorrectCount: Int? = nil, resumeDigitIndex: Int? = nil) {
         self.username = username
         self.resumeRoomID = resumeRoomID
         self.isPractice = isPractice
         self.practiceStartDigit = practiceStartDigit
-        if resumeRoomID != nil {
-            // Look up by mode — the ID may have drifted after a re-save.
+        self.hasDirectResumeState = resumeLives != nil
+        self.directSessionStartIndex = resumeDigitIndex ?? 0
+
+        if !isPractice, let rsLives = resumeLives, let rsSkips = resumeSkips,
+           let rsCount = resumeCorrectCount {
+            _engine = StateObject(wrappedValue: GameEngine(lives: rsLives, skips: rsSkips, correctCount: rsCount))
+        } else if !isPractice, resumeRoomID != nil {
             let savedRoom = MultiplayerStore.shared.backgroundRooms.first(where: { room in
                 room.isStandaloneSolo && room.mode == .pi && room.serverModeSlug == nil
             })
@@ -150,7 +159,14 @@ struct PiGameView: View {
     private func restoreOrStartFresh() {
         guard !hasRestoredSession else { return }
         hasRestoredSession = true
-        // Use mode-based lookup (ID may have drifted after a re-save).
+
+        if hasDirectResumeState {
+            // Digit index and engine state were already set in init.
+            sessionStartIndex = directSessionStartIndex
+            currentIndex = 0
+            return
+        }
+
         let room = resumeRoomID != nil
             ? MultiplayerStore.shared.backgroundRooms.first(where: {
                 $0.isStandaloneSolo && $0.mode == .pi && $0.serverModeSlug == nil
@@ -162,7 +178,6 @@ struct PiGameView: View {
             engine.restoreState(lives: me.lives, skips: me.skips, correctCount: me.correctCount)
             return
         }
-        // Fresh game: start at the boundary of the user's current Pi level
         sessionStartIndex = levelStartIndex
     }
 

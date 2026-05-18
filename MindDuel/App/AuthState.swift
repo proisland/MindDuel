@@ -138,6 +138,11 @@ final class AuthState: ObservableObject {
     private func loadProfile(userID: String) async throws {
         let user: APIUser = try await APIClient.shared.get("me")
         if let username = user.username {
+            // Apply the server's quota limit immediately so unlimited users
+            // never see a false "quota exhausted" state before syncWithBackend fires.
+            if let quota = user.dailyQuota {
+                ProgressionStore.shared.applyQuotaFromProfile(used: quota.used, limit: quota.limit)
+            }
             phase = .authenticated(userID: userID, username: username)
             ProgressionStore.shared.syncWithBackend()
             Task { await SocialStore.shared.refresh() }

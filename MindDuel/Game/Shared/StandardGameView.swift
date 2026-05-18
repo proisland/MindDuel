@@ -7,6 +7,8 @@ struct StandardGameView: View {
     let mode: GameMode
     let username: String
     let resumeRoomID: String?
+    // True when caller already provided saved state — skips backgroundRooms lookup.
+    private let hasDirectResumeState: Bool
 
     @StateObject private var engine      = GameEngine()
     @ObservedObject private var progression = ProgressionStore.shared
@@ -29,22 +31,35 @@ struct StandardGameView: View {
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @MainActor init(mode: GameMode, username: String, resumeRoomID: String? = nil) {
+    @MainActor init(mode: GameMode, username: String, resumeRoomID: String? = nil,
+         resumeLives: Int? = nil, resumeSkips: Int? = nil,
+         resumeCorrectCount: Int? = nil, resumeStartLevel: Int? = nil) {
         self.mode = mode
         self.username = username
         self.resumeRoomID = resumeRoomID
-        let lvl = ProgressionStore.shared.level(for: mode)
-        _startLevel = State(initialValue: lvl)
-        Self.resetRoundHistory(mode: mode)
-        _problem = State(initialValue: Self.generate(mode: mode, level: lvl))
-        if resumeRoomID != nil {
-            // Look up by mode rather than ID — the ID may have drifted after a re-save.
-            let resumeMode = mode
-            let savedRoom = MultiplayerStore.shared.backgroundRooms.first(where: { room in
-                room.isStandaloneSolo && room.mode == resumeMode && room.serverModeSlug == nil
-            })
-            if let me = savedRoom?.players.first(where: { $0.isYou }) {
-                _engine = StateObject(wrappedValue: GameEngine(lives: me.lives, skips: me.skips, correctCount: me.correctCount))
+        self.hasDirectResumeState = resumeLives != nil
+
+        if let rsLevel = resumeStartLevel, let rsLives = resumeLives,
+           let rsSkips = resumeSkips, let rsCount = resumeCorrectCount {
+            let lvl = max(1, rsLevel)
+            _startLevel   = State(initialValue: lvl)
+            _problemCount = State(initialValue: max(1, rsCount + 1))
+            Self.resetRoundHistory(mode: mode)
+            _problem = State(initialValue: Self.generate(mode: mode, level: ProgressionStore.shared.level(for: mode)))
+            _engine = StateObject(wrappedValue: GameEngine(lives: rsLives, skips: rsSkips, correctCount: rsCount))
+        } else {
+            let lvl = ProgressionStore.shared.level(for: mode)
+            _startLevel = State(initialValue: lvl)
+            Self.resetRoundHistory(mode: mode)
+            _problem = State(initialValue: Self.generate(mode: mode, level: lvl))
+            if resumeRoomID != nil {
+                let resumeMode = mode
+                let savedRoom = MultiplayerStore.shared.backgroundRooms.first(where: { room in
+                    room.isStandaloneSolo && room.mode == resumeMode && room.serverModeSlug == nil
+                })
+                if let me = savedRoom?.players.first(where: { $0.isYou }) {
+                    _engine = StateObject(wrappedValue: GameEngine(lives: me.lives, skips: me.skips, correctCount: me.correctCount))
+                }
             }
         }
     }
@@ -107,9 +122,10 @@ struct StandardGameView: View {
     // MARK: – Session restore / save
 
     private func restoreSavedSessionIfNeeded() {
+        // Direct resume state was provided in init — nothing to restore.
+        guard !hasDirectResumeState else { return }
         guard !hasRestoredSession, resumeRoomID != nil else { return }
         hasRestoredSession = true
-        // Use mode-based lookup (ID may have drifted after a re-save).
         let room = MultiplayerStore.shared.backgroundRooms.first(where: {
             $0.isStandaloneSolo && $0.mode == mode && $0.serverModeSlug == nil
         })

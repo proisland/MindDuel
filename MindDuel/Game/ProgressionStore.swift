@@ -433,6 +433,13 @@ import SwiftUI
 
     // MARK: – Backend sync
 
+    /// Applies quota data received from GET /me before the full sync runs.
+    /// Ensures unlimited users never see a false exhausted state on launch.
+    func applyQuotaFromProfile(used: Int, limit: Int) {
+        set(serverDailyLimit: limit)
+        set(dailyUsed: min(used, limit))
+    }
+
     /// Syncs quota (takes max of local vs server) and pulls progression data.
     /// Safe to call on launch or after returning from offline.
     func syncWithBackend() {

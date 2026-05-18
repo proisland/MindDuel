@@ -308,11 +308,13 @@ export default async function gamesRoutes(app: FastifyInstance) {
         },
       })
 
+      const totalCorrectAnswerTimeMs = correctAnswers.reduce((s, a) => s + a.answerTimeMs, 0)
       await tx.user.update({
         where: { id: request.userId },
         data: {
           totalRoundsPlayed: { increment: 1 },
           totalCorrectAnswers: { increment: correctCount },
+          totalCorrectAnswerTimeMs: { increment: BigInt(Math.round(totalCorrectAnswerTimeMs)) },
           lastActiveAt: new Date(),
         },
       })

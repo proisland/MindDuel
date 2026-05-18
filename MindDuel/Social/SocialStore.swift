@@ -107,6 +107,19 @@ extension UserProfile {
         )
     }
 
+    /// Minimal stub for navigating to OtherProfileView when only a username is known.
+    /// OtherProfileView loads the real data from the network on appear.
+    static func stub(username: String) -> UserProfile {
+        UserProfile(
+            id: username,
+            username: username,
+            piScore: 0, mathScore: 0, piLevel: 1, mathLevel: 1,
+            roundsPlayed: 0, age: nil, city: nil,
+            memberSince: "–", lastActive: "–",
+            isFriend: false, isFlagged: false
+        )
+    }
+
     static func relativeTime(_ date: Date) -> String {
         let cal = Calendar.current
         let timeFmt = DateFormatter()

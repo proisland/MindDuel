@@ -5,7 +5,7 @@ import Foundation
 /// Norsk fokus i lavere nivåer; internasjonal historie i høyere.
 enum SportQuestionBank {
 
-    typealias Raw = SportProblemGenerator.Raw
+    typealias Raw = QuizProblemGenerator.Raw
 
     static func questions(forLevel level: Int) -> [Raw] {
         switch max(1, min(20, level)) {

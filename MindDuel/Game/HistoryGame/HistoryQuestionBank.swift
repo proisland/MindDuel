@@ -6,7 +6,7 @@ import Foundation
 /// forhistorie til moderne tid.
 enum HistoryQuestionBank {
 
-    typealias Raw = HistoryProblemGenerator.Raw
+    typealias Raw = QuizProblemGenerator.Raw
 
     static func questions(forLevel level: Int) -> [Raw] {
         switch max(1, min(20, level)) {
