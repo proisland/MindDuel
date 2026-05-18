@@ -166,4 +166,9 @@ async function runMigrationsInternal(prisma: PrismaClient) {
       ADD COLUMN IF NOT EXISTS "isUnlimited" BOOLEAN NOT NULL DEFAULT false
   `)
 
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "User"
+      ADD COLUMN IF NOT EXISTS "avatarUrl" TEXT
+  `)
+
 }
