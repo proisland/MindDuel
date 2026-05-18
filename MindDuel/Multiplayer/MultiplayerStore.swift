@@ -204,15 +204,20 @@ import UserNotifications
             currentRoom?.invitedUsernames.append(username)
         }
         var player = MultiplayerPlayer(id: playerID, username: username, isHost: false, isReady: false)
-        // Mock invitee stats — deterministic from username so the lobby line
-        // doesn't jitter between renders. Replace with server data in M5+.
         let seed = abs(username.hashValue)
         player.piLevel      = 1 + seed % 12
         player.mathLevel    = 1 + (seed / 13) % 12
         player.piBestScore  = (seed % 1500)
         player.mathBestScore = ((seed / 17) % 1500)
         currentRoom?.players.append(player)
-        simulatePlayerReady(playerID: playerID)
+        if let roomId = backendRoomId {
+            Task {
+                struct Body: Encodable { let username: String }
+                try? await APIClient.shared.post("ws/rooms/\(roomId)/invite", body: Body(username: username)) as Empty
+            }
+        } else {
+            simulatePlayerReady(playerID: playerID)
+        }
     }
 
     /// Snapshot the local user's progression stats onto the player record

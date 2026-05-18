@@ -192,7 +192,12 @@ extension UserProfile {
         Task {
             do {
                 struct Body: Encodable { let username: String }
-                let _: Empty = try await APIClient.shared.post("friends/requests", body: Body(username: username))
+                struct RequestResponse: Decodable { let friendshipCreated: Bool?; let message: String? }
+                let resp: RequestResponse = try await APIClient.shared.post("friends/requests", body: Body(username: username))
+                if resp.friendshipCreated == true {
+                    sentRequestUsernames.remove(username)
+                    await refresh()
+                }
             } catch APIError.conflict {
                 // 409 means a request already exists — keep the optimistic UI state
             } catch {

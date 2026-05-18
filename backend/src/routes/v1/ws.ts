@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import type { WebSocket } from '@fastify/websocket'
 import { z } from 'zod'
 import crypto from 'crypto'
+import { sendPush } from '../../lib/apns'
 
 // ── Room state (stored in Redis with TTL) ─────────────────────────────────────
 
@@ -114,6 +115,8 @@ const createRoomBody = z.object({
   startLevel: z.number().int().min(0).default(0),
 })
 
+const inviteBody = z.object({ username: z.string().min(1) })
+
 export default async function wsRoutes(app: FastifyInstance) {
   const auth = { onRequest: [app.authenticate] }
 
@@ -205,6 +208,37 @@ export default async function wsRoutes(app: FastifyInstance) {
 
     const state = await getRoomState(app.redis, room.id)
     return reply.send({ ...room, participants: state?.participants ?? [] })
+  })
+
+  // POST /v1/rooms/:roomId/invite — send a push invite to a friend by username
+  app.post('/rooms/:roomId/invite', auth, async (request, reply) => {
+    const { roomId } = request.params as { roomId: string }
+    const body = inviteBody.safeParse(request.body)
+    if (!body.success) return reply.status(400).send({ error: 'Invalid body' })
+
+    const state = await getRoomState(app.redis, roomId)
+    if (!state) return reply.status(404).send({ error: 'Room not found' })
+    if (state.hostUserId !== request.userId) return reply.status(403).send({ error: 'Only host can invite' })
+
+    const [invitee, inviter] = await Promise.all([
+      app.prisma.user.findUnique({ where: { username: body.data.username }, select: { id: true } }),
+      app.prisma.user.findUnique({ where: { id: request.userId }, select: { username: true } }),
+    ])
+    if (!invitee) return reply.status(404).send({ error: 'User not found' })
+
+    const inviterName = inviter?.username ?? 'Noen'
+    app.prisma.pushToken.findMany({ where: { userId: invitee.id } }).then(tokens => {
+      tokens.forEach(({ deviceToken }) =>
+        sendPush(deviceToken, 'Spillinvitasjon 🎮', `${inviterName} inviterer deg til et spill`, {
+          kind: 'multiplayerInvite',
+          roomCode: state.code,
+          mode: state.mode,
+          fromUsername: inviterName,
+        }).catch(() => {}),
+      )
+    }).catch(() => {})
+
+    return reply.status(204).send()
   })
 
   // WS /v1/rooms/:roomId/ws — real-time game connection

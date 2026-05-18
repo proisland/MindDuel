@@ -81,7 +81,7 @@ export default async function friendsRoutes(app: FastifyInstance) {
     if (!body.success) return reply.status(400).send({ error: 'Invalid body' })
 
     const [target, sender] = await Promise.all([
-      app.prisma.user.findUnique({ where: { username: body.data.username }, select: { id: true } }),
+      app.prisma.user.findUnique({ where: { username: body.data.username }, select: { id: true, username: true } }),
       app.prisma.user.findUnique({ where: { id: request.userId }, select: { username: true } }),
     ])
     if (!target) return reply.status(404).send({ error: 'User not found' })
@@ -115,11 +115,18 @@ export default async function friendsRoutes(app: FastifyInstance) {
           data: { senderId: target.id, receiverId: request.userId },
         })
       })
-      // Notify both users that they are now friends
       const senderName = sender?.username ?? 'Noen'
+      const targetName = target.username
+      // Notify target: their original request was accepted
       app.prisma.pushToken.findMany({ where: { userId: target.id } }).then(tokens => {
         tokens.forEach(({ deviceToken }) =>
-          sendPush(deviceToken, 'Ny venn! 🎉', `${senderName} og du er nå venner`).catch(() => {}),
+          sendPush(deviceToken, 'Ny venn! 🎉', `${senderName} og du er nå venner`, { kind: 'newFriend' }).catch(() => {}),
+        )
+      }).catch(() => {})
+      // Notify sender: their request was auto-accepted
+      app.prisma.pushToken.findMany({ where: { userId: request.userId } }).then(tokens => {
+        tokens.forEach(({ deviceToken }) =>
+          sendPush(deviceToken, 'Ny venn! 🎉', `Du og ${targetName} er nå venner`, { kind: 'newFriend' }).catch(() => {}),
         )
       }).catch(() => {})
       return reply.status(201).send({ friendshipCreated: true })
@@ -133,7 +140,7 @@ export default async function friendsRoutes(app: FastifyInstance) {
     const senderName = sender?.username ?? 'Noen'
     app.prisma.pushToken.findMany({ where: { userId: target.id } }).then(tokens => {
       tokens.forEach(({ deviceToken }) =>
-        sendPush(deviceToken, 'Venneforespørsel', `${senderName} vil være venner med deg`).catch(() => {}),
+        sendPush(deviceToken, 'Venneforespørsel', `${senderName} vil være venner med deg`, { kind: 'friendRequest' }).catch(() => {}),
       )
     }).catch(() => {})
 

@@ -64,13 +64,53 @@ struct MindDuelApp: App {
     }
 }
 
-final class AppDelegate: NSObject, UIApplicationDelegate {
+final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        UNUserNotificationCenter.current().delegate = self
+        return true
+    }
+
     func application(
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
         let token = deviceToken.map { String(format: "%02x", $0) }.joined()
         NotificationCenter.default.post(name: .apnsTokenRegistered, object: token)
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        let info = response.notification.request.content.userInfo
+        let kind = info["kind"] as? String
+        if kind == "multiplayerInvite",
+           let roomCode = info["roomCode"] as? String,
+           let modeSlug = info["mode"] as? String,
+           let fromUsername = info["fromUsername"] as? String {
+            let mode = GameMode(slug: modeSlug) ?? .pi
+            let invite = MultiplayerInvite(roomCode: roomCode, mode: mode, hostUsername: fromUsername, invitedAt: Date())
+            Task { @MainActor in
+                MultiplayerStore.shared.pendingInvites.append(invite)
+            }
+        } else if kind == "newFriend" || kind == "friendRequest" {
+            Task { @MainActor in
+                await SocialStore.shared.refresh()
+            }
+        }
+        completionHandler()
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
     }
 }
 

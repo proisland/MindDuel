@@ -37,12 +37,12 @@ function getH2Session(): http2.ClientHttp2Session {
   return h2Session
 }
 
-export async function sendPush(deviceToken: string, title: string, body: string): Promise<void> {
+export async function sendPush(deviceToken: string, title: string, body: string, data?: Record<string, string>): Promise<void> {
   if (!config.apns.keyId || !config.apns.teamId || !config.apns.privateKeyBase64 || !config.apns.bundleId) return
 
   const jwt = await getJWT()
   const host = config.isDev ? 'api.sandbox.push.apple.com' : 'api.push.apple.com'
-  const payload = JSON.stringify({ aps: { alert: { title, body }, sound: 'default' } })
+  const payload = JSON.stringify({ aps: { alert: { title, body }, sound: 'default' }, ...(data ?? {}) })
 
   return new Promise((resolve, reject) => {
     let client: http2.ClientHttp2Session
