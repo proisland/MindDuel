@@ -2,6 +2,9 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import crypto from 'node:crypto'
 import { sendPush } from '../../lib/apns'
+import { GetObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { config } from '../../config'
 
 const patchBody = z.object({
   status:   z.enum(['open', 'in_progress', 'closed']).optional(),
@@ -55,7 +58,20 @@ export default async function adminFeedbackRoutes(app: FastifyInstance) {
         : Promise.resolve([] as RawComment[]),
     ])
 
-    const imageUrlById = new Map(rawImageUrls.map(r => [r.id, r.imageUrl]))
+    // Generate presigned GET URLs so private-bucket images are viewable in admin
+    const presignedById = new Map<string, string | null>()
+    await Promise.all(rawImageUrls.map(async ({ id, imageUrl }) => {
+      if (!imageUrl) { presignedById.set(id, null); return }
+      try {
+        const key = imageUrl.replace(config.s3.publicUrl + '/', '')
+        const cmd = new GetObjectCommand({ Bucket: config.s3.bucket, Key: key })
+        const url  = await getSignedUrl(app.s3, cmd, { expiresIn: 3600 })
+        presignedById.set(id, url)
+      } catch {
+        presignedById.set(id, imageUrl)
+      }
+    }))
+
     const commentsByTicket = (rawComments as RawComment[]).reduce<Record<string, RawComment[]>>(
       (acc, c) => {
         if (!acc[c.feedbackId]) acc[c.feedbackId] = [] as RawComment[]
@@ -67,7 +83,7 @@ export default async function adminFeedbackRoutes(app: FastifyInstance) {
 
     const tickets = ticketsBase.map(t => ({
       ...t,
-      imageUrl: imageUrlById.get(t.id) ?? null,
+      imageUrl: presignedById.get(t.id) ?? null,
       comments: commentsByTicket[t.id] ?? [],
     }))
 
@@ -95,11 +111,14 @@ export default async function adminFeedbackRoutes(app: FastifyInstance) {
     })
 
     if (body.data.notify && body.data.response && ticket.user.pushTokens.length > 0) {
-      await Promise.allSettled(
+      const results = await Promise.allSettled(
         ticket.user.pushTokens.map(t =>
           sendPush(t.deviceToken, 'Svar på tilbakemelding', body.data.response!)
         )
       )
+      results.forEach((r, i) => {
+        if (r.status === 'rejected') console.error(`[push] token[${i}] failed:`, r.reason)
+      })
     }
 
     return reply.send({ ok: true })
@@ -125,11 +144,16 @@ export default async function adminFeedbackRoutes(app: FastifyInstance) {
     const comment = { id: commentId, feedbackId: id, body: body.data.body, notified: body.data.notify }
 
     if (body.data.notify && ticket.user.pushTokens.length > 0) {
-      await Promise.allSettled(
+      const results = await Promise.allSettled(
         ticket.user.pushTokens.map(t =>
           sendPush(t.deviceToken, 'Ny kommentar på tilbakemelding', body.data.body)
         )
       )
+      results.forEach((r, i) => {
+        if (r.status === 'rejected') console.error(`[push] token[${i}] failed:`, r.reason)
+      })
+    } else if (body.data.notify) {
+      console.warn(`[push] notify=true but no tokens for feedback ${id}`)
     }
 
     return reply.send({ ok: true, comment })

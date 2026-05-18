@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { PutObjectCommand } from '@aws-sdk/client-s3'
+import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { config } from '../../config'
 
@@ -13,7 +13,10 @@ const createBody = z.object({
 
 async function sendFeedbackEmail(ticketId: string, username: string, message: string, imageUrl?: string | null) {
   const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) return
+  if (!apiKey) {
+    console.warn('[email] RESEND_API_KEY not set — skipping feedback email')
+    return
+  }
 
   const imageHtml = imageUrl ? `<p><img src="${imageUrl}" style="max-width:400px" /></p>` : ''
   const html = `
@@ -23,7 +26,7 @@ async function sendFeedbackEmail(ticketId: string, username: string, message: st
     ${imageHtml}
   `
 
-  await fetch('https://api.resend.com/emails', {
+  const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
@@ -35,7 +38,12 @@ async function sendFeedbackEmail(ticketId: string, username: string, message: st
       subject: `[MindDuel tilbakemelding] ${message.slice(0, 60).replace(/\n/g, ' ')}`,
       html,
     }),
-  }).catch(() => { /* non-fatal */ })
+  }).catch((err: unknown) => { console.error('[email] fetch error:', err); return null })
+
+  if (res && !res.ok) {
+    const body = await res.text().catch(() => '')
+    console.error(`[email] Resend error ${res.status}:`, body)
+  }
 }
 
 export default async function feedbackRoutes(app: FastifyInstance) {
@@ -91,6 +99,19 @@ export default async function feedbackRoutes(app: FastifyInstance) {
       },
     })
 
-    return reply.send({ tickets })
+    // Replace stored private S3 URLs with 1-hour presigned GET URLs
+    const ticketsWithUrls = await Promise.all(tickets.map(async t => {
+      if (!t.imageUrl) return t
+      try {
+        const key = t.imageUrl.replace(config.s3.publicUrl + '/', '')
+        const cmd = new GetObjectCommand({ Bucket: config.s3.bucket, Key: key })
+        const signedUrl = await getSignedUrl(app.s3, cmd, { expiresIn: 3600 })
+        return { ...t, imageUrl: signedUrl }
+      } catch {
+        return t
+      }
+    }))
+
+    return reply.send({ tickets: ticketsWithUrls })
   })
 }

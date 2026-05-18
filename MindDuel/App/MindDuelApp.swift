@@ -53,10 +53,10 @@ struct MindDuelApp: App {
 
     private func registerPushToken(_ token: String) async {
         do {
-            struct Body: Encodable { let token: String; let platform: String }
+            struct Body: Encodable { let deviceToken: String }
             let _: Empty = try await APIClient.shared.post(
                 "me/push-token",
-                body: Body(token: token, platform: "apns")
+                body: Body(deviceToken: token)
             )
         } catch {
             // Non-critical; token will be re-registered on next launch
