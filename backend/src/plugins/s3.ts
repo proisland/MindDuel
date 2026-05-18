@@ -12,6 +12,8 @@ export default fp(async (app: FastifyInstance) => {
       secretAccessKey: config.s3.secretKey,
     },
     forcePathStyle: config.s3.forcePathStyle,
+    requestChecksumCalculation: 'WHEN_REQUIRED',
+    responseChecksumValidation: 'WHEN_REQUIRED',
   })
 
   app.decorate('s3', s3)

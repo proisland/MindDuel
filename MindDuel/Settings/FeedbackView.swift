@@ -203,10 +203,15 @@ struct FeedbackView: View {
                     var request = URLRequest(url: URL(string: urls.uploadUrl)!)
                     request.httpMethod = "PUT"
                     request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
-                    _ = try await URLSession.shared.upload(for: request, from: imageData)
-                    imageUrl = urls.publicUrl
+                    let (_, uploadResponse) = try await URLSession.shared.upload(for: request, from: imageData)
+                    let httpStatus = (uploadResponse as? HTTPURLResponse)?.statusCode ?? 0
+                    if httpStatus == 200 {
+                        imageUrl = urls.publicUrl
+                    } else {
+                        print("[FeedbackUpload] R2 PUT feila med status \(httpStatus)")
+                    }
                 } catch {
-                    // Proceed without image
+                    print("[FeedbackUpload] Nettverksfeil: \(error)")
                 }
             }
 
