@@ -508,7 +508,7 @@ struct ScoreboardView: View {
         } label: {
             HStack(spacing: MDSpacing.sm) {
                 Group {
-                    if let trophy = trophyColor(forRank: rank), !isOwn {
+                    if let trophy = trophyColor(forRank: rank) {
                         Image(systemName: "trophy.fill")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(trophy)
@@ -531,9 +531,7 @@ struct ScoreboardView: View {
                             .foregroundStyle(Color.mdText)
                             .lineLimit(1)
                             .truncationMode(.tail)
-                        if isOwn {
-                            MDPillTag(label: String(localized: "your_label"), variant: .accent)
-                        }
+
                         if profile.isFlagged {
                             Image(systemName: "flag.fill")
                                 .font(.system(size: 9))
