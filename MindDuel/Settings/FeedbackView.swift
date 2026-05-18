@@ -207,11 +207,12 @@ struct FeedbackView: View {
             logger.info("imageData størrelse: \(selectedImageData?.count ?? -1) bytes")
             if let imageData = selectedImageData {
                 do {
-                    struct UploadUrlResponse: Decodable { let uploadUrl: String; let publicUrl: String }
-                    let urls: UploadUrlResponse = try await APIClient.shared.post("feedback/upload-url", body: Empty())
-                    guard let uploadURL = URL(string: urls.uploadUrl) else { throw URLError(.badURL) }
-                    try await APIClient.shared.putData(to: uploadURL, data: imageData, contentType: "image/jpeg")
-                    imageUrl = urls.publicUrl
+                    struct ImageUploadBody: Encodable { let data: String }
+                    struct ImageUploadResponse: Decodable { let publicUrl: String }
+                    let body = ImageUploadBody(data: imageData.base64EncodedString())
+                    let resp: ImageUploadResponse = try await APIClient.shared.post("feedback/image", body: body)
+                    imageUrl = resp.publicUrl
+                    logger.info("Bilde lastet opp: \(resp.publicUrl)")
                 } catch {
                     logger.error("Nettverksfeil: \(error)")
                 }

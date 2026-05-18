@@ -4,6 +4,8 @@ import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { config } from '../../config'
 
+const uploadImageBody = z.object({ data: z.string().min(1) })
+
 const NOTIFY_EMAIL = 'petter.roisland@gmail.com'
 
 const createBody = z.object({
@@ -74,16 +76,19 @@ export default async function feedbackRoutes(app: FastifyInstance) {
     return reply.status(201).send({ id: ticket.id, status: ticket.status })
   })
 
-  // POST /v1/feedback/upload-url — presigned S3 PUT URL for feedback image
-  app.post('/upload-url', auth, async (request, reply) => {
+  // POST /v1/feedback/image — upload feedback image via backend (avoids presigned URL issues)
+  app.post('/image', auth, async (request, reply) => {
+    const body = uploadImageBody.safeParse(request.body)
+    if (!body.success) return reply.status(400).send({ error: 'Invalid body' })
+    const imageBuffer = Buffer.from(body.data.data, 'base64')
     const key = `feedback/${request.userId}/${Date.now()}.jpg`
-    const command = new PutObjectCommand({
-      Bucket: config.s3.bucket,
-      Key:    key,
-    })
-    const uploadUrl = await getSignedUrl(app.s3, command, { expiresIn: 300 })
-    const publicUrl = `${config.s3.publicUrl}/${key}`
-    return reply.send({ uploadUrl, publicUrl })
+    await app.s3.send(new PutObjectCommand({
+      Bucket:      config.s3.bucket,
+      Key:         key,
+      Body:        imageBuffer,
+      ContentType: 'image/jpeg',
+    }))
+    return reply.send({ publicUrl: `${config.s3.publicUrl}/${key}` })
   })
 
   // GET /v1/feedback — my tickets
