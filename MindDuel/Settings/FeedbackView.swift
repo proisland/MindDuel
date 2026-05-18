@@ -204,7 +204,6 @@ struct FeedbackView: View {
         do {
             // Upload image if selected — failure is non-fatal; submit without image
             var imageUrl: String? = nil
-            logger.info("imageData størrelse: \(selectedImageData?.count ?? -1) bytes")
             if let imageData = selectedImageData {
                 do {
                     struct ImageUploadBody: Encodable { let data: String }
@@ -212,9 +211,8 @@ struct FeedbackView: View {
                     let body = ImageUploadBody(data: imageData.base64EncodedString())
                     let resp: ImageUploadResponse = try await APIClient.shared.post("feedback/image", body: body)
                     imageUrl = resp.publicUrl
-                    logger.info("Bilde lastet opp: \(resp.publicUrl)")
                 } catch {
-                    logger.error("Nettverksfeil: \(error)")
+                    logger.error("Bildeopplasting feilet: \(error)")
                 }
             }
 
