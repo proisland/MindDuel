@@ -66,6 +66,7 @@ struct HomeView: View {
     @AppStorage("game.difficulty") private var difficultyRaw: String = "normal"
     @AppStorage("hasSeenDifficultyPicker") private var hasSeenDifficultyPicker = false
     private var difficulty: GameDifficulty { GameDifficulty(rawValue: difficultyRaw) ?? .normal }
+    @State private var showFeedback = false
 
     private var pendingBadge: Int { social.totalPendingCount }
     private var inviteBadge: Int  { multiplayer.pendingInviteCount }
@@ -166,6 +167,22 @@ struct HomeView: View {
                     }
                 }
             }
+            .overlay(alignment: .bottomTrailing) {
+                Button {
+                    showFeedback = true
+                } label: {
+                    Image(systemName: "bubble.left.and.text.bubble.right.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(Color.mdText)
+                        .frame(width: 50, height: 50)
+                        .background(Color.mdAccent)
+                        .clipShape(Circle())
+                        .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, MDSpacing.md)
+                .padding(.bottom, MDSpacing.xl)
+            }
             .onAppear {
                 progression.checkResetQuota()
                 if !hasSeenOnboarding { showOnboarding = true }
@@ -227,6 +244,9 @@ struct HomeView: View {
                 gamePath.append(GameModeRoute(mode: mode, resumeRoomID: nil))
             }
         }
+        .sheet(isPresented: $showFeedback) {
+            FeedbackView()
+        }
         .alert(
             String(localized: "upgrade_coming_soon_title"),
             isPresented: $showUpgradeComingSoon
@@ -239,6 +259,15 @@ struct HomeView: View {
 
     // MARK: – Centered header
 
+    private var milestoneRingColor: Color {
+        let lvl = progression.highestModeLevel
+        if lvl >= 20 { return Color.mdPink }
+        if lvl >= 15 { return Color.mdGreen }
+        if lvl >= 10 { return Color.mdAmber }
+        if lvl >= 5  { return Color(red: 0.72, green: 0.55, blue: 0.35) }
+        return Color.mdAccent
+    }
+
     private var centeredHeader: some View {
         ZStack {
             Text("MindDuel")
@@ -249,7 +278,7 @@ struct HomeView: View {
                 Spacer()
                 Button { activeDestination = .profile } label: {
                     ZStack(alignment: .topTrailing) {
-                        MDAvatar(username: username, size: .sm)
+                        MDAvatar(username: username, size: .sm, ringColor: milestoneRingColor)
                         if pendingBadge > 0 {
                             Circle()
                                 .fill(Color.mdRed)
@@ -515,6 +544,7 @@ struct HomeView: View {
                 score: progression.bestScore(for: gm),
                 level: progression.level(for: gm),
                 streak: progression.currentStreak(for: gm),
+                piPosition: gm == .pi ? progression.piPosition : nil,
                 action: { startOrResume(gm) }
             )
             .contextMenu {
@@ -610,36 +640,49 @@ struct HomeView: View {
     }
 
     private func activityRow(_ item: MultiplayerActivityItem) -> some View {
-        HStack(spacing: MDSpacing.sm) {
-            ZStack(alignment: .bottomTrailing) {
-                MDAvatar(username: item.opponentUsername, size: .sm)
-                Circle()
-                    .fill(item.didWin ? Color.mdGreen : Color.mdRed)
-                    .frame(width: 11, height: 11)
-                    .overlay(Circle().stroke(Color.mdBg, lineWidth: 2))
-                    .offset(x: 2, y: 2)
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 3) {
-                    Text(item.didWin
-                         ? String(localized: "activity_won_prefix")
-                         : String(localized: "activity_lost_prefix"))
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(Color.mdText)
-                    Text("@\(item.opponentUsername)")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(Color.mdAccent)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: MDSpacing.sm) {
+                ZStack(alignment: .bottomTrailing) {
+                    MDAvatar(username: item.opponentUsername, size: .sm)
+                    Circle()
+                        .fill(item.didWin ? Color.mdGreen : Color.mdRed)
+                        .frame(width: 11, height: 11)
+                        .overlay(Circle().stroke(Color.mdBg, lineWidth: 2))
+                        .offset(x: 2, y: 2)
                 }
-                Text(String(format: String(localized: "activity_score_format"),
-                            modeLabel(for: item.mode),
-                            item.score))
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 3) {
+                        Text(item.didWin
+                             ? String(localized: "activity_won_prefix")
+                             : String(localized: "activity_lost_prefix"))
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Color.mdText)
+                        Text("@\(item.opponentUsername)")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Color.mdAccent)
+                    }
+                    Text(String(format: String(localized: "activity_score_format"),
+                                modeLabel(for: item.mode),
+                                item.score))
+                        .mdStyle(.micro)
+                        .foregroundStyle(Color.mdText3)
+                }
+                Spacer()
+                Text(item.timeAgoString)
                     .mdStyle(.micro)
                     .foregroundStyle(Color.mdText3)
             }
-            Spacer()
-            Text(item.timeAgoString)
-                .mdStyle(.micro)
-                .foregroundStyle(Color.mdText3)
+            if let taunt = item.winnerTaunt {
+                HStack(spacing: 4) {
+                    Image(systemName: "bubble.left.fill")
+                        .font(.system(size: 9))
+                        .foregroundStyle(Color.mdAmber)
+                    Text(taunt)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(Color.mdAmber)
+                }
+                .padding(.leading, 34)
+            }
         }
         .padding(.vertical, 10)
     }

@@ -30,6 +30,8 @@ struct MDAvatar: View {
     var customImageData: Data? = nil
     /// #246: remote photo URL for other users. AsyncImage loads and caches it.
     var avatarUrl: String? = nil
+    /// #232: ring color override (defaults to mdAccent; set from milestone level on own avatar).
+    var ringColor: Color = .mdAccent
     /// #118: when call sites don't explicitly pass a custom avatar but the
     /// username matches the signed-in user, fall back to the values stored
     /// in `AvatarStore.shared` so a customised avatar shows up everywhere
@@ -68,7 +70,7 @@ struct MDAvatar: View {
                 initialView(username: username, size: size)
             }
         }
-        .overlay(Circle().stroke(Color.mdAccent, lineWidth: 1))
+        .overlay(Circle().stroke(ringColor, lineWidth: 1))
     }
 
     private func initialView(username: String, size: AvatarSize) -> some View {

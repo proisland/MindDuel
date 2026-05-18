@@ -288,6 +288,12 @@ import SwiftUI
         min(20, max(0, position) / 50 + 1)
     }
 
+    /// Highest level reached across all game modes — used for avatar milestone ring color.
+    var highestModeLevel: Int {
+        [piLevel, mathLevel, chemLevel, geoLevel, brainLevel,
+         scienceLevel, historyLevel, physicsLevel, sportLevel, grammarLevel].max() ?? 1
+    }
+
     func checkResetQuota() {
         let lastReset = Date(timeIntervalSince1970: quotaResetEpoch)
         guard !Calendar.current.isDateInToday(lastReset) else { return }

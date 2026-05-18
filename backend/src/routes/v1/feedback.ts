@@ -4,10 +4,39 @@ import { PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { config } from '../../config'
 
+const NOTIFY_EMAIL = 'petter.roisland@gmail.com'
+
 const createBody = z.object({
   message:  z.string().min(1).max(2000),
   imageUrl: z.string().url().nullish(),
 })
+
+async function sendFeedbackEmail(ticketId: string, username: string, message: string, imageUrl?: string | null) {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) return
+
+  const imageHtml = imageUrl ? `<p><img src="${imageUrl}" style="max-width:400px" /></p>` : ''
+  const html = `
+    <h2>Ny tilbakemelding (#${ticketId.slice(0, 8)})</h2>
+    <p><strong>Fra:</strong> @${username}</p>
+    <pre style="background:#f4f4f4;padding:12px;border-radius:6px;white-space:pre-wrap">${message}</pre>
+    ${imageHtml}
+  `
+
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'MindDuel <onboarding@resend.dev>',
+      to: [NOTIFY_EMAIL],
+      subject: `[MindDuel tilbakemelding] ${message.slice(0, 60).replace(/\n/g, ' ')}`,
+      html,
+    }),
+  }).catch(() => { /* non-fatal */ })
+}
 
 export default async function feedbackRoutes(app: FastifyInstance) {
   const auth = { onRequest: [app.authenticate] }
@@ -22,6 +51,7 @@ export default async function feedbackRoutes(app: FastifyInstance) {
         userId:  request.userId,
         message: body.data.message,
       },
+      include: { user: { select: { username: true } } },
     })
 
     if (body.data.imageUrl) {
@@ -29,6 +59,9 @@ export default async function feedbackRoutes(app: FastifyInstance) {
         UPDATE "Feedback" SET "imageUrl" = ${body.data.imageUrl} WHERE id = ${ticket.id}
       `
     }
+
+    const username = (ticket as any).user?.username ?? 'ukjent'
+    sendFeedbackEmail(ticket.id, username, body.data.message, body.data.imageUrl).catch(() => {})
 
     return reply.status(201).send({ id: ticket.id, status: ticket.status })
   })

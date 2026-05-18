@@ -8,6 +8,14 @@ struct MultiplayerFinishedView: View {
     let onShowBreakdown: (MultiplayerPlayer) -> Void
     let onLeave: () -> Void
 
+    @State private var sentTaunt: String? = nil
+
+    private static let tauntOptions = [
+        String(localized: "taunt_option_good_try"),
+        String(localized: "taunt_option_rematch"),
+        String(localized: "taunt_option_next_time"),
+    ]
+
     var body: some View {
         ZStack {
             Color.mdBg.ignoresSafeArea()
@@ -35,11 +43,56 @@ struct MultiplayerFinishedView: View {
                 leaderboard
                     .padding(.horizontal, MDSpacing.md)
 
+                if room.winner?.isYou == true {
+                    tauntSection
+                        .padding(.horizontal, MDSpacing.md)
+                }
+
                 Spacer()
 
                 MDButton(.primary, title: String(localized: "back_to_home_action"), action: onLeave)
                     .padding(.horizontal, MDSpacing.lg)
                     .padding(.bottom, MDSpacing.xl)
+            }
+        }
+    }
+
+    private var tauntSection: some View {
+        VStack(spacing: MDSpacing.sm) {
+            if let taunt = sentTaunt {
+                HStack(spacing: MDSpacing.xs) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(Color.mdGreen)
+                    Text(taunt)
+                        .mdStyle(.bodyMd)
+                        .foregroundStyle(Color.mdText2)
+                }
+                .padding(MDSpacing.sm)
+                .frame(maxWidth: .infinity)
+                .background(Color.mdGreenSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            } else {
+                Text(String(localized: "taunt_prompt"))
+                    .mdStyle(.caption)
+                    .foregroundStyle(Color.mdText3)
+                HStack(spacing: MDSpacing.sm) {
+                    ForEach(Self.tauntOptions, id: \.self) { option in
+                        Button {
+                            sentTaunt = option
+                            MultiplayerStore.shared.setTauntOnLatestActivity(option)
+                        } label: {
+                            Text(option)
+                                .mdStyle(.caption)
+                                .foregroundStyle(Color.mdText)
+                                .padding(.horizontal, MDSpacing.sm)
+                                .padding(.vertical, MDSpacing.xs)
+                                .background(Color.mdSurface2)
+                                .clipShape(Capsule())
+                                .overlay(Capsule().stroke(Color.mdBorder2, lineWidth: 0.5))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             }
         }
     }

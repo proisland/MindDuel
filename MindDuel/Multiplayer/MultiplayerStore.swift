@@ -886,6 +886,12 @@ import UserNotifications
         ProgressionStore.shared.recordMultiplayerScore(mode: room.mode, score: me.score, correctCount: me.correctCount)
     }
 
+    /// Sets the winner taunt on the most recent activity item (called after the winner picks a taunt).
+    @MainActor func setTauntOnLatestActivity(_ taunt: String) {
+        guard !recentActivity.isEmpty else { return }
+        recentActivity[0].winnerTaunt = taunt
+    }
+
     private func sendTurnNotification() {
         Task {
             let center = UNUserNotificationCenter.current()
