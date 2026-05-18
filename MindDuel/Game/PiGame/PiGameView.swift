@@ -389,8 +389,7 @@ struct PiGameView: View {
 
     private func handleSkip() {
         guard !engine.isRoundOver, !engine.isWaitingAfterSkip else { return }
-        elapsedSeconds  = 0
-        currentIndex   += 1
+        elapsedSeconds = 0
         engine.useSkip()
     }
 
