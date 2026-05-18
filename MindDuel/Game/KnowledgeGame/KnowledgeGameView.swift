@@ -100,10 +100,11 @@ struct KnowledgeGameView: View {
             Task { try? await sessionService.startSession(mode: serverMode.slug, startPosition: startLevel) }
         }
         .task {
-            guard currentQuestion == nil else { return }
             await QuestionPackCache.shared.syncIfNeeded(modes: [serverMode.slug])
             let lvl = progression.level(forSlug: serverMode.slug)
-            currentQuestion = KnowledgeProblemGenerator.generate(slug: serverMode.slug, level: lvl)
+            if let q = KnowledgeProblemGenerator.generate(slug: serverMode.slug, level: lvl) {
+                currentQuestion = q
+            }
         }
         .onDisappear {
             feedbackTask?.cancel()

@@ -194,7 +194,7 @@ export default async function wsRoutes(app: FastifyInstance) {
     }
     await setRoomState(app.redis, state)
 
-    return reply.status(201).send({ roomId: room.id, code: room.code })
+    return reply.status(201).send({ id: room.id, code: room.code })
   })
 
   // GET /v1/rooms/:code — look up a room by code
@@ -202,12 +202,20 @@ export default async function wsRoutes(app: FastifyInstance) {
     const { code } = request.params as { code: string }
     const room = await app.prisma.multiplayerRoom.findUnique({
       where: { code: code.toUpperCase() },
-      select: { id: true, code: true, mode: true, startLevel: true, hostUserId: true, status: true },
+      select: { id: true, code: true, mode: true, hostUserId: true, status: true },
     })
     if (!room) return reply.status(404).send({ error: 'Room not found' })
 
     const state = await getRoomState(app.redis, room.id)
-    return reply.send({ ...room, participants: state?.participants ?? [] })
+    return reply.send({
+      id: room.id,
+      code: room.code,
+      mode: room.mode,
+      hostId: room.hostUserId,
+      maxPlayers: 4,
+      state: room.status,
+      participants: state?.participants ?? [],
+    })
   })
 
   // POST /v1/rooms/:roomId/invite — send a push invite to a friend by username

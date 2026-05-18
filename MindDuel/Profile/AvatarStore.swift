@@ -45,15 +45,15 @@ import SwiftUI
         return own.compare(username, options: .caseInsensitive) == .orderedSame
     }
 
-    /// Upload imageData to R2 via a presigned URL, then persist the public URL to the backend and UserDefaults.
+    /// Upload imageData to R2 via the backend proxy, then persist the public URL to UserDefaults.
     func uploadAvatar(imageData: Data) async {
         do {
-            struct PresignResponse: Decodable { let uploadUrl: String; let publicUrl: String }
-            let resp: PresignResponse = try await APIClient.shared.post("me/avatar/upload-url", body: Empty())
-            guard let uploadURL = URL(string: resp.uploadUrl) else { return }
-            try await APIClient.shared.putData(to: uploadURL, data: imageData, contentType: "image/jpeg")
-            struct PatchBody: Encodable { let avatarUrl: String }
-            let _: Empty = try await APIClient.shared.patch("me", body: PatchBody(avatarUrl: resp.publicUrl))
+            struct Body: Encodable { let data: String }
+            struct Response: Decodable { let publicUrl: String }
+            let resp: Response = try await APIClient.shared.post(
+                "me/avatar/image",
+                body: Body(data: imageData.base64EncodedString())
+            )
             avatarUrl = resp.publicUrl
         } catch {
             // Upload failure is non-fatal; the local photo is still shown for the user themselves.

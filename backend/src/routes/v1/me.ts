@@ -137,7 +137,24 @@ export default async function meRoutes(app: FastifyInstance) {
     return reply.send({ id: user.id, username: user.username, avatarEmoji: user.avatarEmoji, avatarUrl: user.avatarUrl ?? null })
   })
 
-  // POST /v1/me/avatar/upload-url — presigned S3 PUT URL for profile photo
+  // POST /v1/me/avatar/image — upload avatar via backend proxy (avoids presigned URL issues)
+  app.post('/avatar/image', auth, async (request, reply) => {
+    const body = z.object({ data: z.string().min(1) }).safeParse(request.body)
+    if (!body.success) return reply.status(400).send({ error: 'Invalid body' })
+    const imageBuffer = Buffer.from(body.data.data, 'base64')
+    const key = `avatars/${request.userId}.jpg`
+    await app.s3.send(new PutObjectCommand({
+      Bucket: config.s3.bucket,
+      Key: key,
+      Body: imageBuffer,
+      ContentType: 'image/jpeg',
+    }))
+    const publicUrl = `${config.s3.publicUrl}/${key}`
+    await (app.prisma.user as any).update({ where: { id: request.userId }, data: { avatarUrl: publicUrl } })
+    return reply.send({ publicUrl })
+  })
+
+  // POST /v1/me/avatar/upload-url — presigned S3 PUT URL for profile photo (legacy)
   app.post('/avatar/upload-url', auth, async (request, reply) => {
     const key = `avatars/${request.userId}.jpg`
     const command = new PutObjectCommand({

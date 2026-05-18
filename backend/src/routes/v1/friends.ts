@@ -167,6 +167,20 @@ export default async function friendsRoutes(app: FastifyInstance) {
       }
     })
 
+    // Notify the original sender that their request was accepted
+    if (body.data.accept) {
+      const accepter = await app.prisma.user.findUnique({
+        where: { id: request.userId },
+        select: { username: true },
+      })
+      const accepterName = accepter?.username ?? 'Noen'
+      app.prisma.pushToken.findMany({ where: { userId: req.fromUserId } }).then(tokens => {
+        tokens.forEach(({ deviceToken }) =>
+          sendPush(deviceToken, 'Ny venn! 🎉', `${accepterName} godkjente venneforespørselen din`, { kind: 'newFriend' }).catch(() => {}),
+        )
+      }).catch(() => {})
+    }
+
     return reply.send({ accepted: body.data.accept })
   })
 
