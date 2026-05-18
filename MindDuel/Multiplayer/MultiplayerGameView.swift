@@ -14,11 +14,7 @@ struct MultiplayerGameView: View {
     @State private var chemProblem: ChemistryProblem = ChemistryProblemGenerator.generate(level: 1)
     @State private var geoProblem: GeographyProblem = GeographyProblemGenerator.generate(level: 1)
     @State private var brainProblem: BrainTrainingProblem = BrainTrainingProblemGenerator.generate(level: 1)
-    @State private var scienceProblem: ScienceProblem = ScienceProblemGenerator.generate(level: 1)
-    @State private var historyProblem: HistoryProblem = HistoryProblemGenerator.generate(level: 1)
-    @State private var physicsProblem: PhysicsProblem = PhysicsProblemGenerator.generate(level: 1)
-    @State private var sportProblem: SportProblem = SportProblemGenerator.generate(level: 1)
-    @State private var grammarProblem: GrammarProblem = GrammarProblemGenerator.generate(level: 1)
+    @State private var quizProblem: QuizProblem = QuizProblem(prompt: "–", correctAnswer: "–", options: ["–", "–", "–", "–"])
     @State private var elapsedSeconds: Double   = 0
     @State private var feedbackIsCorrect: Bool? = nil
     @State private var selectedIndex: Int?      = nil
@@ -426,57 +422,13 @@ struct MultiplayerGameView: View {
                         .foregroundStyle(Color.mdText)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity, alignment: .center)
-                case .science:
-                    Text(String(format: String(localized: "science_level_problem"),
+                case .science, .history, .physics, .sport, .grammar:
+                    Text(String(format: String(localized: "game_level_problem"),
                                 room.startLevel, 1))
                         .mdStyle(.caption)
                         .foregroundStyle(Color.mdText2)
                         .frame(maxWidth: .infinity, alignment: .center)
-                    Text(scienceProblem.prompt)
-                        .font(.system(size: 18, weight: .heavy))
-                        .foregroundStyle(Color.mdText)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                case .history:
-                    Text(String(format: String(localized: "history_level_problem"),
-                                room.startLevel, 1))
-                        .mdStyle(.caption)
-                        .foregroundStyle(Color.mdText2)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                    Text(historyProblem.prompt)
-                        .font(.system(size: 18, weight: .heavy))
-                        .foregroundStyle(Color.mdText)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                case .physics:
-                    Text(String(format: String(localized: "physics_level_problem"),
-                                room.startLevel, 1))
-                        .mdStyle(.caption)
-                        .foregroundStyle(Color.mdText2)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                    Text(physicsProblem.prompt)
-                        .font(.system(size: 18, weight: .heavy))
-                        .foregroundStyle(Color.mdText)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                case .sport:
-                    Text(String(format: String(localized: "sport_level_problem"),
-                                room.startLevel, 1))
-                        .mdStyle(.caption)
-                        .foregroundStyle(Color.mdText2)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                    Text(sportProblem.prompt)
-                        .font(.system(size: 18, weight: .heavy))
-                        .foregroundStyle(Color.mdText)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                case .grammar:
-                    Text(String(format: String(localized: "grammar_level_problem"),
-                                room.startLevel, 1))
-                        .mdStyle(.caption)
-                        .foregroundStyle(Color.mdText2)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                    Text(grammarProblem.prompt)
+                    Text(quizProblem.prompt)
                         .font(.system(size: 18, weight: .heavy))
                         .foregroundStyle(Color.mdText)
                         .multilineTextAlignment(.center)
@@ -495,147 +447,27 @@ struct MultiplayerGameView: View {
         case .chemistry:     chemAnswerGrid
         case .geography:     geoAnswerGrid
         case .brainTraining: brainAnswerGrid
-        case .science:       scienceAnswerGrid
-        case .history:       historyAnswerGrid
-        case .physics:       physicsAnswerGrid
-        case .sport:         sportAnswerGrid
-        case .grammar:       grammarAnswerGrid
+        case .science, .history, .physics, .sport, .grammar: quizAnswerGrid
         }
     }
 
-    private var scienceAnswerGrid: some View {
+    private var quizAnswerGrid: some View {
         let columns = Array(repeating: GridItem(.flexible(), spacing: MDSpacing.sm), count: 2)
         return LazyVGrid(columns: columns, spacing: MDSpacing.sm) {
-            ForEach(scienceProblem.options.indices, id: \.self) { i in
+            ForEach(quizProblem.options.indices, id: \.self) { i in
                 AnswerButton(
-                    label: scienceProblem.options[i],
+                    label: quizProblem.options[i],
                     feedbackState: mathButtonState(for: i)
-                ) { handleScienceTap(i) }
+                ) { handleQuizTap(i) }
                 .disabled(feedbackIsCorrect != nil || progression.isQuotaExhausted)
             }
         }
     }
 
-    private var historyAnswerGrid: some View {
-        let columns = Array(repeating: GridItem(.flexible(), spacing: MDSpacing.sm), count: 2)
-        return LazyVGrid(columns: columns, spacing: MDSpacing.sm) {
-            ForEach(historyProblem.options.indices, id: \.self) { i in
-                AnswerButton(
-                    label: historyProblem.options[i],
-                    feedbackState: mathButtonState(for: i)
-                ) { handleHistoryTap(i) }
-                .disabled(feedbackIsCorrect != nil || progression.isQuotaExhausted)
-            }
-        }
-    }
-
-    private func handleScienceTap(_ index: Int) {
+    private func handleQuizTap(_ index: Int) {
         guard feedbackIsCorrect == nil, !progression.isQuotaExhausted,
               let room = store.currentRoom, room.isMyTurn else { return }
-        let correct = scienceProblem.options[index] == scienceProblem.correctAnswer
-        selectedIndex = index
-        feedbackIsCorrect = correct
-        let time = elapsedSeconds
-        Task {
-            try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
-            selectedIndex = nil
-            feedbackIsCorrect = nil
-            elapsedSeconds = 0
-            store.submitAnswer(correct: correct, answerTime: time)
-        }
-    }
-
-    private func handleHistoryTap(_ index: Int) {
-        guard feedbackIsCorrect == nil, !progression.isQuotaExhausted,
-              let room = store.currentRoom, room.isMyTurn else { return }
-        let correct = historyProblem.options[index] == historyProblem.correctAnswer
-        selectedIndex = index
-        feedbackIsCorrect = correct
-        let time = elapsedSeconds
-        Task {
-            try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
-            selectedIndex = nil
-            feedbackIsCorrect = nil
-            elapsedSeconds = 0
-            store.submitAnswer(correct: correct, answerTime: time)
-        }
-    }
-
-    private var physicsAnswerGrid: some View {
-        let columns = Array(repeating: GridItem(.flexible(), spacing: MDSpacing.sm), count: 2)
-        return LazyVGrid(columns: columns, spacing: MDSpacing.sm) {
-            ForEach(physicsProblem.options.indices, id: \.self) { i in
-                AnswerButton(
-                    label: physicsProblem.options[i],
-                    feedbackState: mathButtonState(for: i)
-                ) { handlePhysicsTap(i) }
-                .disabled(feedbackIsCorrect != nil || progression.isQuotaExhausted)
-            }
-        }
-    }
-
-    private func handlePhysicsTap(_ index: Int) {
-        guard feedbackIsCorrect == nil, !progression.isQuotaExhausted,
-              let room = store.currentRoom, room.isMyTurn else { return }
-        let correct = physicsProblem.options[index] == physicsProblem.correctAnswer
-        selectedIndex = index
-        feedbackIsCorrect = correct
-        let time = elapsedSeconds
-        Task {
-            try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
-            selectedIndex = nil
-            feedbackIsCorrect = nil
-            elapsedSeconds = 0
-            store.submitAnswer(correct: correct, answerTime: time)
-        }
-    }
-
-    private var sportAnswerGrid: some View {
-        let columns = Array(repeating: GridItem(.flexible(), spacing: MDSpacing.sm), count: 2)
-        return LazyVGrid(columns: columns, spacing: MDSpacing.sm) {
-            ForEach(sportProblem.options.indices, id: \.self) { i in
-                AnswerButton(
-                    label: sportProblem.options[i],
-                    feedbackState: mathButtonState(for: i)
-                ) { handleSportTap(i) }
-                .disabled(feedbackIsCorrect != nil || progression.isQuotaExhausted)
-            }
-        }
-    }
-
-    private func handleSportTap(_ index: Int) {
-        guard feedbackIsCorrect == nil, !progression.isQuotaExhausted,
-              let room = store.currentRoom, room.isMyTurn else { return }
-        let correct = sportProblem.options[index] == sportProblem.correctAnswer
-        selectedIndex = index
-        feedbackIsCorrect = correct
-        let time = elapsedSeconds
-        Task {
-            try? await Task.sleep(nanoseconds: correct ? 250_000_000 : 300_000_000)
-            selectedIndex = nil
-            feedbackIsCorrect = nil
-            elapsedSeconds = 0
-            store.submitAnswer(correct: correct, answerTime: time)
-        }
-    }
-
-    private var grammarAnswerGrid: some View {
-        let columns = Array(repeating: GridItem(.flexible(), spacing: MDSpacing.sm), count: 2)
-        return LazyVGrid(columns: columns, spacing: MDSpacing.sm) {
-            ForEach(grammarProblem.options.indices, id: \.self) { i in
-                AnswerButton(
-                    label: grammarProblem.options[i],
-                    feedbackState: mathButtonState(for: i)
-                ) { handleGrammarTap(i) }
-                .disabled(feedbackIsCorrect != nil || progression.isQuotaExhausted)
-            }
-        }
-    }
-
-    private func handleGrammarTap(_ index: Int) {
-        guard feedbackIsCorrect == nil, !progression.isQuotaExhausted,
-              let room = store.currentRoom, room.isMyTurn else { return }
-        let correct = grammarProblem.options[index] == grammarProblem.correctAnswer
+        let correct = quizProblem.options[index] == quizProblem.correctAnswer
         selectedIndex = index
         feedbackIsCorrect = correct
         let time = elapsedSeconds
@@ -905,6 +737,17 @@ struct MultiplayerGameView: View {
         if elapsedSeconds >= maxSec { handleSkip() }
     }
 
+    private func localQuizBank(for mode: GameMode) -> (Int) -> [QuizProblemGenerator.Raw] {
+        switch mode {
+        case .science:  return ScienceQuestionBank.questions(forLevel:)
+        case .history:  return HistoryQuestionBank.questions(forLevel:)
+        case .physics:  return PhysicsQuestionBank.questions(forLevel:)
+        case .sport:    return SportQuestionBank.questions(forLevel:)
+        case .grammar:  return GrammarQuestionBank.questions(forLevel:)
+        default:        return { _ in [] }
+        }
+    }
+
     private func refreshMathProblem() {
         guard let room = store.currentRoom else { return }
         switch room.mode {
@@ -916,16 +759,12 @@ struct MultiplayerGameView: View {
             geoProblem = GeographyProblemGenerator.generate(level: max(1, room.startLevel))
         case .brainTraining:
             brainProblem = BrainTrainingProblemGenerator.generate(level: max(1, room.startLevel))
-        case .science:
-            scienceProblem = ScienceProblemGenerator.generate(level: max(1, room.startLevel))
-        case .history:
-            historyProblem = HistoryProblemGenerator.generate(level: max(1, room.startLevel))
-        case .physics:
-            physicsProblem = PhysicsProblemGenerator.generate(level: max(1, room.startLevel))
-        case .sport:
-            sportProblem = SportProblemGenerator.generate(level: max(1, room.startLevel))
-        case .grammar:
-            grammarProblem = GrammarProblemGenerator.generate(level: max(1, room.startLevel))
+        case .science, .history, .physics, .sport, .grammar:
+            quizProblem = QuizProblemGenerator.generate(
+                slug: room.mode.slug,
+                bank: localQuizBank(for: room.mode),
+                level: max(1, room.startLevel)
+            )
         case .pi:
             break
         }
@@ -963,26 +802,10 @@ struct MultiplayerGameView: View {
             brainProblem = BrainTrainingProblem(prompt: s.prompt,
                                                 correctAnswer: s.options[s.correctIndex],
                                                 options: s.options)
-        case .science:
-            scienceProblem = ScienceProblem(prompt: s.prompt,
-                                            correctAnswer: s.options[s.correctIndex],
-                                            options: s.options)
-        case .history:
-            historyProblem = HistoryProblem(prompt: s.prompt,
-                                            correctAnswer: s.options[s.correctIndex],
-                                            options: s.options)
-        case .physics:
-            physicsProblem = PhysicsProblem(prompt: s.prompt,
-                                            correctAnswer: s.options[s.correctIndex],
-                                            options: s.options)
-        case .sport:
-            sportProblem = SportProblem(prompt: s.prompt,
-                                        correctAnswer: s.options[s.correctIndex],
-                                        options: s.options)
-        case .grammar:
-            grammarProblem = GrammarProblem(prompt: s.prompt,
-                                            correctAnswer: s.options[s.correctIndex],
-                                            options: s.options)
+        case .science, .history, .physics, .sport, .grammar:
+            quizProblem = QuizProblem(prompt: s.prompt,
+                                      correctAnswer: s.options[s.correctIndex],
+                                      options: s.options)
         case .pi:
             break
         }

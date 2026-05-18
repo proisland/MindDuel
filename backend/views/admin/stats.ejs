@@ -126,7 +126,7 @@
             <div class="bg-indigo-500 w-full" style="height: <%= Math.round(d.single / maxSessions * 100) %>%"></div>
             <div class="bg-purple-500 w-full" style="height: <%= Math.round(d.multiplayer / maxSessions * 100) %>%"></div>
           </div>
-          <span class="text-gray-500" style="writing-mode: vertical-rl; transform: rotate(180deg); font-size: 9px; height: 40px; line-height: 20px;"><%= d.label %></span>
+          <span class="text-white" style="writing-mode: vertical-rl; transform: rotate(180deg); font-size: 9px; height: 40px; line-height: 20px;"><%= d.label %></span>
         </div>
       <% }) %>
     </div>
@@ -318,7 +318,7 @@
         <tr>
           <td class="px-4 py-2 text-gray-600"><%= i + 1 %></td>
           <td class="px-4 py-2 text-gray-400"><%= r.mode %></td>
-          <td class="px-4 py-2 font-mono text-xs text-gray-300 max-w-xs truncate"><%= r.questionRef %></td>
+          <td class="px-4 py-2 text-gray-300 max-w-xs truncate"><%= r.questionText %></td>
           <td class="px-4 py-2 text-amber-400 max-w-xs truncate"><%= r.wrongAnswer %></td>
           <td class="px-4 py-2 text-right text-red-400"><%= r.wrongCount %></td>
           <td class="px-4 py-2 text-right text-gray-400"><%= r.totalAttempts %></td>

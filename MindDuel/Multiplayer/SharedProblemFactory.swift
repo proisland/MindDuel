@@ -6,6 +6,17 @@ import Foundation
 /// problems on the host once per round; mock bots and remote players will
 /// read the same snapshot from the room.
 enum SharedProblemFactory {
+    private static func quizBank(for mode: GameMode) -> (Int) -> [QuizProblemGenerator.Raw] {
+        switch mode {
+        case .science:  return ScienceQuestionBank.questions(forLevel:)
+        case .history:  return HistoryQuestionBank.questions(forLevel:)
+        case .physics:  return PhysicsQuestionBank.questions(forLevel:)
+        case .sport:    return SportQuestionBank.questions(forLevel:)
+        case .grammar:  return GrammarQuestionBank.questions(forLevel:)
+        default:        return { _ in [] }
+        }
+    }
+
     static func makeRound(mode: GameMode, level: Int, count: Int,
                           piStartIndex: Int = 0) -> [SharedProblem] {
         (0..<max(1, count)).map { offset in
@@ -62,55 +73,16 @@ enum SharedProblemFactory {
                     correctIndex: p.correctIndex ?? 0,
                     curriculumLabel: BrainTrainingProblemGenerator.curriculumLabel(forLevel: level)
                 )
-            case .science:
-                let p = ScienceProblemGenerator.generate(level: level)
+            case .science, .history, .physics, .sport, .grammar:
+                let bank = quizBank(for: mode)
+                let p = QuizProblemGenerator.generate(slug: mode.slug, bank: bank, level: level)
                 return SharedProblem(
-                    mode: .science,
+                    mode: mode,
                     prompt: p.prompt,
                     flag: nil,
                     options: p.options,
                     correctIndex: p.correctIndex ?? 0,
-                    curriculumLabel: ScienceProblemGenerator.curriculumLabel(forLevel: level)
-                )
-            case .history:
-                let p = HistoryProblemGenerator.generate(level: level)
-                return SharedProblem(
-                    mode: .history,
-                    prompt: p.prompt,
-                    flag: nil,
-                    options: p.options,
-                    correctIndex: p.correctIndex ?? 0,
-                    curriculumLabel: HistoryProblemGenerator.curriculumLabel(forLevel: level)
-                )
-            case .physics:
-                let p = PhysicsProblemGenerator.generate(level: level)
-                return SharedProblem(
-                    mode: .physics,
-                    prompt: p.prompt,
-                    flag: nil,
-                    options: p.options,
-                    correctIndex: p.correctIndex ?? 0,
-                    curriculumLabel: PhysicsProblemGenerator.curriculumLabel(forLevel: level)
-                )
-            case .sport:
-                let p = SportProblemGenerator.generate(level: level)
-                return SharedProblem(
-                    mode: .sport,
-                    prompt: p.prompt,
-                    flag: nil,
-                    options: p.options,
-                    correctIndex: p.correctIndex ?? 0,
-                    curriculumLabel: SportProblemGenerator.curriculumLabel(forLevel: level)
-                )
-            case .grammar:
-                let p = GrammarProblemGenerator.generate(level: level)
-                return SharedProblem(
-                    mode: .grammar,
-                    prompt: p.prompt,
-                    flag: nil,
-                    options: p.options,
-                    correctIndex: p.correctIndex ?? 0,
-                    curriculumLabel: GrammarProblemGenerator.curriculumLabel(forLevel: level)
+                    curriculumLabel: QuizProblemGenerator.curriculumLabel(forLevel: level)
                 )
             }
         }

@@ -383,11 +383,8 @@ struct StandardGameView: View {
         case .chemistry:     return ChemistryProblemGenerator.generate(level: level)
         case .geography:     return GeographyProblemGenerator.generate(level: level)
         case .brainTraining: return BrainTrainingProblemGenerator.generate(level: level)
-        case .science:       return ScienceProblemGenerator.generate(level: level)
-        case .history:       return HistoryProblemGenerator.generate(level: level)
-        case .physics:       return PhysicsProblemGenerator.generate(level: level)
-        case .sport:         return SportProblemGenerator.generate(level: level)
-        case .grammar:       return GrammarProblemGenerator.generate(level: level)
+        case .science, .history, .physics, .sport, .grammar:
+            return QuizProblemGenerator.generate(slug: mode.slug, bank: localBank(for: mode), level: level)
         case .pi, .math:     return ChemistryProblemGenerator.generate(level: level)
         }
     }
@@ -397,12 +394,20 @@ struct StandardGameView: View {
         case .chemistry:     ChemistryProblemGenerator.resetRoundHistory()
         case .geography:     GeographyProblemGenerator.resetRoundHistory()
         case .brainTraining: BrainTrainingProblemGenerator.resetRoundHistory()
-        case .science:       ScienceProblemGenerator.resetRoundHistory()
-        case .history:       HistoryProblemGenerator.resetRoundHistory()
-        case .physics:       PhysicsProblemGenerator.resetRoundHistory()
-        case .sport:         SportProblemGenerator.resetRoundHistory()
-        case .grammar:       GrammarProblemGenerator.resetRoundHistory()
+        case .science, .history, .physics, .sport, .grammar:
+            QuizProblemGenerator.resetRoundHistory(slug: mode.slug)
         case .pi, .math:     break
+        }
+    }
+
+    private static func localBank(for mode: GameMode) -> (Int) -> [QuizProblemGenerator.Raw] {
+        switch mode {
+        case .science:  return ScienceQuestionBank.questions(forLevel:)
+        case .history:  return HistoryQuestionBank.questions(forLevel:)
+        case .physics:  return PhysicsQuestionBank.questions(forLevel:)
+        case .sport:    return SportQuestionBank.questions(forLevel:)
+        case .grammar:  return GrammarQuestionBank.questions(forLevel:)
+        default:        return { _ in [] }
         }
     }
 }

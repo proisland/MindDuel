@@ -28,6 +28,9 @@ enum QuizProblemGenerator {
     static func generate(slug: String, bank: (Int) -> [Raw], level: Int = 1) -> QuizProblem {
         let clamped = max(1, min(20, level))
         let pool = pool(slug: slug, bank: bank, level: clamped)
+        guard !pool.isEmpty else {
+            return QuizProblem(prompt: "–", correctAnswer: "–", options: ["–", "–", "–", "–"])
+        }
         var seen = seenCorrects(for: slug)
         var candidates = pool.filter { !seen.contains($0.correct + ":" + $0.prompt) }
         if candidates.isEmpty {

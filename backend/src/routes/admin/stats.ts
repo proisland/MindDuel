@@ -250,13 +250,30 @@ export default async function adminStatsRoutes(app: FastifyInstance) {
       hourlySessionsRaw: hourlySessionsRaw.map(r => ({
         hour: r.hour, single: Number(r.single), multiplayer: Number(r.multiplayer),
       })),
-      topWrongQuestions: topWrongQuestions.map(r => ({
-        mode:         r.mode,
-        questionRef:  r.question_ref,
-        wrongAnswer:  r.wrong_answer,
-        wrongCount:   Number(r.wrong_count),
-        totalAttempts: Number(r.total_attempts),
-      })),
+      topWrongQuestions: await (async () => {
+        const uniqueModes = [...new Set(topWrongQuestions.map(r => r.mode))]
+        const activePacks = uniqueModes.length > 0
+          ? await app.prisma.questionPack.findMany({
+              where: { mode: { in: uniqueModes }, isActive: true },
+              select: { mode: true, data: true },
+            })
+          : []
+        const lookup = new Map<string, string>()
+        for (const pack of activePacks) {
+          const questions = pack.data as Array<{ id: string; prompt: string }>
+          for (const q of questions) {
+            lookup.set(`${pack.mode}:${q.id}`, q.prompt)
+          }
+        }
+        return topWrongQuestions.map(r => ({
+          mode:          r.mode,
+          questionRef:   r.question_ref,
+          questionText:  lookup.get(`${r.mode}:${r.question_ref}`) ?? r.question_ref,
+          wrongAnswer:   r.wrong_answer,
+          wrongCount:    Number(r.wrong_count),
+          totalAttempts: Number(r.total_attempts),
+        }))
+      })(),
     })
   })
 }
