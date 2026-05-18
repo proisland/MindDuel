@@ -7,7 +7,7 @@ struct MathGameView: View {
     let practiceStartLevel: Int
     private let hasDirectResumeState: Bool
 
-    @StateObject private var engine      = GameEngine()
+    @StateObject private var engine = GameEngine()
     @ObservedObject private var progression = ProgressionStore.shared
     @State private var problem:           MathProblem
     @State private var problemCount      = 1
@@ -129,6 +129,7 @@ struct MathGameView: View {
             $0.isStandaloneSolo && $0.mode == .math && $0.serverModeSlug == nil
         })
         guard let room, let me = room.players.first(where: { $0.isYou }) else { return }
+        hasRestoredSession = true
         startLevel = max(1, room.startLevel)
         problem    = MathProblemGenerator.generate(level: progression.mathLevel)
         problemCount = max(1, me.correctCount + 1)
@@ -136,7 +137,7 @@ struct MathGameView: View {
     }
 
     private func saveSessionAndExit() {
-        // Save mid-session state without finalising — see PiGameView for why.
+        print("[MD-SAVE] mode=math explicit exit lives=\(engine.lives) skips=\(engine.skips) correct=\(engine.correctCount)")
         _ = MultiplayerStore.shared.saveStandaloneSoloMath(
             ownUsername: username,
             lives: engine.lives,
@@ -153,6 +154,7 @@ struct MathGameView: View {
     private func autoSaveIfInProgress() {
         guard !engine.isRoundOver, roundResult == nil,
               engine.correctCount > 0 || engine.lives < 5 || engine.skips < 5 else { return }
+        print("[MD-SAVE] mode=math auto-save lives=\(engine.lives) skips=\(engine.skips) correct=\(engine.correctCount)")
         _ = MultiplayerStore.shared.saveStandaloneSoloMath(
             ownUsername: username,
             lives: engine.lives,

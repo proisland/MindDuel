@@ -30,6 +30,12 @@ struct DifficultyPickerSheet: View {
 
                 Spacer()
 
+                Text(String(localized: "difficulty_picker_settings_hint"))
+                    .mdStyle(.micro)
+                    .foregroundStyle(Color.mdText3)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, MDSpacing.lg)
+
                 MDButton(.primary, title: String(localized: "difficulty_picker_start_action")) {
                     dismiss()
                     onStart()

@@ -10,7 +10,7 @@ struct StandardGameView: View {
     // True when caller already provided saved state — skips backgroundRooms lookup.
     private let hasDirectResumeState: Bool
 
-    @StateObject private var engine      = GameEngine()
+    @StateObject private var engine = GameEngine()
     @ObservedObject private var progression = ProgressionStore.shared
     @State private var problem:           any GameProblem
     @State private var problemCount      = 1
@@ -130,6 +130,7 @@ struct StandardGameView: View {
             $0.isStandaloneSolo && $0.mode == mode && $0.serverModeSlug == nil
         })
         guard let room, let me = room.players.first(where: { $0.isYou }) else { return }
+        hasRestoredSession = true
         startLevel   = max(1, room.startLevel)
         problem      = Self.generate(mode: mode, level: progression.level(for: mode))
         problemCount = max(1, me.correctCount + 1)
@@ -137,6 +138,7 @@ struct StandardGameView: View {
     }
 
     private func saveSessionAndExit() {
+        print("[MD-SAVE] mode=\(mode.slug) explicit exit lives=\(engine.lives) skips=\(engine.skips) correct=\(engine.correctCount)")
         _ = MultiplayerStore.shared.saveStandaloneSolo(
             mode: mode, ownUsername: username,
             lives: engine.lives, skips: engine.skips, score: 0,

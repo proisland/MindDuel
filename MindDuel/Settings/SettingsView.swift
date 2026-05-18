@@ -74,12 +74,12 @@ struct SettingsView: View {
                                 label: String(localized: "settings_difficulty_label")
                             ) {
                                 Picker("", selection: $difficultyRaw) {
-                                    Text(String(localized: "difficulty_easy")).tag("easy")
-                                    Text(String(localized: "difficulty_normal")).tag("normal")
-                                    Text(String(localized: "difficulty_hard")).tag("hard")
+                                    Text("15s").tag("easy")
+                                    Text("10s").tag("normal")
+                                    Text("5s").tag("hard")
                                 }
                                 .pickerStyle(.segmented)
-                                .frame(maxWidth: 160)
+                                .frame(maxWidth: 120)
                             }
                         }
 

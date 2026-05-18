@@ -8,7 +8,7 @@ struct PiGameView: View {
     private let hasDirectResumeState: Bool
     private let directSessionStartIndex: Int
 
-    @StateObject private var engine      = GameEngine()
+    @StateObject private var engine = GameEngine()
     @ObservedObject private var progression = ProgressionStore.shared
     @State private var currentIndex      = 0
     @State private var elapsedSeconds:   Double = 0
@@ -146,6 +146,7 @@ struct PiGameView: View {
         guard !engine.isRoundOver, roundResult == nil,
               engine.correctCount > 0 || engine.lives < 5 || engine.skips < 5 else { return }
         let absoluteDigit = sessionStartIndex + currentIndex
+        print("[MD-SAVE] mode=pi auto-save lives=\(engine.lives) skips=\(engine.skips) correct=\(engine.correctCount)")
         _ = MultiplayerStore.shared.saveStandaloneSoloPi(
             ownUsername: username,
             lives: engine.lives,
@@ -188,6 +189,7 @@ struct PiGameView: View {
         // The score field on the saved room is informational only; the real total
         // is computed by finaliseRound when the resumed round actually finishes.
         let absoluteDigit = sessionStartIndex + currentIndex
+        print("[MD-SAVE] mode=pi explicit exit lives=\(engine.lives) skips=\(engine.skips) correct=\(engine.correctCount)")
         _ = MultiplayerStore.shared.saveStandaloneSoloPi(
             ownUsername: username,
             lives: engine.lives,

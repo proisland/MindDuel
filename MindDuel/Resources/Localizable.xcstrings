@@ -61,6 +61,15 @@
     "🔥" : {
 
     },
+    "5s" : {
+
+    },
+    "10s" : {
+
+    },
+    "15s" : {
+
+    },
     "accept_action" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1077,6 +1086,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Normal"
+          }
+        }
+      }
+    },
+    "difficulty_picker_settings_hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can change this later in Settings."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du kan endre dette senere i Innstillinger."
           }
         }
       }

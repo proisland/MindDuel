@@ -64,6 +64,7 @@ struct HomeView: View {
     @State private var pendingGameMode: GameMode? = nil
     @State private var showUpgradeComingSoon = false
     @AppStorage("game.difficulty") private var difficultyRaw: String = "normal"
+    @AppStorage("hasSeenDifficultyPicker") private var hasSeenDifficultyPicker = false
     private var difficulty: GameDifficulty { GameDifficulty(rawValue: difficultyRaw) ?? .normal }
 
     private var pendingBadge: Int { social.totalPendingCount }
@@ -221,6 +222,7 @@ struct HomeView: View {
         }
         .sheet(item: $pendingGameMode) { mode in
             DifficultyPickerSheet(difficulty: $difficultyRaw) {
+                hasSeenDifficultyPicker = true
                 pendingGameMode = nil
                 gamePath.append(GameModeRoute(mode: mode, resumeRoomID: nil))
             }

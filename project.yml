@@ -47,6 +47,9 @@ targets:
           fi
     entitlements:
       path: MindDuel/MindDuel.entitlements
+      properties:
+        com.apple.developer.applesignin:
+          - Default
     settings:
       base:
         SWIFT_VERSION: "5.9"
