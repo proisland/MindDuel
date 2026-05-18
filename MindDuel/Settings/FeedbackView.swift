@@ -196,6 +196,7 @@ struct FeedbackView: View {
         do {
             // Upload image if selected — failure is non-fatal; submit without image
             var imageUrl: String? = nil
+            print("[FeedbackUpload] imageData størrelse: \(selectedImageData?.count ?? -1) bytes")
             if let imageData = selectedImageData {
                 do {
                     struct UploadUrlResponse: Decodable { let uploadUrl: String; let publicUrl: String }
