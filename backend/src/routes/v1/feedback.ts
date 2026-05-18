@@ -33,7 +33,7 @@ async function sendFeedbackEmail(ticketId: string, username: string, message: st
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'MindDuel <onboarding@resend.dev>',
+      from: process.env.RESEND_FROM ?? 'MindDuel <onboarding@resend.dev>',
       to: [NOTIFY_EMAIL],
       subject: `[MindDuel tilbakemelding] ${message.slice(0, 60).replace(/\n/g, ' ')}`,
       html,
