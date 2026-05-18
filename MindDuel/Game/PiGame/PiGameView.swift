@@ -258,7 +258,7 @@ struct PiGameView: View {
     private var questionCard: some View {
         MDPrimaryCard {
             VStack(spacing: MDSpacing.xs) {
-                Text(String(format: String(localized: "pi_digits_guessed"), startIndex + currentIndex))
+                Text(String(format: String(localized: "pi_digits_guessed"), sessionStartIndex + engine.correctCount))
                     .mdStyle(.caption)
                     .foregroundStyle(Color.mdText2)
                     .frame(maxWidth: .infinity, alignment: .center)
