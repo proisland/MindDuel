@@ -213,7 +213,7 @@ import UserNotifications
         if let roomId = backendRoomId {
             Task {
                 struct Body: Encodable { let username: String }
-                try? await APIClient.shared.post("ws/rooms/\(roomId)/invite", body: Body(username: username)) as Empty
+                _ = try? await APIClient.shared.post("ws/rooms/\(roomId)/invite", body: Body(username: username)) as Empty
             }
         } else {
             simulatePlayerReady(playerID: playerID)
