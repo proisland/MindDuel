@@ -4,7 +4,7 @@ import { PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { config } from '../../config'
 import { revokeAllRefreshTokens } from '../../lib/tokens'
-import { deleteAvatarFromS3 } from '../../lib/s3'
+import { deleteAvatarByUserId } from '../../lib/s3'
 
 const RESERVED_USERNAMES = new Set(['admin', 'mindduel', 'support', 'moderator', 'system'])
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
@@ -124,12 +124,8 @@ export default async function meRoutes(app: FastifyInstance) {
       await app.prisma.$executeRaw`UPDATE "User" SET locale = ${locale} WHERE id = ${request.userId}`
     }
 
-    // If clearing a custom avatar, delete the S3 object
     if (avatarUrl === null) {
-      const existing = await (app.prisma.user as any).findUnique({
-        where: { id: request.userId }, select: { avatarUrl: true },
-      })
-      if (existing?.avatarUrl) await deleteAvatarFromS3(app.s3, existing.avatarUrl)
+      await deleteAvatarByUserId(app.s3, request.userId)
     }
 
     const prismaData: Record<string, unknown> = {
@@ -196,10 +192,7 @@ export default async function meRoutes(app: FastifyInstance) {
 
   // DELETE /v1/me
   app.delete('/', auth, async (request, reply) => {
-    const existing = await (app.prisma.user as any).findUnique({
-      where: { id: request.userId }, select: { avatarUrl: true },
-    })
-    if (existing?.avatarUrl) await deleteAvatarFromS3(app.s3, existing.avatarUrl)
+    await deleteAvatarByUserId(app.s3, request.userId)
     await revokeAllRefreshTokens(app.redis, request.userId)
     await app.prisma.user.delete({ where: { id: request.userId } })
     return reply.status(204).send()
