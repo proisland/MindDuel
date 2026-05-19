@@ -653,7 +653,8 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: MDSpacing.sm) {
                 ZStack(alignment: .bottomTrailing) {
-                    MDAvatar(username: item.opponentUsername, size: .sm)
+                    MDAvatar(username: item.opponentUsername, size: .sm,
+                             avatarUrl: social.apiFriends.first { $0.username == item.opponentUsername }?.avatarUrl)
                     Circle()
                         .fill(item.didWin ? Color.mdGreen : Color.mdRed)
                         .frame(width: 11, height: 11)
@@ -703,7 +704,8 @@ struct HomeView: View {
             switch item.type {
             case .newFriend:
                 ZStack(alignment: .bottomTrailing) {
-                    MDAvatar(username: item.user1?.username ?? "?", size: .sm)
+                    MDAvatar(username: item.user1?.username ?? "?", size: .sm,
+                             avatarUrl: item.user1?.avatarUrl)
                     Image(systemName: "person.2.fill")
                         .font(.system(size: 6, weight: .bold))
                         .foregroundStyle(.white)
@@ -745,7 +747,8 @@ struct HomeView: View {
                 }
             case .streak:
                 ZStack(alignment: .bottomTrailing) {
-                    MDAvatar(username: item.user?.username ?? "?", size: .sm)
+                    MDAvatar(username: item.user?.username ?? "?", size: .sm,
+                             avatarUrl: item.user?.avatarUrl)
                     Text("🔥")
                         .font(.system(size: 11))
                         .offset(x: 3, y: 3)

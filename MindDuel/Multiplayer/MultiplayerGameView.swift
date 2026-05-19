@@ -341,7 +341,7 @@ struct MultiplayerGameView: View {
                 }
             } else if let current = room.currentPlayer {
                 VStack(spacing: MDSpacing.sm) {
-                    MDAvatar(username: current.username, size: .lg)
+                    MDAvatar(username: current.username, size: .lg, avatarUrl: current.avatarUrl)
                     Text(String(format: String(localized: "multiplayer_waiting_for_format"),
                                 current.username))
                         .mdStyle(.body)
