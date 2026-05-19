@@ -94,79 +94,152 @@ final class WebSocketClient: NSObject, ObservableObject {
     }
 }
 
-// MARK: – Message types
+// MARK: – Server → Client message types
+
+/// Participant as sent in WS messages (matches backend Participant interface).
+struct WSParticipant: Decodable {
+    let userId: String
+    let username: String
+    let avatarEmoji: String?
+    let avatarUrl: String?
+    let lives: Int
+    let skips: Int
+    let isActive: Bool
+    let score: Int
+}
+
+/// Full room state as sent in room_state / game_started messages.
+struct WSRoomState: Decodable {
+    let id: String
+    let code: String
+    let mode: String
+    let startLevel: Int
+    let hostUserId: String
+    let participants: [WSParticipant]
+    let turnIndex: Int
+    let status: String
+    let name: String?
+    let questionsPerRound: Int?
+    let currentRoundIndex: Int?
+}
+
+/// Scores entry in round_summary.
+struct WSRoundScore: Decodable {
+    let userId: String
+    let username: String
+    let score: Int
+}
 
 enum WSMessage: Decodable {
-    case joined(roomId: String, players: [WSPlayer])
-    case playerLeft(userId: String)
-    case roundStarted(roundIndex: Int, problem: WSProblem)
-    case answerResult(userId: String, correct: Bool, score: Double)
-    case roundEnded(scores: [WSScore])
-    case gameEnded(finalScores: [WSScore])
+    case roomState(WSRoomState)
+    case playerJoined(userId: String, participants: [WSParticipant])
+    case gameStarted(WSRoomState)
+    case answerResult(userId: String, isCorrect: Bool, lives: Int, scoreGained: Int, totalScore: Int)
+    case playerOut(userId: String)
+    case skipUsed(userId: String, skips: Int)
+    case gameOver(winner: String?, participants: [WSParticipant])
+    case turnChanged(activeUserId: String, turnIndex: Int)
+    case yourTurn
+    case playerDisconnected(userId: String)
+    case roundSummary(roundIndex: Int, participants: [WSParticipant])
+    case turnTimeFactor(userId: String, timeFactor: Double, totalScore: Int)
     case error(message: String)
 
-    private enum CodingKeys: String, CodingKey { case type, payload }
+    private enum TopKeys: String, CodingKey {
+        case type, state, userId, participants, isCorrect, lives, skips, scoreGained, totalScore
+        case winner, activeUserId, turnIndex, roundIndex, timeFactor, message, position
+    }
 
     init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let c = try decoder.container(keyedBy: TopKeys.self)
         let type = try c.decode(String.self, forKey: .type)
-        let p = try c.nestedContainer(keyedBy: PayloadKeys.self, forKey: .payload)
         switch type {
-        case "joined":
-            self = .joined(
-                roomId: try p.decode(String.self, forKey: .roomId),
-                players: try p.decode([WSPlayer].self, forKey: .players)
+        case "room_state":
+            self = .roomState(try c.decode(WSRoomState.self, forKey: .state))
+        case "player_joined":
+            self = .playerJoined(
+                userId: try c.decode(String.self, forKey: .userId),
+                participants: try c.decode([WSParticipant].self, forKey: .participants)
             )
-        case "playerLeft":
-            self = .playerLeft(userId: try p.decode(String.self, forKey: .userId))
-        case "roundStarted":
-            self = .roundStarted(
-                roundIndex: try p.decode(Int.self, forKey: .roundIndex),
-                problem: try p.decode(WSProblem.self, forKey: .problem)
-            )
-        case "answerResult":
+        case "game_started":
+            self = .gameStarted(try c.decode(WSRoomState.self, forKey: .state))
+        case "answer_result":
             self = .answerResult(
-                userId: try p.decode(String.self, forKey: .userId),
-                correct: try p.decode(Bool.self, forKey: .correct),
-                score: try p.decode(Double.self, forKey: .score)
+                userId: try c.decode(String.self, forKey: .userId),
+                isCorrect: try c.decode(Bool.self, forKey: .isCorrect),
+                lives: try c.decode(Int.self, forKey: .lives),
+                scoreGained: (try? c.decode(Int.self, forKey: .scoreGained)) ?? 0,
+                totalScore: (try? c.decode(Int.self, forKey: .totalScore)) ?? 0
             )
-        case "roundEnded":
-            self = .roundEnded(scores: try p.decode([WSScore].self, forKey: .scores))
-        case "gameEnded":
-            self = .gameEnded(finalScores: try p.decode([WSScore].self, forKey: .finalScores))
+        case "player_out":
+            self = .playerOut(userId: try c.decode(String.self, forKey: .userId))
+        case "skip_used":
+            self = .skipUsed(
+                userId: try c.decode(String.self, forKey: .userId),
+                skips: try c.decode(Int.self, forKey: .skips)
+            )
+        case "game_over":
+            self = .gameOver(
+                winner: try? c.decode(String.self, forKey: .winner),
+                participants: try c.decode([WSParticipant].self, forKey: .participants)
+            )
+        case "turn_changed":
+            self = .turnChanged(
+                activeUserId: try c.decode(String.self, forKey: .activeUserId),
+                turnIndex: try c.decode(Int.self, forKey: .turnIndex)
+            )
+        case "your_turn":
+            self = .yourTurn
+        case "player_disconnected":
+            self = .playerDisconnected(userId: try c.decode(String.self, forKey: .userId))
+        case "round_summary":
+            self = .roundSummary(
+                roundIndex: try c.decode(Int.self, forKey: .roundIndex),
+                participants: try c.decode([WSParticipant].self, forKey: .participants)
+            )
+        case "turn_time_factor":
+            self = .turnTimeFactor(
+                userId: try c.decode(String.self, forKey: .userId),
+                timeFactor: try c.decode(Double.self, forKey: .timeFactor),
+                totalScore: (try? c.decode(Int.self, forKey: .totalScore)) ?? 0
+            )
         case "error":
-            self = .error(message: try p.decode(String.self, forKey: .message))
+            self = .error(message: (try? c.decode(String.self, forKey: .message)) ?? "Unknown error")
         default:
             throw DecodingError.dataCorruptedError(forKey: .type, in: c, debugDescription: "Unknown WS message type: \(type)")
         }
     }
-
-    private enum PayloadKeys: String, CodingKey {
-        case roomId, players, userId, roundIndex, problem, correct, score, scores, finalScores, message
-    }
 }
 
-enum WSClientMessage: Encodable {
-    case submitAnswer(questionId: String, answer: String, answeredAt: String)
-    case ready
+// MARK: – Client → Server message types
 
-    private enum CodingKeys: String, CodingKey { case type, payload }
+enum WSClientMessage: Encodable {
+    case startGame(name: String, questionsPerRound: Int, mode: String)
+    case submitAnswer(questionRef: String, userAnswer: String, answerTimeMs: Int, clientReportsCorrect: Bool)
+    case useSkip
+
+    private enum CodingKeys: String, CodingKey {
+        case type, name, questionsPerRound, mode, questionRef, userAnswer, answerTimeMs, clientReportsCorrect
+    }
 
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         switch self {
-        case .submitAnswer(let qid, let ans, let at):
-            try c.encode("submitAnswer", forKey: .type)
-            var p = c.nestedContainer(keyedBy: PayloadKeys.self, forKey: .payload)
-            try p.encode(qid, forKey: .questionId)
-            try p.encode(ans, forKey: .answer)
-            try p.encode(at, forKey: .answeredAt)
-        case .ready:
-            try c.encode("ready", forKey: .type)
+        case .startGame(let name, let qpr, let mode):
+            try c.encode("start_game", forKey: .type)
+            try c.encode(name, forKey: .name)
+            try c.encode(qpr, forKey: .questionsPerRound)
+            try c.encode(mode, forKey: .mode)
+        case .submitAnswer(let ref, let ans, let timeMs, let correct):
+            try c.encode("submit_answer", forKey: .type)
+            try c.encode(ref, forKey: .questionRef)
+            try c.encode(ans, forKey: .userAnswer)
+            try c.encode(timeMs, forKey: .answerTimeMs)
+            try c.encode(correct, forKey: .clientReportsCorrect)
+        case .useSkip:
+            try c.encode("use_skip", forKey: .type)
         }
     }
-
-    private enum PayloadKeys: String, CodingKey { case questionId, answer, answeredAt }
 }
 
 struct WSPlayer: Decodable {
@@ -174,17 +247,4 @@ struct WSPlayer: Decodable {
     let username: String
     let avatarEmoji: String?
     let avatarUrl: String?
-}
-
-struct WSProblem: Decodable {
-    let id: String
-    let prompt: String
-    let options: [String]?
-    let timeoutSeconds: Int
-}
-
-struct WSScore: Decodable {
-    let userId: String
-    let username: String
-    let score: Double
 }

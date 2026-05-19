@@ -43,17 +43,23 @@ struct MultiplayerLobbyView: View {
             }
         }
         .onAppear {
-            // For the invite-accept flow (#56) MultiplayerStore.acceptInvite
-            // already seeded the room. Only fall back to seeding here if we
-            // still have nothing — covers fresh "Create" and legacy "Join".
             if startAsHost {
                 if store.currentRoom == nil {
-                    store.createRoom(mode: .pi, ownUsername: ownUsername, invitedUsername: invitedUsername)
+                    Task {
+                        try? await store.createRealRoom(
+                            mode: .pi,
+                            ownUsername: ownUsername,
+                            invitedUsername: invitedUsername
+                        )
+                        roomName = store.currentRoom?.customName ?? ""
+                    }
+                } else {
+                    roomName = store.currentRoom?.customName ?? ""
                 }
-            } else if store.currentRoom == nil {
-                store.joinMockRoom(ownUsername: ownUsername)
+            } else {
+                // Non-host: room already set by acceptInvite → joinRealRoom.
+                roomName = store.currentRoom?.customName ?? ""
             }
-            roomName = store.currentRoom?.customName ?? ""
         }
         .onDisappear {
             if store.currentRoom?.status == .lobby {
@@ -430,14 +436,8 @@ struct MultiplayerLobbyView: View {
             }
             .disabled(progression.isQuotaExhausted || hasOnlyHost(room))
         } else {
-            let youReady = room.players.first(where: { $0.isYou })?.isReady ?? false
-            MDButton(youReady ? .ghost : .primary,
-                     title: youReady
-                        ? String(localized: "multiplayer_waiting_for_host_label")
-                        : String(localized: "multiplayer_ready_action")) {
-                if !progression.isQuotaExhausted { store.toggleReady() }
-            }
-            .disabled(youReady || progression.isQuotaExhausted)
+            MDButton(.ghost, title: String(localized: "multiplayer_waiting_for_host_label")) { }
+                .disabled(true)
         }
     }
 

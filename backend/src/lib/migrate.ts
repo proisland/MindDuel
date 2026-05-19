@@ -185,4 +185,19 @@ async function runMigrationsInternal(prisma: PrismaClient) {
     )
   `)
 
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "MultiplayerRoom"
+      ADD COLUMN IF NOT EXISTS "name" TEXT NOT NULL DEFAULT ''
+  `)
+
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "MultiplayerRoom"
+      ADD COLUMN IF NOT EXISTS "questionsPerRound" INTEGER NOT NULL DEFAULT 3
+  `)
+
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS "MultiplayerRoom_hostUserId_status_idx"
+      ON "MultiplayerRoom"("hostUserId", status)
+  `)
+
 }

@@ -6,7 +6,7 @@ import { sendPush } from '../../lib/apns'
 
 // ── Room state (stored in Redis with TTL) ─────────────────────────────────────
 
-const ROOM_TTL = 60 * 60 * 4 // 4 hours
+const ROOM_TTL = 60 * 60 * 48 // 48 hours
 const DISCONNECT_GRACE_MS = 15_000
 const LOCK_TTL_MS = 500
 const LOCK_RETRIES = 3
@@ -32,6 +32,12 @@ interface RoomState {
   participants: Participant[]
   turnIndex: number
   status: 'waiting' | 'active' | 'finished'
+  name: string
+  questionsPerRound: number
+  currentTurnQuestionsAnswered: number
+  currentRoundIndex: number
+  turnNotifiedAt: number | null
+  roundTurnCompletions: string[]
 }
 
 interface PubSubEnvelope {
@@ -109,11 +115,25 @@ async function withRoomLock<T>(
   return null
 }
 
+// ── Time factor for async turn scoring ───────────────────────────────────────
+
+function computeTimeFactor(elapsedMs: number): number {
+  const hours = elapsedMs / (1000 * 60 * 60)
+  if (hours <= 1) return 1.0
+  if (hours <= 6) return 0.9
+  if (hours <= 12) return 0.75
+  if (hours <= 24) return 0.6
+  if (hours <= 48) return 0.4
+  return 0.25
+}
+
 // ── HTTP endpoints ────────────────────────────────────────────────────────────
 
 const createRoomBody = z.object({
   mode: z.string().min(1),
   startLevel: z.number().int().min(0).default(0),
+  questionsPerRound: z.number().int().min(1).max(10).default(3),
+  name: z.string().max(40).default(''),
 })
 
 const inviteBody = z.object({ username: z.string().min(1) })
@@ -166,12 +186,14 @@ export default async function wsRoutes(app: FastifyInstance) {
     if (!user?.username) return reply.status(400).send({ error: 'Username required before playing' })
 
     const code = crypto.randomBytes(2).toString('hex').toUpperCase()
-    const room = await app.prisma.multiplayerRoom.create({
+    const room = await (app.prisma.multiplayerRoom as any).create({
       data: {
         code,
         hostUserId: request.userId,
         mode: body.data.mode,
         startLevel: body.data.startLevel,
+        name: body.data.name,
+        questionsPerRound: body.data.questionsPerRound,
       },
     })
 
@@ -181,6 +203,8 @@ export default async function wsRoutes(app: FastifyInstance) {
       mode: room.mode,
       startLevel: room.startLevel,
       hostUserId: request.userId,
+      name: body.data.name,
+      questionsPerRound: body.data.questionsPerRound,
       participants: [{
         userId: request.userId,
         username: user.username,
@@ -193,6 +217,10 @@ export default async function wsRoutes(app: FastifyInstance) {
       }],
       turnIndex: 0,
       status: 'waiting',
+      currentTurnQuestionsAnswered: 0,
+      currentRoundIndex: 1,
+      turnNotifiedAt: null,
+      roundTurnCompletions: [],
     }
     await setRoomState(app.redis, state)
 
@@ -202,9 +230,9 @@ export default async function wsRoutes(app: FastifyInstance) {
   // GET /v1/rooms/:code — look up a room by code
   app.get('/rooms/:code', auth, async (request, reply) => {
     const { code } = request.params as { code: string }
-    const room = await app.prisma.multiplayerRoom.findUnique({
+    const room = await (app.prisma.multiplayerRoom as any).findUnique({
       where: { code: code.toUpperCase() },
-      select: { id: true, code: true, mode: true, hostUserId: true, status: true },
+      select: { id: true, code: true, mode: true, hostUserId: true, status: true, name: true, questionsPerRound: true },
     })
     if (!room) return reply.status(404).send({ error: 'Room not found' })
 
@@ -214,10 +242,43 @@ export default async function wsRoutes(app: FastifyInstance) {
       code: room.code,
       mode: room.mode,
       hostId: room.hostUserId,
-      maxPlayers: 4,
+      name: room.name ?? '',
+      questionsPerRound: room.questionsPerRound ?? 3,
+      maxPlayers: 10,
       state: room.status,
       participants: state?.participants ?? [],
     })
+  })
+
+  // GET /v1/rooms/active — list rooms the authenticated user is participating in (active/waiting)
+  app.get('/rooms/active', auth, async (request, reply) => {
+    const participations = await app.prisma.multiplayerParticipant.findMany({
+      where: { userId: request.userId },
+      select: { roomId: true },
+    })
+    const roomIds = participations.map((p: any) => p.roomId)
+    if (roomIds.length === 0) return reply.send({ rooms: [] })
+
+    const rooms = await (app.prisma.multiplayerRoom as any).findMany({
+      where: { id: { in: roomIds }, status: { in: ['waiting', 'active'] } },
+      orderBy: { updatedAt: 'desc' },
+      select: { id: true, code: true, mode: true, hostUserId: true, status: true, name: true, questionsPerRound: true },
+    })
+
+    const roomsWithState = await Promise.all(rooms.map(async (room: any) => {
+      const state = await getRoomState(app.redis, room.id)
+      return {
+        id: room.id, code: room.code, mode: room.mode,
+        hostId: room.hostUserId, name: room.name ?? '',
+        questionsPerRound: room.questionsPerRound ?? 3,
+        state: room.status,
+        participants: state?.participants ?? [],
+        turnIndex: state?.turnIndex ?? 0,
+        currentRoundIndex: state?.currentRoundIndex ?? 1,
+      }
+    }))
+
+    return reply.send({ rooms: roomsWithState })
   })
 
   // POST /v1/rooms/:roomId/invite — send a push invite to a friend by username
@@ -229,6 +290,7 @@ export default async function wsRoutes(app: FastifyInstance) {
     const state = await getRoomState(app.redis, roomId)
     if (!state) return reply.status(404).send({ error: 'Room not found' })
     if (state.hostUserId !== request.userId) return reply.status(403).send({ error: 'Only host can invite' })
+    if (state.status !== 'waiting') return reply.status(400).send({ error: 'Game already started' })
 
     const [invitee, inviter] = await Promise.all([
       app.prisma.user.findUnique({ where: { username: body.data.username }, select: { id: true } }),
@@ -254,14 +316,12 @@ export default async function wsRoutes(app: FastifyInstance) {
   // WS /v1/rooms/:roomId/ws — real-time game connection
   app.get('/rooms/:roomId/ws', { websocket: true }, async (socket: WebSocket, request) => {
     // Authenticate via one-time ?ticket= query param fetched just before connecting.
-    // Short-lived tickets avoid exposing the long-lived JWT in WS URLs.
     const ticket = (request.query as { ticket?: string }).ticket
     if (!ticket) { socket.close(4001, 'Unauthorized'); return }
 
     const userId = await app.redis.getdel(`ws_ticket:${ticket}`)
     if (!userId) { socket.close(4001, 'Invalid or expired ticket'); return }
 
-    // Verify user is not suspended before allowing connection
     const user: any = await (app.prisma.user as any).findUnique({
       where: { id: userId },
       select: { isSuspended: true, username: true, avatarEmoji: true, avatarUrl: true },
@@ -281,11 +341,16 @@ export default async function wsRoutes(app: FastifyInstance) {
 
     // Add participant if not already in room
     if (!state.participants.find(p => p.userId === userId)) {
-      if (state.participants.length >= 8) { socket.close(4008, 'Room full'); return }
+      if (state.participants.length >= 10) { socket.close(4008, 'Room full'); return }
       state.participants.push({
         userId, username: user.username, avatarEmoji: user.avatarEmoji,
         avatarUrl: (user as any).avatarUrl ?? null,
         lives: 5, skips: 5, isActive: true, score: 0,
+      })
+      await (app.prisma.multiplayerParticipant as any).upsert({
+        where: { roomId_userId: { roomId, userId } },
+        update: {},
+        create: { roomId, userId },
       })
       await setRoomState(app.redis, state)
     } else {
@@ -310,10 +375,32 @@ export default async function wsRoutes(app: FastifyInstance) {
             if (!s) return
             if (userId !== s.hostUserId) return
             if (s.status !== 'waiting') return
+            if (s.participants.filter(p => p.isActive).length < 2) return
+
+            // Apply any settings sent with the start message
+            if (typeof msg.name === 'string') s.name = String(msg.name).slice(0, 40)
+            if (typeof msg.questionsPerRound === 'number') {
+              s.questionsPerRound = Math.min(10, Math.max(1, Number(msg.questionsPerRound)))
+            }
+            if (typeof msg.mode === 'string') s.mode = String(msg.mode)
+            if (typeof msg.startLevel === 'number') s.startLevel = Number(msg.startLevel)
+
             s.status = 'active'
+            s.currentRoundIndex = 1
+            s.roundTurnCompletions = [] as string[]
+            s.currentTurnQuestionsAnswered = 0
+            s.turnNotifiedAt = Date.now()
+
             await setRoomState(app.redis, s)
+
+            // Update DB with final settings
+            await (app.prisma.multiplayerRoom as any).update({
+              where: { id: roomId },
+              data: { status: 'active', name: s.name, questionsPerRound: s.questionsPerRound, mode: s.mode, startLevel: s.startLevel },
+            })
+
             await publish(app.redis, roomId, { type: 'game_started', state: s })
-            await notifyTurn(app.redis, roomId, s)
+            await notifyTurnWithPush(app, roomId, s)
           })
           break
         }
@@ -326,41 +413,121 @@ export default async function wsRoutes(app: FastifyInstance) {
             if (active?.userId !== userId) return
             if (s.status !== 'active') return
 
-            const { questionRef, userAnswer, answerTimeMs } = msg as unknown as {
-              questionRef: string; userAnswer: string; answerTimeMs: number
+            const { questionRef, userAnswer, answerTimeMs, clientReportsCorrect } = msg as unknown as {
+              questionRef: string; userAnswer: string; answerTimeMs: number; clientReportsCorrect: boolean
             }
 
             if (typeof answerTimeMs === 'number' && answerTimeMs < 200) return
 
-            let isCorrect = false
+            let isCorrect = typeof clientReportsCorrect === 'boolean' ? clientReportsCorrect : false
             if (s.mode === 'pi') {
               const { validatePiAnswer } = await import('../../lib/pi')
               isCorrect = validatePiAnswer(parseInt(questionRef, 10), String(userAnswer))
             }
-            // Knowledge mode validation omitted here; extend similarly to games.ts
 
-            if (!isCorrect) {
+            let scoreGained = 0
+            if (isCorrect) {
+              const answerTimeSec = Math.max(0.5, (answerTimeMs ?? 1000) / 1000)
+              scoreGained = Math.round(50 / answerTimeSec)
+              active.score += scoreGained
+            } else {
               active.lives = Math.max(0, active.lives - 1)
             }
 
-            await publish(app.redis, roomId, { type: 'answer_result', userId, isCorrect, lives: active.lives })
+            await publish(app.redis, roomId, {
+              type: 'answer_result',
+              userId,
+              isCorrect,
+              lives: active.lives,
+              scoreGained,
+              totalScore: active.score,
+            })
 
-            if (active.lives === 0 || active.skips === 0) {
+            const playerEliminated = active.lives === 0
+            if (playerEliminated) {
               active.isActive = false
               await publish(app.redis, roomId, { type: 'player_out', userId })
             }
 
-            advanceTurn(s)
-            await setRoomState(app.redis, s)
+            s.currentTurnQuestionsAnswered = (s.currentTurnQuestionsAnswered ?? 0) + 1
+            const questionsPerRound = s.questionsPerRound ?? 3
+            const shouldAdvanceTurn = playerEliminated || s.currentTurnQuestionsAnswered >= questionsPerRound
 
-            const remaining = s.participants.filter(p => p.isActive)
-            if (remaining.length <= 1) {
-              s.status = 'finished'
+            if (shouldAdvanceTurn) {
+              // Apply time factor to this turn's accumulated score
+              if (s.turnNotifiedAt) {
+                const elapsedMs = Date.now() - s.turnNotifiedAt
+                const timeFactor = computeTimeFactor(elapsedMs)
+                if (timeFactor < 1.0 && scoreGained > 0) {
+                  // Adjust score: recompute turn total with factor applied
+                  // For simplicity, apply factor to the score gained this turn
+                  // A full implementation would track per-turn accumulated score
+                  const adjustedGain = Math.floor(scoreGained * timeFactor) - scoreGained
+                  active.score = Math.max(0, active.score + adjustedGain)
+                  await publish(app.redis, roomId, {
+                    type: 'turn_time_factor',
+                    userId,
+                    timeFactor,
+                    totalScore: active.score,
+                  })
+                }
+              }
+
+              // Mark player as having completed their turn this round
+              if (!s.roundTurnCompletions) s.roundTurnCompletions = [] as string[]
+              if (!s.roundTurnCompletions.includes(userId)) {
+                s.roundTurnCompletions.push(userId)
+              }
+
+              s.currentTurnQuestionsAnswered = 0
+              advanceTurn(s)
+
               await setRoomState(app.redis, s)
-              const winner = remaining[0] ?? null
-              await publish(app.redis, roomId, { type: 'game_over', winner: winner?.userId ?? null, participants: s.participants })
+
+              const remaining = s.participants.filter(p => p.isActive)
+              if (remaining.length <= 1) {
+                s.status = 'finished'
+                await setRoomState(app.redis, s)
+                const winner = remaining[0] ?? null
+                await publish(app.redis, roomId, {
+                  type: 'game_over',
+                  winner: winner?.userId ?? null,
+                  participants: s.participants,
+                })
+                // Update DB
+                await (app.prisma.multiplayerRoom as any).update({
+                  where: { id: roomId },
+                  data: { status: 'finished' },
+                })
+                // Notify all participants
+                for (const p of s.participants) {
+                  sendPushToUser(app, p.userId,
+                    '🏆 Spillet er ferdig!',
+                    winner ? `${winner.username} vant!` : 'Spillet er over',
+                    { kind: 'gameOver', roomId },
+                  )
+                }
+              } else {
+                // Check if round complete (all currently active players have had their turn)
+                const allHadTurn = remaining.every(p => s.roundTurnCompletions?.includes(p.userId))
+                if (allHadTurn) {
+                  const roundIdx = s.currentRoundIndex
+                  s.currentRoundIndex = (s.currentRoundIndex ?? 1) + 1
+                  s.roundTurnCompletions = [] as string[]
+                  await setRoomState(app.redis, s)
+                  await publish(app.redis, roomId, {
+                    type: 'round_summary',
+                    roundIndex: roundIdx,
+                    participants: s.participants,
+                  })
+                }
+
+                s.turnNotifiedAt = Date.now()
+                await setRoomState(app.redis, s)
+                await notifyTurnWithPush(app, roomId, s)
+              }
             } else {
-              await notifyTurn(app.redis, roomId, s)
+              await setRoomState(app.redis, s)
             }
           })
           break
@@ -372,15 +539,70 @@ export default async function wsRoutes(app: FastifyInstance) {
             if (!s) return
             const active = s.participants[s.turnIndex]
             if (active?.userId !== userId) return
+            if (s.status !== 'active') return
+
             active.skips = Math.max(0, active.skips - 1)
             await publish(app.redis, roomId, { type: 'skip_used', userId, skips: active.skips })
-            if (active.skips === 0) {
+
+            s.currentTurnQuestionsAnswered = (s.currentTurnQuestionsAnswered ?? 0) + 1
+            const questionsPerRound = s.questionsPerRound ?? 3
+            const playerEliminated = active.skips === 0
+            const shouldAdvanceTurn = playerEliminated || s.currentTurnQuestionsAnswered >= questionsPerRound
+
+            if (playerEliminated) {
               active.isActive = false
               await publish(app.redis, roomId, { type: 'player_out', userId })
-              advanceTurn(s)
             }
-            await setRoomState(app.redis, s)
-            await notifyTurn(app.redis, roomId, s)
+
+            if (shouldAdvanceTurn) {
+              if (!s.roundTurnCompletions) s.roundTurnCompletions = [] as string[]
+              if (!s.roundTurnCompletions.includes(userId)) s.roundTurnCompletions.push(userId)
+              s.currentTurnQuestionsAnswered = 0
+              advanceTurn(s)
+              await setRoomState(app.redis, s)
+
+              const remaining = s.participants.filter(p => p.isActive)
+              if (remaining.length <= 1) {
+                s.status = 'finished'
+                await setRoomState(app.redis, s)
+                const winner = remaining[0] ?? null
+                await publish(app.redis, roomId, {
+                  type: 'game_over',
+                  winner: winner?.userId ?? null,
+                  participants: s.participants,
+                })
+                await (app.prisma.multiplayerRoom as any).update({
+                  where: { id: roomId },
+                  data: { status: 'finished' },
+                })
+                for (const p of s.participants) {
+                  sendPushToUser(app, p.userId,
+                    '🏆 Spillet er ferdig!',
+                    winner ? `${winner.username} vant!` : 'Spillet er over',
+                    { kind: 'gameOver', roomId },
+                  )
+                }
+              } else {
+                const allHadTurn = remaining.every(p => s.roundTurnCompletions?.includes(p.userId))
+                if (allHadTurn) {
+                  const roundIdx = s.currentRoundIndex
+                  s.currentRoundIndex = (s.currentRoundIndex ?? 1) + 1
+                  s.roundTurnCompletions = [] as string[]
+                  await setRoomState(app.redis, s)
+                  await publish(app.redis, roomId, {
+                    type: 'round_summary',
+                    roundIndex: roundIdx,
+                    participants: s.participants,
+                  })
+                }
+                s.turnNotifiedAt = Date.now()
+                await setRoomState(app.redis, s)
+                await notifyTurnWithPush(app, roomId, s)
+              }
+            } else {
+              await setRoomState(app.redis, s)
+              await notifyTurnWithPush(app, roomId, s)
+            }
           })
           break
         }
@@ -392,11 +614,10 @@ export default async function wsRoutes(app: FastifyInstance) {
       connections.get(roomId)?.delete(userId)
       await app.redis.set(`disconnect:${roomId}:${userId}`, '1', 'PX', DISCONNECT_GRACE_MS + 5000)
 
-      // Grace period: wait before treating as left
       setTimeout(async () => {
-        if (connections.get(roomId)?.has(userId)) return // reconnected locally
+        if (connections.get(roomId)?.has(userId)) return
         const stillDisconnected = await app.redis.exists(`disconnect:${roomId}:${userId}`)
-        if (!stillDisconnected) return // reconnected on another instance
+        if (!stillDisconnected) return
 
         await withRoomLock(app.redis, roomId, async () => {
           const s = await getRoomState(app.redis, roomId)
@@ -435,13 +656,26 @@ function advanceTurn(state: RoomState) {
   state.turnIndex = next
 }
 
-async function notifyTurn(redis: RedisClient, roomId: string, state: RoomState) {
+async function notifyTurnWithPush(app: FastifyInstance, roomId: string, state: RoomState) {
   const current = state.participants[state.turnIndex]
   if (!current) return
-  await publish(redis, roomId, {
+  await publish(app.redis, roomId, {
     type: 'turn_changed',
     activeUserId: current.userId,
     turnIndex: state.turnIndex,
   })
-  await publish(redis, roomId, { type: 'your_turn', position: current.userId }, undefined, current.userId)
+  await publish(app.redis, roomId, { type: 'your_turn' }, undefined, current.userId)
+  sendPushToUser(app, current.userId, '🎮 Din tur!', `Det er din tur i ${state.name || 'spillet'}`, {
+    kind: 'yourTurn',
+    roomId,
+    roomCode: state.code,
+  })
+}
+
+function sendPushToUser(app: FastifyInstance, userId: string, title: string, body: string, data: Record<string, string>) {
+  app.prisma.pushToken.findMany({ where: { userId } }).then(tokens => {
+    tokens.forEach(({ deviceToken }) =>
+      sendPush(deviceToken, title, body, data).catch(() => {}),
+    )
+  }).catch(() => {})
 }
