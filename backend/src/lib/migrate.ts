@@ -210,14 +210,20 @@ async function runMigrationsInternal(prisma: PrismaClient) {
       ADD COLUMN IF NOT EXISTS "labelEn" TEXT NOT NULL DEFAULT ''
   `)
 
-  // Backfill: copy existing label into both language columns, then drop label.
+  // Backfill label → labelNo/labelEn, then drop the old column.
+  // Wrapped in IF EXISTS so restarts after the first migration don't fail.
   await prisma.$executeRawUnsafe(`
-    UPDATE "PresetAvatar" SET "labelNo" = label, "labelEn" = label
-    WHERE "labelNo" = '' AND label <> ''
-  `)
-
-  await prisma.$executeRawUnsafe(`
-    ALTER TABLE "PresetAvatar" DROP COLUMN IF EXISTS label
+    DO $$ BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'PresetAvatar' AND column_name = 'label'
+      ) THEN
+        UPDATE "PresetAvatar"
+          SET "labelNo" = label, "labelEn" = label
+          WHERE "labelNo" = '' AND label <> '';
+        ALTER TABLE "PresetAvatar" DROP COLUMN label;
+      END IF;
+    END $$
   `)
 
 }
