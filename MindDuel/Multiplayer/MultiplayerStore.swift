@@ -38,7 +38,26 @@ import UserNotifications
     func joinRealRoom(code: String, ownUsername: String) async throws {
         let info: RoomInfo = try await APIClient.shared.get("ws/rooms/\(code)")
         let mode = GameMode(slug: info.mode) ?? .pi
-        joinMockRoom(ownUsername: ownUsername, mode: mode)
+
+        var players: [MultiplayerPlayer] = (info.participants ?? []).map { p in
+            MultiplayerPlayer(
+                id: p.userId,
+                username: p.username,
+                isHost: p.userId == info.hostId,
+                isReady: p.userId == info.hostId
+            )
+        }
+
+        if let idx = players.firstIndex(where: { $0.username.lowercased() == ownUsername.lowercased() }) {
+            players[idx].isYou = true
+            applyOwnStats(to: &players[idx])
+        } else {
+            var me = MultiplayerPlayer(id: "me", username: ownUsername, isHost: false, isReady: false, isYou: true)
+            applyOwnStats(to: &me)
+            players.append(me)
+        }
+
+        currentRoom = MultiplayerRoom(id: info.code, mode: mode, startLevel: 1, players: players, status: .lobby)
         backendRoomId = info.id
         wsClient.connect(roomId: info.id)
         observeWS()

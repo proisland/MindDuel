@@ -98,4 +98,5 @@ struct RoomInfo: Decodable {
     let hostId: String
     let maxPlayers: Int
     let state: String
+    let participants: [WSPlayer]?
 }

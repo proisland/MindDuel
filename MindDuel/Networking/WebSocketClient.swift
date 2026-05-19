@@ -172,7 +172,7 @@ enum WSClientMessage: Encodable {
 struct WSPlayer: Decodable {
     let userId: String
     let username: String
-    let avatarEmoji: String
+    let avatarEmoji: String?
 }
 
 struct WSProblem: Decodable {
