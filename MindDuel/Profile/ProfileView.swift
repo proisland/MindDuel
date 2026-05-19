@@ -266,7 +266,8 @@ struct ProfileView: View {
             // Pending requests with accept / decline
             ForEach(social.pendingRequests) { req in
                 HStack(spacing: MDSpacing.sm) {
-                    MDAvatar(username: req.username, size: .sm)
+                    MDAvatar(username: req.username, size: .sm,
+                             avatarUrl: req.avatarUrl)
                     Text("\(req.username)")
                         .mdStyle(.caption)
                         .foregroundStyle(Color.mdText)

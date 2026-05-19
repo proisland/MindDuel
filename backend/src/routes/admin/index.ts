@@ -7,6 +7,7 @@ import adminQuestionsRoutes from './questions'
 import adminModesRoutes from './modes'
 import adminFeedbackRoutes from './feedback'
 import adminStatsRoutes from './stats'
+import adminAvatarsRoutes from './avatars'
 
 const SESSION_KEY = 'admin_session'
 const SESSION_TTL = 60 * 60 * 8
@@ -115,5 +116,6 @@ export default async function adminRoutes(app: FastifyInstance) {
     sub.register(adminModesRoutes,     { prefix: '/modes' })
     sub.register(adminFeedbackRoutes,  { prefix: '/feedback' })
     sub.register(adminStatsRoutes,     { prefix: '/stats' })
+    sub.register(adminAvatarsRoutes,   { prefix: '/avatars' })
   })
 }

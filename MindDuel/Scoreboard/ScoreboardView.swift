@@ -722,7 +722,8 @@ private struct FriendRequestRow: View {
 
     var body: some View {
         HStack(spacing: MDSpacing.sm) {
-            MDAvatar(username: profile.username, size: .sm)
+            MDAvatar(username: profile.username, size: .sm,
+                     avatarUrl: profile.avatarUrl)
             Text("\(profile.username)")
                 .mdStyle(.caption)
                 .foregroundStyle(Color.mdText)

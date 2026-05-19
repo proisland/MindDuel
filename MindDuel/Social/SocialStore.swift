@@ -103,7 +103,8 @@ extension UserProfile {
             piScore: 0, mathScore: 0, piLevel: 1, mathLevel: 1,
             roundsPlayed: 0, age: nil, city: nil,
             memberSince: "–", lastActive: "–",
-            isFriend: false, isFlagged: false
+            isFriend: false, isFlagged: false,
+            avatarUrl: request.fromAvatarUrl
         )
     }
 

@@ -512,6 +512,23 @@
         }
       }
     },
+    "avatar_picker_presets_section" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PRESET AVATARS"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FORHÅNDSVALGTE AVATARER"
+          }
+        }
+      }
+    },
     "avatar_picker_choose_photo" : {
       "extractionState" : "stale",
       "localizations" : {

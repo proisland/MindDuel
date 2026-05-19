@@ -43,6 +43,7 @@ import UserNotifications
             MultiplayerPlayer(
                 id: p.userId,
                 username: p.username,
+                avatarUrl: p.avatarUrl,
                 isHost: p.userId == info.hostId,
                 isReady: p.userId == info.hostId
             )
@@ -86,7 +87,8 @@ import UserNotifications
         case .joined(_, let players):
             for p in players {
                 if !(currentRoom?.players.contains(where: { $0.id == p.userId }) ?? false) {
-                    let player = MultiplayerPlayer(id: p.userId, username: p.username, isHost: false, isReady: false)
+                    let player = MultiplayerPlayer(id: p.userId, username: p.username,
+                                                   avatarUrl: p.avatarUrl, isHost: false, isReady: false)
                     currentRoom?.players.append(player)
                 }
             }

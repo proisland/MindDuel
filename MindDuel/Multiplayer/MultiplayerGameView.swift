@@ -239,7 +239,7 @@ struct MultiplayerGameView: View {
         let isMultiplayer = room.players.count > 1
         return VStack(spacing: 4) {
             ZStack {
-                MDAvatar(username: player.username, size: .sm)
+                MDAvatar(username: player.username, size: .sm, avatarUrl: player.avatarUrl)
                     .opacity(player.isEliminated ? 0.3 : 1)
                 if isActive && !player.isEliminated {
                     Circle()

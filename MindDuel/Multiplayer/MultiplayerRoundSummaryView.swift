@@ -74,7 +74,7 @@ struct MultiplayerRoundSummaryView: View {
     private func answerRow(idx: Int, player: MultiplayerPlayer) -> some View {
         let answer = summary.answers.first { $0.playerID == player.id && $0.questionInRound == idx }
         return HStack(spacing: MDSpacing.sm) {
-            MDAvatar(username: player.username, size: .sm)
+            MDAvatar(username: player.username, size: .sm, avatarUrl: player.avatarUrl)
             Text(player.username)
                 .mdStyle(.caption)
                 .foregroundStyle(Color.mdText)

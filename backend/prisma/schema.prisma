@@ -314,6 +314,18 @@ model ActivityKudos {
   @@index([toUserId, createdAt(sort: Desc)])
 }
 
+// ── Preset avatars ────────────────────────────────────────────────────────────
+
+model PresetAvatar {
+  id        String   @id @default(cuid())
+  url       String   @unique
+  label     String   @default("")
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 // ── Admin ─────────────────────────────────────────────────────────────────────
 
 model AdminUser {

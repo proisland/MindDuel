@@ -39,6 +39,7 @@ struct APIFriendRequest: Decodable {
     let fromUsername: String?
     let toUsername: String?
     let fromAvatarEmoji: String?
+    let fromAvatarUrl: String?
     let createdAt: Date
 }
 
@@ -68,6 +69,7 @@ struct UserSearchResult: Decodable, Identifiable {
 struct SocialFeedUserSnippet: Codable {
     let username: String
     let avatarEmoji: String
+    let avatarUrl: String?
 }
 
 enum SocialFeedItemType: String, Codable {

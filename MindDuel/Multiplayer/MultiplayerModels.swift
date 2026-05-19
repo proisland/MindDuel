@@ -40,6 +40,7 @@ struct MultiplayerActivityItem: Identifiable, Codable {
 struct MultiplayerPlayer: Identifiable, Equatable, Codable {
     let id: String
     let username: String
+    var avatarUrl: String? = nil
     var isHost: Bool
     var isReady: Bool
     var lives: Int = 5

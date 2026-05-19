@@ -372,7 +372,7 @@ struct MultiplayerLobbyView: View {
             }
         }
         return HStack(spacing: MDSpacing.sm) {
-            MDAvatar(username: player.username, size: .sm)
+            MDAvatar(username: player.username, size: .sm, avatarUrl: player.avatarUrl)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: MDSpacing.xxs) {
                     Text("\(player.username)").mdStyle(.caption).foregroundStyle(Color.mdText)
@@ -534,7 +534,7 @@ struct MultiplayerLobbyView: View {
             else          { pickerSelection.insert(friend.username) }
         } label: {
             HStack(spacing: MDSpacing.sm) {
-                MDAvatar(username: friend.username, size: .sm)
+                MDAvatar(username: friend.username, size: .sm, avatarUrl: friend.avatarUrl)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(friend.username)")
                         .mdStyle(.caption)

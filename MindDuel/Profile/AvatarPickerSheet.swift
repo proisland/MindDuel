@@ -31,6 +31,37 @@ struct AvatarPickerSheet: View {
                         .frame(maxWidth: .infinity)
                         .padding(.top, MDSpacing.md)
 
+                        // Preset avatars
+                        if !store.presets.isEmpty {
+                            sectionLabel(String(localized: "avatar_picker_presets_section"))
+                            LazyVGrid(
+                                columns: Array(repeating: GridItem(.flexible(), spacing: MDSpacing.sm), count: 4),
+                                spacing: MDSpacing.sm
+                            ) {
+                                ForEach(store.presets) { preset in
+                                    let isSelected = store.avatarUrl == preset.url && store.imageData == nil
+                                    Button {
+                                        store.selectPreset(preset)
+                                    } label: {
+                                        AsyncImage(url: URL(string: preset.url)) { phase in
+                                            if let img = phase.image {
+                                                img.resizable().scaledToFill()
+                                            } else {
+                                                Color.mdSurface2
+                                            }
+                                        }
+                                        .frame(width: 60, height: 60)
+                                        .clipShape(Circle())
+                                        .overlay(Circle().stroke(
+                                            isSelected ? Color.mdAccent : Color.clear,
+                                            lineWidth: 2.5
+                                        ))
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+
                         sectionLabel(String(localized: "avatar_picker_photo_section"))
                         PhotosPicker(selection: $photoItem, matching: .images) {
                             HStack(spacing: MDSpacing.sm) {
@@ -52,16 +83,26 @@ struct AvatarPickerSheet: View {
                         }
                         .buttonStyle(.plain)
 
-                        if store.emoji != nil || store.imageData != nil {
+                        if store.emoji != nil || store.imageData != nil || store.avatarUrl != nil {
                             MDButton(.danger, title: String(localized: "avatar_picker_reset")) {
                                 store.emoji = nil
                                 store.imageData = nil
+                                store.avatarUrl = nil
+                                Task {
+                                    struct Body: Encodable { let avatarUrl: String? }
+                                    let _: Empty? = try? await APIClient.shared.patch(
+                                        "me", body: Body(avatarUrl: nil)
+                                    )
+                                }
                             }
                         }
                     }
                     .padding(MDSpacing.md)
                 }
             }
+        }
+        .onAppear {
+            Task { await store.fetchPresets() }
         }
         .onChange(of: photoItem) { item in
             guard let item else { return }

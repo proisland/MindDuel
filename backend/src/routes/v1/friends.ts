@@ -40,10 +40,10 @@ export default async function friendsRoutes(app: FastifyInstance) {
 
   // GET /v1/friends/requests — pending requests (sent + received)
   app.get('/requests', auth, async (request, reply) => {
-    const received = await app.prisma.friendRequest.findMany({
+    const received: any[] = await (app.prisma.friendRequest as any).findMany({
       where: { toUserId: request.userId },
       include: {
-        from: { select: { id: true, username: true, avatarEmoji: true } },
+        from: { select: { id: true, username: true, avatarEmoji: true, avatarUrl: true } },
       },
       orderBy: { createdAt: 'desc' },
     })
@@ -63,6 +63,7 @@ export default async function friendsRoutes(app: FastifyInstance) {
         toUserId: r.toUserId,
         fromUsername: r.from.username,
         fromAvatarEmoji: r.from.avatarEmoji,
+        fromAvatarUrl: (r.from as any).avatarUrl ?? null,
         createdAt: r.createdAt,
       })),
       sent: sent.map(r => ({

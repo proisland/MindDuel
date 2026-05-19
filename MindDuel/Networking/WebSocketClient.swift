@@ -173,6 +173,7 @@ struct WSPlayer: Decodable {
     let userId: String
     let username: String
     let avatarEmoji: String?
+    let avatarUrl: String?
 }
 
 struct WSProblem: Decodable {

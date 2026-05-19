@@ -16,6 +16,7 @@ interface Participant {
   userId: string
   username: string
   avatarEmoji: string
+  avatarUrl: string | null
   lives: number
   skips: number
   isActive: boolean
@@ -158,9 +159,9 @@ export default async function wsRoutes(app: FastifyInstance) {
     })
     if (!activeMode) return reply.status(400).send({ error: 'Mode not available' })
 
-    const user = await app.prisma.user.findUnique({
+    const user: any = await (app.prisma.user as any).findUnique({
       where: { id: request.userId },
-      select: { username: true, avatarEmoji: true },
+      select: { username: true, avatarEmoji: true, avatarUrl: true },
     })
     if (!user?.username) return reply.status(400).send({ error: 'Username required before playing' })
 
@@ -184,6 +185,7 @@ export default async function wsRoutes(app: FastifyInstance) {
         userId: request.userId,
         username: user.username,
         avatarEmoji: user.avatarEmoji,
+        avatarUrl: (user as any).avatarUrl ?? null,
         lives: 5,
         skips: 5,
         isActive: true,
@@ -260,9 +262,9 @@ export default async function wsRoutes(app: FastifyInstance) {
     if (!userId) { socket.close(4001, 'Invalid or expired ticket'); return }
 
     // Verify user is not suspended before allowing connection
-    const user = await app.prisma.user.findUnique({
+    const user: any = await (app.prisma.user as any).findUnique({
       where: { id: userId },
-      select: { isSuspended: true, username: true, avatarEmoji: true },
+      select: { isSuspended: true, username: true, avatarEmoji: true, avatarUrl: true },
     })
     if (!user || user.isSuspended || !user.username) {
       socket.close(4003, 'Unauthorized')
@@ -282,6 +284,7 @@ export default async function wsRoutes(app: FastifyInstance) {
       if (state.participants.length >= 8) { socket.close(4008, 'Room full'); return }
       state.participants.push({
         userId, username: user.username, avatarEmoji: user.avatarEmoji,
+        avatarUrl: (user as any).avatarUrl ?? null,
         lives: 5, skips: 5, isActive: true, score: 0,
       })
       await setRoomState(app.redis, state)
