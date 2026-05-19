@@ -1,8 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { DeleteObjectCommand } from '@aws-sdk/client-s3'
-import { config } from '../../config'
 import { revokeAllRefreshTokens } from '../../lib/tokens'
+import { deleteAvatarFromS3 } from '../../lib/s3'
 
 const patchBody = z.object({
   isFlagged:   z.boolean().optional(),
@@ -126,13 +125,7 @@ export default async function adminUsersRoutes(app: FastifyInstance) {
     if (!user) return reply.status(404).send({ error: 'Not found' })
 
     if (user.avatarUrl) {
-      const prefix = config.s3.publicUrl + '/'
-      if (user.avatarUrl.startsWith(prefix)) {
-        const key = user.avatarUrl.slice(prefix.length)
-        try {
-          await app.s3.send(new DeleteObjectCommand({ Bucket: config.s3.bucket, Key: key }))
-        } catch { /* non-fatal */ }
-      }
+      await deleteAvatarFromS3(app.s3, user.avatarUrl)
       await (app.prisma.user as any).update({ where: { id }, data: { avatarUrl: null } })
     }
 
