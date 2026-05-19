@@ -256,7 +256,11 @@ extension UserProfile {
         apiSentRequests.removeAll { $0.id == req.id }
         sentRequestUsernames.remove(username)
         Task {
-            try? await APIClient.shared.delete("friends/requests/\(req.id)")
+            do {
+                try await APIClient.shared.delete("friends/requests/\(req.id)")
+            } catch {
+                await refresh()
+            }
         }
     }
 

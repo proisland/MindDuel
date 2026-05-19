@@ -59,19 +59,14 @@ enum GeographyProblemGenerator {
         let distractors: [String]
     }
 
-    /// Compose the level pool from programmatic country questions +
-    /// handcrafted specials + cross-cutting question types.
-    /// Uses the cached backend question pack when available (language-aware),
-    /// falling back to the hardcoded Norwegian programmatic generation.
     private static func pool(forLevel level: Int) -> [Raw] {
         if let cached = QuestionPackCache.shared.questions(for: "geo") {
-            let filtered = cached.filter { $0.level == level }
-            if !filtered.isEmpty {
-                return filtered.map { q in
-                    Raw(prompt: q.prompt, correct: q.answer,
-                        distractors: q.options.filter { $0 != q.answer })
-                }
+            let fromCache = cached.compactMap { q -> Raw? in
+                guard q.level == level else { return nil }
+                return Raw(prompt: q.prompt, correct: q.answer,
+                           distractors: q.options.filter { $0 != q.answer })
             }
+            if !fromCache.isEmpty { return fromCache }
         }
         let countries = CountryData.countries(forLevel: level)
         var pool: [Raw] = []

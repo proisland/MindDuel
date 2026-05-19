@@ -1,25 +1,10 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import { PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { config } from '../../config'
 import { revokeAllRefreshTokens } from '../../lib/tokens'
-
-function avatarS3Key(avatarUrl: string): string | null {
-  const prefix = config.s3.publicUrl + '/'
-  if (!avatarUrl.startsWith(prefix)) return null
-  return avatarUrl.slice(prefix.length)
-}
-
-async function deleteAvatarFromS3(app: FastifyInstance, avatarUrl: string): Promise<void> {
-  const key = avatarS3Key(avatarUrl)
-  if (!key) return
-  try {
-    await app.s3.send(new DeleteObjectCommand({ Bucket: config.s3.bucket, Key: key }))
-  } catch {
-    // Non-fatal — object may already be gone
-  }
-}
+import { deleteAvatarFromS3 } from '../../lib/s3'
 
 const RESERVED_USERNAMES = new Set(['admin', 'mindduel', 'support', 'moderator', 'system'])
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
@@ -144,7 +129,7 @@ export default async function meRoutes(app: FastifyInstance) {
       const existing = await (app.prisma.user as any).findUnique({
         where: { id: request.userId }, select: { avatarUrl: true },
       })
-      if (existing?.avatarUrl) await deleteAvatarFromS3(app, existing.avatarUrl)
+      if (existing?.avatarUrl) await deleteAvatarFromS3(app.s3, existing.avatarUrl)
     }
 
     const prismaData: Record<string, unknown> = {
@@ -214,7 +199,7 @@ export default async function meRoutes(app: FastifyInstance) {
     const existing = await (app.prisma.user as any).findUnique({
       where: { id: request.userId }, select: { avatarUrl: true },
     })
-    if (existing?.avatarUrl) await deleteAvatarFromS3(app, existing.avatarUrl)
+    if (existing?.avatarUrl) await deleteAvatarFromS3(app.s3, existing.avatarUrl)
     await revokeAllRefreshTokens(app.redis, request.userId)
     await app.prisma.user.delete({ where: { id: request.userId } })
     return reply.status(204).send()
