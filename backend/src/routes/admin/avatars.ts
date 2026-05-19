@@ -1,15 +1,20 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
+import { randomUUID } from 'node:crypto'
+import { config } from '../../config'
+import { deleteS3Key, uploadJpegToS3 } from '../../lib/s3'
 
 const createBody = z.object({
-  url:       z.string().url(),
-  label:     z.string().default(''),
+  data:      z.string().min(1),
+  labelNo:   z.string().default(''),
+  labelEn:   z.string().default(''),
   isActive:  z.boolean().default(true),
   sortOrder: z.number().int().optional(),
 })
 
 const patchBody = z.object({
-  label:     z.string().optional(),
+  labelNo:   z.string().optional(),
+  labelEn:   z.string().optional(),
   isActive:  z.boolean().optional(),
   sortOrder: z.number().int().optional(),
 })
@@ -23,10 +28,15 @@ export default async function adminAvatarsRoutes(app: FastifyInstance) {
     return reply.view('admin/avatars.ejs', { title: 'Preset Avatars', avatars })
   })
 
-  // POST /admin/avatars
+  // POST /admin/avatars — upload image + bilingual labels
   app.post('/', async (request, reply) => {
     const body = createBody.safeParse(request.body)
     if (!body.success) return reply.status(400).send({ error: body.error.flatten() })
+
+    const imageBuffer = Buffer.from(body.data.data, 'base64')
+    if (imageBuffer.byteLength > 5 * 1024 * 1024) {
+      return reply.status(413).send({ error: 'Image too large (max 5 MB)' })
+    }
 
     let { sortOrder } = body.data
     if (sortOrder === undefined) {
@@ -36,8 +46,17 @@ export default async function adminAvatarsRoutes(app: FastifyInstance) {
       sortOrder = (last?.sortOrder ?? -1) + 1
     }
 
+    const key = `preset-avatars/${randomUUID()}.jpg`
+    const url = await uploadJpegToS3(app.s3, key, imageBuffer)
+
     const avatar = await (app.prisma as any).presetAvatar.create({
-      data: { url: body.data.url, label: body.data.label, isActive: body.data.isActive, sortOrder },
+      data: {
+        url,
+        labelNo: body.data.labelNo,
+        labelEn: body.data.labelEn,
+        isActive: body.data.isActive,
+        sortOrder,
+      },
     })
     return reply.status(201).send(avatar)
   })
@@ -51,7 +70,8 @@ export default async function adminAvatarsRoutes(app: FastifyInstance) {
     const avatar = await (app.prisma as any).presetAvatar.update({
       where: { id },
       data: {
-        ...(body.data.label     !== undefined && { label: body.data.label }),
+        ...(body.data.labelNo   !== undefined && { labelNo: body.data.labelNo }),
+        ...(body.data.labelEn   !== undefined && { labelEn: body.data.labelEn }),
         ...(body.data.isActive  !== undefined && { isActive: body.data.isActive }),
         ...(body.data.sortOrder !== undefined && { sortOrder: body.data.sortOrder }),
       },
@@ -59,9 +79,20 @@ export default async function adminAvatarsRoutes(app: FastifyInstance) {
     return reply.send({ ok: true, isActive: avatar.isActive })
   })
 
-  // DELETE /admin/avatars/:id
+  // DELETE /admin/avatars/:id — also removes the image from S3
   app.delete('/:id', async (request, reply) => {
     const { id } = request.params as { id: string }
+    const avatar = await (app.prisma as any).presetAvatar.findUnique({
+      where: { id }, select: { url: true },
+    })
+    if (!avatar) return reply.status(404).send({ error: 'Not found' })
+
+    // Extract key from public URL and delete from S3
+    const prefix = config.s3.publicUrl + '/'
+    if (avatar.url.startsWith(prefix)) {
+      await deleteS3Key(app.s3, avatar.url.slice(prefix.length))
+    }
+
     await (app.prisma as any).presetAvatar.delete({ where: { id } })
     return reply.send({ ok: true })
   })

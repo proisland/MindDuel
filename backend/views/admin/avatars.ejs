@@ -1,22 +1,27 @@
 <h1 class="text-2xl font-bold mb-6">Preset Avatars</h1>
 
-<!-- Create form -->
+<!-- Upload form -->
 <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-6">
   <h2 class="font-semibold mb-3">Add preset avatar</h2>
-  <form onsubmit="createAvatar(event)" class="flex flex-wrap gap-2 items-end">
+  <form onsubmit="createAvatar(event)" class="flex flex-wrap gap-3 items-end">
     <div>
-      <label class="block text-xs text-gray-400 mb-1">Image URL</label>
-      <input name="url" placeholder="https://..." required
-        class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 w-80">
+      <label class="block text-xs text-gray-400 mb-1">Image file (JPEG/PNG)</label>
+      <input id="avatarFile" type="file" accept="image/*" required
+        class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 file:mr-2 file:bg-indigo-700 file:border-0 file:rounded file:text-xs file:text-white file:px-2 file:py-1">
     </div>
     <div>
-      <label class="block text-xs text-gray-400 mb-1">Label (optional)</label>
-      <input name="label" placeholder="e.g. Fox"
+      <label class="block text-xs text-gray-400 mb-1">Label (norsk)</label>
+      <input name="labelNo" placeholder="f.eks. Rev"
         class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 w-32">
     </div>
-    <button type="submit"
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">Label (English)</label>
+      <input name="labelEn" placeholder="e.g. Fox"
+        class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 w-32">
+    </div>
+    <button type="submit" id="uploadBtn"
       class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-1.5 rounded transition">
-      Add
+      Upload
     </button>
   </form>
 </div>
@@ -25,10 +30,13 @@
 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
   <% avatars.forEach(function(av) { %>
   <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 flex flex-col items-center gap-2">
-    <img src="<%= av.url %>" alt="<%= av.label || 'avatar' %>"
+    <img src="<%= av.url %>" alt="<%= av.labelNo || av.labelEn || 'avatar' %>"
       class="w-16 h-16 rounded-full object-cover border border-gray-700"
       onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23374151%22/></svg>'">
-    <span class="text-xs text-gray-400 text-center truncate w-full"><%= av.label || '—' %></span>
+    <div class="text-center w-full">
+      <% if (av.labelNo) { %><div class="text-xs text-gray-300 truncate"><%= av.labelNo %></div><% } %>
+      <% if (av.labelEn) { %><div class="text-xs text-gray-500 truncate"><%= av.labelEn %></div><% } %>
+    </div>
     <div class="flex gap-1 w-full">
       <button onclick="toggleAvatar('<%= av.id %>', <%= av.isActive %>)"
         class="flex-1 text-xs px-2 py-1 rounded <%= av.isActive ? 'bg-green-900 text-green-300' : 'bg-gray-700 text-gray-400' %> hover:opacity-80 transition">
@@ -42,21 +50,42 @@
   </div>
   <% }) %>
   <% if (avatars.length === 0) { %>
-  <p class="col-span-full text-gray-500 text-sm">No preset avatars yet. Add one above.</p>
+  <p class="col-span-full text-gray-500 text-sm">No preset avatars yet. Upload one above.</p>
   <% } %>
 </div>
 
 <script>
 async function createAvatar(e) {
   e.preventDefault()
-  const fd = new FormData(e.target)
-  const res = await fetch('/admin/avatars', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url: fd.get('url'), label: fd.get('label') || '' }),
-  })
-  if (res.ok) location.reload()
-  else alert('Error: ' + (await res.json()).error)
+  const file = document.getElementById('avatarFile').files[0]
+  if (!file) return
+  const btn = document.getElementById('uploadBtn')
+  btn.disabled = true
+  btn.textContent = 'Uploading…'
+
+  const reader = new FileReader()
+  reader.onload = async function(ev) {
+    const base64 = ev.target.result.split(',')[1]
+    const fd = new FormData(e.target)
+    const res = await fetch('/admin/avatars', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        data: base64,
+        labelNo: fd.get('labelNo') || '',
+        labelEn: fd.get('labelEn') || '',
+      }),
+    })
+    if (res.ok) {
+      location.reload()
+    } else {
+      const err = await res.json()
+      alert('Error: ' + JSON.stringify(err.error))
+      btn.disabled = false
+      btn.textContent = 'Upload'
+    }
+  }
+  reader.readAsDataURL(file)
 }
 
 async function toggleAvatar(id, isActive) {
@@ -69,7 +98,7 @@ async function toggleAvatar(id, isActive) {
 }
 
 async function deleteAvatar(id) {
-  if (!confirm('Delete this preset avatar?')) return
+  if (!confirm('Delete this preset avatar? This also removes the image from storage.')) return
   await fetch(`/admin/avatars/${id}`, { method: 'DELETE' })
   location.reload()
 }
