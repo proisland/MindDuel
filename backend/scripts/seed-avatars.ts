@@ -424,14 +424,16 @@ async function main() {
     process.exit(1)
   }
 
-  const existing = await (prisma as any).presetAvatar.findMany({
-    select: { labelNo: true },
-  })
-  const existingLabels = new Set((existing as any[]).map((a: any) => a.labelNo))
+  // Use raw SQL — the generated Prisma client is stale and lacks presetAvatar
+  const existing = await prisma.$queryRawUnsafe<Array<{ labelNo: string }>>(
+    `SELECT "labelNo" FROM "PresetAvatar"`
+  )
+  const existingLabels = new Set(existing.map(r => r.labelNo))
 
-  let sortOrder: number = await (prisma as any).presetAvatar
-    .findFirst({ orderBy: { sortOrder: 'desc' }, select: { sortOrder: true } })
-    .then((r: any) => (r?.sortOrder ?? -1) + 1)
+  const lastRow = await prisma.$queryRawUnsafe<Array<{ sortOrder: number }>>(
+    `SELECT "sortOrder" FROM "PresetAvatar" ORDER BY "sortOrder" DESC LIMIT 1`
+  )
+  let sortOrder = (lastRow[0]?.sortOrder ?? -1) + 1
 
   for (const av of avatars) {
     if (existingLabels.has(av.labelNo)) {
@@ -439,9 +441,9 @@ async function main() {
       continue
     }
 
-    const svgBuf  = Buffer.from(av.svgBody(), 'utf-8')
-    const key     = `preset-avatars/${randomUUID()}.svg`
-    const url     = `${publicUrl}/${key}`
+    const svgBuf = Buffer.from(av.svgBody(), 'utf-8')
+    const key    = `preset-avatars/${randomUUID()}.svg`
+    const url    = `${publicUrl}/${key}`
 
     await s3.send(new PutObjectCommand({
       Bucket: bucket,
@@ -450,9 +452,11 @@ async function main() {
       ContentType: 'image/svg+xml',
     }))
 
-    await (prisma as any).presetAvatar.create({
-      data: { url, labelNo: av.labelNo, labelEn: av.labelEn, isActive: true, sortOrder },
-    })
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "PresetAvatar" (id, url, "labelNo", "labelEn", "isActive", "sortOrder", "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, $4, true, $5, NOW(), NOW())`,
+      randomUUID(), url, av.labelNo, av.labelEn, sortOrder
+    )
 
     sortOrder++
     console.log(`  added ${av.labelNo} / ${av.labelEn} → ${key}`)
