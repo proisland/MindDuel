@@ -200,4 +200,24 @@ async function runMigrationsInternal(prisma: PrismaClient) {
       ON "MultiplayerRoom"("hostUserId", status)
   `)
 
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "PresetAvatar"
+      ADD COLUMN IF NOT EXISTS "labelNo" TEXT NOT NULL DEFAULT ''
+  `)
+
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "PresetAvatar"
+      ADD COLUMN IF NOT EXISTS "labelEn" TEXT NOT NULL DEFAULT ''
+  `)
+
+  // Backfill: copy existing label into both language columns, then drop label.
+  await prisma.$executeRawUnsafe(`
+    UPDATE "PresetAvatar" SET "labelNo" = label, "labelEn" = label
+    WHERE "labelNo" = '' AND label <> ''
+  `)
+
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "PresetAvatar" DROP COLUMN IF EXISTS label
+  `)
+
 }

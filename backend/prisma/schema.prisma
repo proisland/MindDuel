@@ -11,57 +11,57 @@ datasource db {
 // ── Users ─────────────────────────────────────────────────────────────────────
 
 model User {
-  id                      String    @id @default(cuid())
-  appleUserId             String    @unique
-  username                String?   @unique
-  birthDate               DateTime?
-  avatarEmoji             String    @default("🧠")
-  avatarUrl               String?
-  isPremium               Boolean   @default(false)
-  isFlagged               Boolean   @default(false)
-  isSuspended             Boolean   @default(false)
-  isUnlimited             Boolean   @default(false)
-  flagReason              String?
-  fastRoundCount          Int       @default(0)
-  totalRoundsPlayed       Int       @default(0)
-  totalCorrectAnswers     Int       @default(0)
-  totalCorrectAnswerTimeMs BigInt   @default(0)
-  locale                  String?
-  lastActiveAt            DateTime?
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
+  id                       String    @id @default(cuid())
+  appleUserId              String    @unique
+  username                 String?   @unique
+  birthDate                DateTime?
+  avatarEmoji              String    @default("🧠")
+  avatarUrl                String?
+  isPremium                Boolean   @default(false)
+  isFlagged                Boolean   @default(false)
+  isSuspended              Boolean   @default(false)
+  isUnlimited              Boolean   @default(false)
+  flagReason               String?
+  fastRoundCount           Int       @default(0)
+  totalRoundsPlayed        Int       @default(0)
+  totalCorrectAnswers      Int       @default(0)
+  totalCorrectAnswerTimeMs BigInt    @default(0)
+  locale                   String?
+  lastActiveAt             DateTime?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
 
   progressions            Progression[]
   scores                  Score[]
   dailyQuota              DailyQuota?
-  friendshipsSent         Friendship[]     @relation("FriendshipSender")
-  friendshipsReceived     Friendship[]     @relation("FriendshipReceiver")
-  friendRequestsSent      FriendRequest[]  @relation("FriendRequestSender")
-  friendRequestsReceived  FriendRequest[]  @relation("FriendRequestReceiver")
+  friendshipsSent         Friendship[]             @relation("FriendshipSender")
+  friendshipsReceived     Friendship[]             @relation("FriendshipReceiver")
+  friendRequestsSent      FriendRequest[]          @relation("FriendRequestSender")
+  friendRequestsReceived  FriendRequest[]          @relation("FriendRequestReceiver")
   gameSessions            GameSession[]
   pushTokens              PushToken[]
   feedbacks               Feedback[]
   multiplayerParticipants MultiplayerParticipant[]
   hostedRooms             MultiplayerRoom[]
-  kudosSent               ActivityKudos[]  @relation("KudosSender")
-  kudosReceived           ActivityKudos[]  @relation("KudosReceiver")
+  kudosSent               ActivityKudos[]          @relation("KudosSender")
+  kudosReceived           ActivityKudos[]          @relation("KudosReceiver")
 }
 
 // ── Progression ───────────────────────────────────────────────────────────────
 
 model Progression {
-  id              String   @id @default(cuid())
-  userId          String
-  mode            String   // "pi" | "math" | "chem" | "geo" | "grammar" | "history" | "physics" | "science" | "sport" | "brain"
-  position        Int      @default(0)   // Pi: decimal index; knowledge: level (1–20)
-  progress        Float    @default(0)   // Knowledge: progress toward next level (0–1)
-  currentStreak   Int      @default(0)   // Consecutive days played in this mode
-  longestStreak   Int      @default(0)
-  lastPlayedDate  String?               // YYYY-MM-DD of most recent completed session
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(cuid())
+  userId         String
+  mode           String // "pi" | "math" | "chem" | "geo" | "grammar" | "history" | "physics" | "science" | "sport" | "brain"
+  position       Int      @default(0) // Pi: decimal index; knowledge: level (1–20)
+  progress       Float    @default(0) // Knowledge: progress toward next level (0–1)
+  currentStreak  Int      @default(0) // Consecutive days played in this mode
+  longestStreak  Int      @default(0)
+  lastPlayedDate String? // YYYY-MM-DD of most recent completed session
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, mode])
   @@index([userId, mode])
@@ -76,7 +76,7 @@ model Score {
   value     Float
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, mode])
   @@index([mode, value(sort: Desc)])
@@ -87,11 +87,11 @@ model Score {
 
 model DailyQuota {
   userId    String   @id
-  date      String   // YYYY-MM-DD in user's local timezone
+  date      String // YYYY-MM-DD in user's local timezone
   count     Int      @default(0)
   updatedAt DateTime @updatedAt
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // ── Friends ───────────────────────────────────────────────────────────────────
@@ -101,8 +101,8 @@ model Friendship {
   receiverId String
   createdAt  DateTime @default(now())
 
-  sender     User     @relation("FriendshipSender",   fields: [senderId],   references: [id], onDelete: Cascade)
-  receiver   User     @relation("FriendshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender   User @relation("FriendshipSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("FriendshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
 
   @@id([senderId, receiverId])
   @@index([senderId])
@@ -115,8 +115,8 @@ model FriendRequest {
   toUserId   String
   createdAt  DateTime @default(now())
 
-  from       User     @relation("FriendRequestSender",   fields: [fromUserId], references: [id], onDelete: Cascade)
-  to         User     @relation("FriendRequestReceiver", fields: [toUserId],   references: [id], onDelete: Cascade)
+  from User @relation("FriendRequestSender", fields: [fromUserId], references: [id], onDelete: Cascade)
+  to   User @relation("FriendRequestReceiver", fields: [toUserId], references: [id], onDelete: Cascade)
 
   @@unique([fromUserId, toUserId])
   @@index([toUserId])
@@ -138,24 +138,24 @@ model GameSession {
   startedAt     DateTime  @default(now())
   endedAt       DateTime?
 
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  answers       GameAnswer[]
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers GameAnswer[]
 
   @@index([userId, mode, startedAt(sort: Desc)])
   @@index([sessionToken])
 }
 
 model GameAnswer {
-  id            String   @id @default(cuid())
-  sessionId     String
-  questionRef   String   // Pi: decimal index as string; knowledge: question ID
-  userAnswer    String
-  isCorrect     Boolean
-  answerTimeMs  Int
-  waitTimeMs    Int      @default(0)
-  createdAt     DateTime @default(now())
+  id           String   @id @default(cuid())
+  sessionId    String
+  questionRef  String // Pi: decimal index as string; knowledge: question ID
+  userAnswer   String
+  isCorrect    Boolean
+  answerTimeMs Int
+  waitTimeMs   Int      @default(0)
+  createdAt    DateTime @default(now())
 
-  session       GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
 }
@@ -178,34 +178,34 @@ model QuestionPack {
 // ── Game modes ────────────────────────────────────────────────────────────────
 
 model GameMode {
-  id          String    @id @default(cuid())
-  slug        String    @unique  // "pi" | "math" | "chem" | etc.
-  name        String
-  nameNo      String    @default("")  // Norwegian display name
-  nameEn      String    @default("")  // English display name
-  isActive    Boolean   @default(true)
-  iconSymbol  String    @default("questionmark")
-  colorHex    String    @default("#6366F1")
-  startsAt    DateTime?
-  endsAt      DateTime?
-  sortOrder   Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id         String    @id @default(cuid())
+  slug       String    @unique // "pi" | "math" | "chem" | etc.
+  name       String
+  nameNo     String    @default("") // Norwegian display name
+  nameEn     String    @default("") // English display name
+  isActive   Boolean   @default(true)
+  iconSymbol String    @default("questionmark")
+  colorHex   String    @default("#6366F1")
+  startsAt   DateTime?
+  endsAt     DateTime?
+  sortOrder  Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 // ── Multiplayer ───────────────────────────────────────────────────────────────
 
 model MultiplayerRoom {
-  id                String    @id @default(cuid())
-  code              String    @unique
+  id                String   @id @default(cuid())
+  code              String   @unique
   hostUserId        String
   mode              String
-  startLevel        Int       @default(0)
-  name              String    @default("")
-  questionsPerRound Int       @default(3)
-  status            String    @default("waiting") // waiting | active | finished
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  startLevel        Int      @default(0)
+  name              String   @default("")
+  questionsPerRound Int      @default(3)
+  status            String   @default("waiting") // waiting | active | finished
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   host         User                     @relation(fields: [hostUserId], references: [id])
   participants MultiplayerParticipant[]
@@ -224,8 +224,8 @@ model MultiplayerParticipant {
   score    Float    @default(0)
   joinedAt DateTime @default(now())
 
-  room     MultiplayerRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user     User            @relation(fields: [userId],  references: [id], onDelete: Cascade)
+  room MultiplayerRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([roomId, userId])
   @@index([roomId])
@@ -240,7 +240,7 @@ model PushToken {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -258,8 +258,8 @@ model Feedback {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  comments      FeedbackComment[]
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments FeedbackComment[]
 
   @@index([status, createdAt(sort: Desc)])
 }
@@ -271,7 +271,7 @@ model FeedbackComment {
   notified   Boolean  @default(false)
   createdAt  DateTime @default(now())
 
-  feedback   Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  feedback Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
 
   @@index([feedbackId, createdAt(sort: Desc)])
 }
@@ -292,13 +292,13 @@ model TelemetryEvent {
 // ── Images ────────────────────────────────────────────────────────────────────
 
 model AppImage {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  objectKey String
+  id          String   @id @default(cuid())
+  name        String   @unique
+  objectKey   String
   contentHash String
-  mimeType  String   @default("image/png")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  mimeType    String   @default("image/png")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 // ── Activity kudos ────────────────────────────────────────────────────────────
@@ -310,8 +310,8 @@ model ActivityKudos {
   roomId     String
   createdAt  DateTime @default(now())
 
-  from       User     @relation("KudosSender",   fields: [fromUserId], references: [id], onDelete: Cascade)
-  to         User     @relation("KudosReceiver", fields: [toUserId],   references: [id], onDelete: Cascade)
+  from User @relation("KudosSender", fields: [fromUserId], references: [id], onDelete: Cascade)
+  to   User @relation("KudosReceiver", fields: [toUserId], references: [id], onDelete: Cascade)
 
   @@unique([fromUserId, roomId])
   @@index([toUserId, createdAt(sort: Desc)])
@@ -322,7 +322,8 @@ model ActivityKudos {
 model PresetAvatar {
   id        String   @id @default(cuid())
   url       String   @unique
-  label     String   @default("")
+  labelNo   String   @default("")
+  labelEn   String   @default("")
   isActive  Boolean  @default(true)
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
