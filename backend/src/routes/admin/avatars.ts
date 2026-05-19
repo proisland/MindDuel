@@ -47,7 +47,15 @@ export default async function adminAvatarsRoutes(app: FastifyInstance) {
     }
 
     const key = `preset-avatars/${randomUUID()}.jpg`
-    const url = await uploadJpegToS3(app.s3, key, imageBuffer)
+    let url: string
+    try {
+      app.log.info({ key, bucket: config.s3.bucket, endpoint: config.s3.endpoint }, 'avatar upload start')
+      url = await uploadJpegToS3(app.s3, key, imageBuffer)
+      app.log.info({ key }, 'avatar upload ok')
+    } catch (err) {
+      app.log.error({ err, key }, 'avatar S3 upload failed')
+      return reply.status(500).send({ error: 'S3 upload failed', detail: String(err) })
+    }
 
     const avatar = await (app.prisma as any).presetAvatar.create({
       data: {
