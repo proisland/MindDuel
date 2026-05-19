@@ -196,19 +196,22 @@ model GameMode {
 // ── Multiplayer ───────────────────────────────────────────────────────────────
 
 model MultiplayerRoom {
-  id          String    @id @default(cuid())
-  code        String    @unique
-  hostUserId  String
-  mode        String
-  startLevel  Int       @default(0)
-  status      String    @default("waiting") // waiting | active | finished
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id                String    @id @default(cuid())
+  code              String    @unique
+  hostUserId        String
+  mode              String
+  startLevel        Int       @default(0)
+  name              String    @default("")
+  questionsPerRound Int       @default(3)
+  status            String    @default("waiting") // waiting | active | finished
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   host         User                     @relation(fields: [hostUserId], references: [id])
   participants MultiplayerParticipant[]
 
   @@index([code])
+  @@index([hostUserId, status])
   @@index([status, createdAt(sort: Desc)])
 }
 
@@ -312,6 +315,18 @@ model ActivityKudos {
 
   @@unique([fromUserId, roomId])
   @@index([toUserId, createdAt(sort: Desc)])
+}
+
+// ── Preset avatars ────────────────────────────────────────────────────────────
+
+model PresetAvatar {
+  id        String   @id @default(cuid())
+  url       String   @unique
+  label     String   @default("")
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ── Admin ─────────────────────────────────────────────────────────────────────

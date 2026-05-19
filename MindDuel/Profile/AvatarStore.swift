@@ -1,5 +1,16 @@
 import SwiftUI
 
+struct PresetAvatarItem: Decodable, Identifiable {
+    let id: String
+    let url: String
+    let label: String
+    let sortOrder: Int
+}
+
+struct PresetAvatarsResponse: Decodable {
+    let presets: [PresetAvatarItem]
+}
+
 /// #71: lets the user customise their own avatar with either an emoji or a
 /// photo from the library. Friends/opponents still render initial-based
 /// avatars; only the local user is customisable.
@@ -19,6 +30,8 @@ import SwiftUI
     @Published var avatarUrl: String? {
         didSet { UserDefaults.standard.set(avatarUrl, forKey: Self.avatarUrlKey) }
     }
+    /// Cached preset avatar list fetched from backend.
+    @Published private(set) var presets: [PresetAvatarItem] = []
     /// #118: signed-in user's username, set by `RootView` when auth flips
     /// to `.authenticated`. `MDAvatar` reads this so any avatar rendered
     /// for "me" picks up the customisation regardless of whose call site
@@ -43,6 +56,23 @@ import SwiftUI
     func isOwnUsername(_ username: String) -> Bool {
         guard let own = ownUsername else { return false }
         return own.compare(username, options: .caseInsensitive) == .orderedSame
+    }
+
+    /// Fetch the active preset avatar list from the backend.
+    func fetchPresets() async {
+        let resp: PresetAvatarsResponse? = try? await APIClient.shared.get("avatars/presets")
+        presets = resp?.presets ?? []
+    }
+
+    /// Select a preset avatar: update avatarUrl, clear local custom photo/emoji.
+    func selectPreset(_ preset: PresetAvatarItem) {
+        imageData = nil
+        emoji = nil
+        avatarUrl = preset.url
+        Task {
+            struct Body: Encodable { let avatarUrl: String? }
+            let _: Empty? = try? await APIClient.shared.patch("me", body: Body(avatarUrl: preset.url))
+        }
     }
 
     /// Upload imageData to R2 via the backend proxy, then persist the public URL to UserDefaults.

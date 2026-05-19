@@ -1,9 +1,25 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { PutObjectCommand } from '@aws-sdk/client-s3'
+import { PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { config } from '../../config'
 import { revokeAllRefreshTokens } from '../../lib/tokens'
+
+function avatarS3Key(avatarUrl: string): string | null {
+  const prefix = config.s3.publicUrl + '/'
+  if (!avatarUrl.startsWith(prefix)) return null
+  return avatarUrl.slice(prefix.length)
+}
+
+async function deleteAvatarFromS3(app: FastifyInstance, avatarUrl: string): Promise<void> {
+  const key = avatarS3Key(avatarUrl)
+  if (!key) return
+  try {
+    await app.s3.send(new DeleteObjectCommand({ Bucket: config.s3.bucket, Key: key }))
+  } catch {
+    // Non-fatal — object may already be gone
+  }
+}
 
 const RESERVED_USERNAMES = new Set(['admin', 'mindduel', 'support', 'moderator', 'system'])
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
@@ -123,6 +139,14 @@ export default async function meRoutes(app: FastifyInstance) {
       await app.prisma.$executeRaw`UPDATE "User" SET locale = ${locale} WHERE id = ${request.userId}`
     }
 
+    // If clearing a custom avatar, delete the S3 object
+    if (avatarUrl === null) {
+      const existing = await (app.prisma.user as any).findUnique({
+        where: { id: request.userId }, select: { avatarUrl: true },
+      })
+      if (existing?.avatarUrl) await deleteAvatarFromS3(app, existing.avatarUrl)
+    }
+
     const prismaData: Record<string, unknown> = {
       ...(username && { username }),
       ...(avatarEmoji && { avatarEmoji }),
@@ -142,6 +166,9 @@ export default async function meRoutes(app: FastifyInstance) {
     const body = z.object({ data: z.string().min(1) }).safeParse(request.body)
     if (!body.success) return reply.status(400).send({ error: 'Invalid body' })
     const imageBuffer = Buffer.from(body.data.data, 'base64')
+    if (imageBuffer.byteLength > 5 * 1024 * 1024) {
+      return reply.status(413).send({ error: 'Image too large (max 5 MB)' })
+    }
     const key = `avatars/${request.userId}.jpg`
     await app.s3.send(new PutObjectCommand({
       Bucket: config.s3.bucket,
@@ -184,6 +211,10 @@ export default async function meRoutes(app: FastifyInstance) {
 
   // DELETE /v1/me
   app.delete('/', auth, async (request, reply) => {
+    const existing = await (app.prisma.user as any).findUnique({
+      where: { id: request.userId }, select: { avatarUrl: true },
+    })
+    if (existing?.avatarUrl) await deleteAvatarFromS3(app, existing.avatarUrl)
     await revokeAllRefreshTokens(app.redis, request.userId)
     await app.prisma.user.delete({ where: { id: request.userId } })
     return reply.status(204).send()

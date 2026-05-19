@@ -171,4 +171,33 @@ async function runMigrationsInternal(prisma: PrismaClient) {
       ADD COLUMN IF NOT EXISTS "avatarUrl" TEXT
   `)
 
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "PresetAvatar" (
+      "id"        TEXT         NOT NULL,
+      "url"       TEXT         NOT NULL,
+      "label"     TEXT         NOT NULL DEFAULT '',
+      "isActive"  BOOLEAN      NOT NULL DEFAULT true,
+      "sortOrder" INTEGER      NOT NULL DEFAULT 0,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "PresetAvatar_pkey" PRIMARY KEY ("id"),
+      CONSTRAINT "PresetAvatar_url_key" UNIQUE ("url")
+    )
+  `)
+
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "MultiplayerRoom"
+      ADD COLUMN IF NOT EXISTS "name" TEXT NOT NULL DEFAULT ''
+  `)
+
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "MultiplayerRoom"
+      ADD COLUMN IF NOT EXISTS "questionsPerRound" INTEGER NOT NULL DEFAULT 3
+  `)
+
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS "MultiplayerRoom_hostUserId_status_idx"
+      ON "MultiplayerRoom"("hostUserId", status)
+  `)
+
 }

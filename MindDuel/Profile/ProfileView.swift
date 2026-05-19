@@ -131,6 +131,13 @@ struct ProfileView: View {
                             friendsRow
                         }
 
+                        // VENNEFORSLAG (bare når man har venner)
+                        if !social.friends.isEmpty && !social.friendSuggestions.isEmpty {
+                            sectionContainer(String(localized: "friend_suggestions_section_title")) {
+                                friendSuggestionsRow
+                            }
+                        }
+
                         // ONBOARDING
                         Button {
                             showOnboarding = true
@@ -259,7 +266,8 @@ struct ProfileView: View {
             // Pending requests with accept / decline
             ForEach(social.pendingRequests) { req in
                 HStack(spacing: MDSpacing.sm) {
-                    MDAvatar(username: req.username, size: .sm)
+                    MDAvatar(username: req.username, size: .sm,
+                             avatarUrl: req.avatarUrl)
                     Text("\(req.username)")
                         .mdStyle(.caption)
                         .foregroundStyle(Color.mdText)
@@ -278,6 +286,43 @@ struct ProfileView: View {
                 .background(Color.mdSurface2)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdBorder2, lineWidth: 0.5))
+            }
+
+            // Sent requests waiting for response
+            if !social.apiSentRequests.isEmpty {
+                VStack(spacing: MDSpacing.xxs) {
+                    Text(String(localized: "sent_friend_requests_section"))
+                        .mdStyle(.micro)
+                        .foregroundStyle(Color.mdText3)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    ForEach(social.apiSentRequests, id: \.id) { req in
+                        HStack(spacing: MDSpacing.sm) {
+                            MDAvatar(username: req.toUsername ?? "?", size: .sm)
+                            Text(req.toUsername ?? "?")
+                                .mdStyle(.caption)
+                                .foregroundStyle(Color.mdText)
+                            Spacer()
+                            Button {
+                                social.withdrawRequest(to: req.toUsername ?? "")
+                            } label: {
+                                Text(String(localized: "withdraw_friend_request_action"))
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(Color.mdText3)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(Color.mdSurface2)
+                                    .clipShape(Capsule())
+                                    .overlay(Capsule().stroke(Color.mdBorder2, lineWidth: 0.5))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, MDSpacing.md)
+                        .padding(.vertical, MDSpacing.sm)
+                        .background(Color.mdSurface2)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdBorder2, lineWidth: 0.5))
+                    }
+                }
             }
 
             // Accepted friends (horizontal scroll)
@@ -313,6 +358,61 @@ struct ProfileView: View {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    // MARK: – Friend suggestions row
+
+    private var friendSuggestionsRow: some View {
+        VStack(spacing: MDSpacing.xs) {
+            ForEach(social.friendSuggestions.prefix(5)) { suggestion in
+                HStack(spacing: MDSpacing.sm) {
+                    MDAvatar(username: suggestion.username, size: .sm,
+                             customEmoji: suggestion.avatarEmoji == "🧠" ? nil : suggestion.avatarEmoji,
+                             avatarUrl: suggestion.avatarUrl)
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: MDSpacing.xxs) {
+                            Text(suggestion.username)
+                                .mdStyle(.caption)
+                                .foregroundStyle(Color.mdText)
+                                .lineLimit(1)
+                            if suggestion.isPremium {
+                                MDPillTag(label: String(localized: "premium_label"), variant: .amber)
+                            }
+                        }
+                        if suggestion.mutualFriendsCount > 0 {
+                            Text(String(format: String(localized: "friend_suggestion_mutual_format"),
+                                        suggestion.mutualFriendsCount))
+                                .mdStyle(.micro)
+                                .foregroundStyle(Color.mdText3)
+                        }
+                    }
+                    Spacer()
+                    if social.sentRequestUsernames.contains(suggestion.username) {
+                        Text(String(localized: "friend_request_pending_short"))
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.mdText3)
+                    } else {
+                        Button {
+                            social.sendFriendRequest(to: suggestion.username)
+                        } label: {
+                            Text(String(localized: "add_friend_short_action"))
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(Color.mdAccent)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(Color.mdAccentSoft)
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, MDSpacing.md)
+                .padding(.vertical, MDSpacing.sm)
+                .background(Color.mdSurface2)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdBorder2, lineWidth: 0.5))
             }
         }
     }

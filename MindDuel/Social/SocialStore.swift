@@ -103,7 +103,8 @@ extension UserProfile {
             piScore: 0, mathScore: 0, piLevel: 1, mathLevel: 1,
             roundsPlayed: 0, age: nil, city: nil,
             memberSince: "–", lastActive: "–",
-            isFriend: false, isFlagged: false
+            isFriend: false, isFlagged: false,
+            avatarUrl: request.fromAvatarUrl
         )
     }
 
@@ -141,13 +142,19 @@ extension UserProfile {
     // Live data from API (empty until refreshed)
     @Published private(set) var apiFriends: [APIFriend] = []
     @Published private(set) var apiPendingRequests: [APIFriendRequest] = []
+    @Published private(set) var apiSentRequests: [APIFriendRequest] = []
     @Published private(set) var socialFeed: [SocialFeedItem] = []
+    @Published private(set) var friendSuggestions: [FriendSuggestion] = []
 
     // Legacy local state kept for UI compatibility
     @Published private(set) var friendUsernames: Set<String> = []
     @Published private(set) var sentRequestUsernames: Set<String> = []
     @Published private(set) var pendingRequests: [UserProfile] = []
     @Published private(set) var friends: [UserProfile] = []
+
+    /// Set to true from AppDelegate when user taps a friendRequest push notification.
+    /// HomeView consumes this by opening ProfileView, then resets it to false.
+    @Published var shouldOpenFriendRequests: Bool = false
 
     private init() {}
 
@@ -157,7 +164,8 @@ extension UserProfile {
         async let friendsTask: FriendsResponse? = try? APIClient.shared.get("friends")
         async let requestsTask: FriendRequestsResponse? = try? APIClient.shared.get("friends/requests")
         async let feedTask: SocialFeedResponse? = try? APIClient.shared.get("activity/feed")
-        let (friendsResp, requestsResp, feedResp) = await (friendsTask, requestsTask, feedTask)
+        async let suggestionsTask: FriendSuggestionsResponse? = try? APIClient.shared.get("friends/suggestions")
+        let (friendsResp, requestsResp, feedResp, suggestionsResp) = await (friendsTask, requestsTask, feedTask, suggestionsTask)
 
         let fetchedFriends = friendsResp?.friends ?? []
         apiFriends = fetchedFriends
@@ -165,10 +173,12 @@ extension UserProfile {
         friendUsernames = Set(fetchedFriends.map(\.username))
         if let reqs = requestsResp {
             apiPendingRequests = reqs.received
+            apiSentRequests = reqs.sent
             sentRequestUsernames = Set(reqs.sent.compactMap(\.toUsername))
             pendingRequests = reqs.received.map { UserProfile(from: $0) }
         }
         socialFeed = feedResp?.feed ?? []
+        friendSuggestions = suggestionsResp?.suggestions ?? []
     }
 
     // MARK: – Queries
@@ -241,6 +251,15 @@ extension UserProfile {
         }
     }
 
+    func withdrawRequest(to username: String) {
+        guard let req = apiSentRequests.first(where: { $0.toUsername == username }) else { return }
+        apiSentRequests.removeAll { $0.id == req.id }
+        sentRequestUsernames.remove(username)
+        Task {
+            try? await APIClient.shared.delete("friends/requests/\(req.id)")
+        }
+    }
+
     func removeFriend(username: String) {
         guard let friend = apiFriends.first(where: { $0.username == username }) else { return }
         apiFriends.removeAll { $0.id == friend.id }
@@ -255,30 +274,12 @@ extension UserProfile {
 
     func seedMockRequestIfNeeded() {}
 
-    /// Schedule a local notification when a new friend request arrives (#105).
-    func notifyIncomingFriendRequest(from username: String) {
-        Task {
-            let center = UNUserNotificationCenter.current()
-            let granted = (try? await center.requestAuthorization(options: [.alert, .sound])) ?? false
-            guard granted else { return }
-            let content = UNMutableNotificationContent()
-            content.title = String(localized: "notification_friend_request_title")
-            content.body  = String(format: String(localized: "notification_friend_request_body"),
-                                   username)
-            content.sound = .default
-            content.userInfo = ["kind": "friendRequest", "username": username]
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
-            let request = UNNotificationRequest(identifier: "friendRequest-\(username)",
-                                                content: content, trigger: trigger)
-            try? await center.add(request)
-        }
-    }
-
     func simulateIncomingRequest() { Task { await refresh() } }
 
     func resetForTesting() {
         apiFriends = []
         apiPendingRequests = []
+        apiSentRequests = []
         friendUsernames = []
         sentRequestUsernames = []
         pendingRequests = []

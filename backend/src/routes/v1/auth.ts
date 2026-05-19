@@ -61,12 +61,24 @@ export default async function authRoutes(app: FastifyInstance) {
     })
 
     if (!user) {
+      // Pick a random active preset avatar for new users (gracefully skipped if none exist)
+      const presets = await (app.prisma as any).presetAvatar.findMany({
+        where: { isActive: true }, select: { url: true },
+      })
+      const randomPreset = presets.length > 0
+        ? presets[Math.floor(Math.random() * presets.length)]
+        : null
+
       user = await app.prisma.user.create({
         data: {
           appleUserId: applePayload.appleUserId,
           lastActiveAt: new Date(),
         },
       })
+
+      if (randomPreset) {
+        await app.prisma.$executeRaw`UPDATE "User" SET "avatarUrl" = ${randomPreset.url} WHERE id = ${user.id}`
+      }
     } else {
       await app.prisma.user.update({
         where: { id: user.id },
