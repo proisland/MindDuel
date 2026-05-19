@@ -30,6 +30,7 @@ import UserNotifications
                         name: name, questionsPerRound: questionsPerRound,
                         invitedUsername: invitedUsername)
         backendRoomId = room.id
+        currentRoom?.backendId = room.id
         wsClient.connect(roomId: room.id)
         observeWS()
     }
@@ -64,6 +65,7 @@ import UserNotifications
         var room = MultiplayerRoom(id: info.code, mode: mode, startLevel: 1, players: players, status: .lobby)
         room.customName = info.name ?? ""
         room.questionsPerTurn = info.questionsPerRound ?? 3
+        room.backendId = info.id
         currentRoom = room
         backendRoomId = info.id
         wsClient.connect(roomId: info.id)
@@ -447,8 +449,10 @@ import UserNotifications
         cancelGameReminderNotification()
         if let idx = backgroundRooms.firstIndex(where: { $0.id == roomID }) {
             currentRoom = backgroundRooms.remove(at: idx)
-            // Reconnect WS if we have the backend room ID
-            if let roomId = backendRoomId {
+            // Reconnect WS — prefer the persisted backendId so rejoin works
+            // after an app restart when backendRoomId (per-session) is nil.
+            if let roomId = currentRoom?.backendId ?? backendRoomId {
+                backendRoomId = roomId
                 wsClient.connect(roomId: roomId)
                 observeWS()
             }
@@ -469,6 +473,81 @@ import UserNotifications
 
     func leaveBackgroundRoom(id: String) {
         backgroundRooms.removeAll { $0.id == id }
+    }
+
+    /// Cancel the current room (host only). Calls DELETE /ws/rooms/:backendId
+    /// then clears local state exactly like leaveRoom().
+    func cancelRoom() {
+        guard let roomId = backendRoomId ?? currentRoom?.backendId else {
+            leaveRoom(); return
+        }
+        Task {
+            try? await APIClient.shared.delete("ws/rooms/\(roomId)")
+        }
+        leaveRoom()
+    }
+
+    /// Syncs active backend rooms into backgroundRooms without touching
+    /// standalone-solo sessions or the currently active room.
+    func fetchActiveRooms(ownUsername: String) async {
+        struct ActiveRoomEntry: Decodable {
+            let id: String
+            let code: String
+            let mode: String
+            let hostId: String
+            let name: String?
+            let questionsPerRound: Int?
+            let state: String
+            let participants: [WSParticipant]
+            let turnIndex: Int
+            let currentRoundIndex: Int?
+        }
+        struct ActiveRoomsResponse: Decodable { let rooms: [ActiveRoomEntry] }
+        guard let response = try? await APIClient.shared.get("ws/rooms/active") as ActiveRoomsResponse
+        else { return }
+
+        let currentCode = currentRoom?.id
+        var updated = backgroundRooms.filter { $0.isStandaloneSolo }
+
+        for entry in response.rooms {
+            guard entry.code != currentCode else { continue }
+            let mode = GameMode(slug: entry.mode) ?? .pi
+            var players: [MultiplayerPlayer] = entry.participants.map { p in
+                var player = MultiplayerPlayer(
+                    id: p.userId, username: p.username,
+                    avatarUrl: p.avatarUrl, isHost: p.userId == entry.hostId,
+                    isReady: true, lives: p.lives, skips: p.skips, score: p.score
+                )
+                player.isEliminated = !p.isActive
+                return player
+            }
+            if let idx = players.firstIndex(where: {
+                $0.username.lowercased() == ownUsername.lowercased()
+            }) { players[idx].isYou = true }
+
+            let status: RoomStatus = entry.state == "active" ? .playing : .lobby
+            if let existingIdx = backgroundRooms.firstIndex(where: { $0.id == entry.code }) {
+                var existing = backgroundRooms[existingIdx]
+                existing.players = players
+                existing.status = status
+                existing.currentTurnIndex = entry.turnIndex
+                if let ri = entry.currentRoundIndex { existing.currentRoundIndex = ri }
+                existing.backendId = entry.id
+                updated.append(existing)
+            } else {
+                var room = MultiplayerRoom(id: entry.code, mode: mode, startLevel: 1,
+                                          players: players, status: status)
+                room.customName = entry.name ?? ""
+                room.questionsPerTurn = entry.questionsPerRound ?? 3
+                room.currentTurnIndex = entry.turnIndex
+                room.currentRoundIndex = entry.currentRoundIndex ?? 1
+                room.backendId = entry.id
+                room.lastActivityAt = Date()
+                updated.append(room)
+            }
+        }
+
+        backgroundRooms = updated  // single assignment → single persist call
     }
 
     // MARK: – Standalone solo (Pi/Math/etc.) sessions

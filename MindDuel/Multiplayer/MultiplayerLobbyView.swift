@@ -4,6 +4,8 @@ struct MultiplayerLobbyView: View {
     let ownUsername: String
     let startAsHost: Bool
     var invitedUsername: String? = nil
+    /// Extra usernames to auto-invite after room creation (used by rematch).
+    var additionalInviteUsernames: [String] = []
 
     @ObservedObject private var store     = MultiplayerStore.shared
     @ObservedObject private var social    = SocialStore.shared
@@ -52,6 +54,9 @@ struct MultiplayerLobbyView: View {
                             invitedUsername: invitedUsername
                         )
                         roomName = store.currentRoom?.customName ?? ""
+                        for username in additionalInviteUsernames {
+                            store.inviteFriend(username: username, playerID: "pending_\(username)")
+                        }
                     }
                 } else {
                     roomName = store.currentRoom?.customName ?? ""
@@ -452,6 +457,11 @@ struct MultiplayerLobbyView: View {
                 showGame = true
             }
             .disabled(progression.isQuotaExhausted || hasOnlyHost(room))
+
+            MDButton(.danger, title: String(localized: "multiplayer_cancel_room_action")) {
+                store.cancelRoom()
+                dismiss()
+            }
         } else {
             MDButton(.ghost, title: String(localized: "multiplayer_waiting_for_host_label")) { }
                 .disabled(true)

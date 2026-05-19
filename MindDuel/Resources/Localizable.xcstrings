@@ -2636,6 +2636,40 @@
         }
       }
     },
+    "multiplayer_cancel_room_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel room"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avbryt rom"
+          }
+        }
+      }
+    },
+    "multiplayer_rematch_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rematch"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Omkamp"
+          }
+        }
+      }
+    },
     "multiplayer_start_action" : {
       "extractionState" : "stale",
       "localizations" : {

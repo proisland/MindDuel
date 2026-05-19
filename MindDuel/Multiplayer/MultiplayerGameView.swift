@@ -22,6 +22,8 @@ struct MultiplayerGameView: View {
     @State private var breakdownPlayer: MultiplayerPlayer? = nil
     @State private var toastOpacity: Double     = 0
     @State private var showSoloQuitModal        = false
+    @State private var showRematchLobby         = false
+    @State private var rematchInviteUsernames: [String] = []
 
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
@@ -34,6 +36,7 @@ struct MultiplayerGameView: View {
                 case .finished:
                     MultiplayerFinishedView(
                         room: room,
+                        ownUsername: ownUsername,
                         onShowBreakdown: { player in
                             breakdownPlayer = player
                             showScoreBreakdown = true
@@ -41,7 +44,14 @@ struct MultiplayerGameView: View {
                         onLeave: {
                             store.leaveRoom()
                             dismiss()
-                        }
+                        },
+                        onRematch: room.players.first(where: { $0.isYou })?.isHost == true ? {
+                            let friendNames = SocialStore.shared.friendUsernames
+                            let opponents = room.players.filter { !$0.isYou }.map(\.username)
+                            rematchInviteUsernames = opponents.filter { friendNames.contains($0) }
+                            store.leaveRoom()
+                            showRematchLobby = true
+                        } : nil
                     )
                 case .playing, .lobby:
                     gameContent(room: room)
@@ -117,6 +127,14 @@ struct MultiplayerGameView: View {
                     store.dismissRoundSummary()
                 }
             }
+        }
+        .fullScreenCover(isPresented: $showRematchLobby) {
+            MultiplayerLobbyView(
+                ownUsername: ownUsername,
+                startAsHost: true,
+                invitedUsername: rematchInviteUsernames.first,
+                additionalInviteUsernames: rematchInviteUsernames.dropFirst().map { $0 }
+            )
         }
         .onAppear {
             store.cancelGameReminderNotification()

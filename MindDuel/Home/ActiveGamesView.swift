@@ -71,6 +71,9 @@ struct ActiveGamesView: View {
                 }
             }
         }
+        .onAppear {
+            Task { await store.fetchActiveRooms(ownUsername: ownUsername) }
+        }
         .fullScreenCover(isPresented: $showGame) {
             MultiplayerGameView(ownUsername: ownUsername)
         }

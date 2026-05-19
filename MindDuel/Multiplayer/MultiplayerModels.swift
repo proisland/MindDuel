@@ -167,6 +167,9 @@ struct MultiplayerRoom: Identifiable, Codable {
     /// display or routing — use this slug + serverModeName instead.
     var serverModeSlug: String? = nil
     var serverModeName: String? = nil
+    /// Backend UUID for this room (separate from the display code stored in `id`).
+    /// Persisted so WS reconnection works across app restarts.
+    var backendId: String? = nil
 
     var activePlayers: [MultiplayerPlayer] { players.filter { !$0.isEliminated } }
 
