@@ -313,6 +313,36 @@ export default async function wsRoutes(app: FastifyInstance) {
     return reply.status(204).send()
   })
 
+  // DELETE /v1/rooms/:roomId — cancel a waiting room (host only)
+  app.delete('/rooms/:roomId', auth, async (request, reply) => {
+    const { roomId } = request.params as { roomId: string }
+    const state = await getRoomState(app.redis, roomId)
+    if (!state) return reply.status(404).send({ error: 'Room not found' })
+    if (state.hostUserId !== request.userId) return reply.status(403).send({ error: 'Only host can cancel' })
+    if (state.status !== 'waiting') return reply.status(400).send({ error: 'Game already started' })
+
+    await app.redis.del(roomKey(roomId))
+    await (app.prisma.multiplayerRoom as any).update({ where: { id: roomId }, data: { status: 'finished' } })
+    await publish(app.redis, roomId, { type: 'room_cancelled' })
+    return reply.status(204).send()
+  })
+
+  // DELETE /v1/rooms/:roomId/players/:userId — host removes a player from waiting lobby
+  app.delete('/rooms/:roomId/players/:targetUserId', auth, async (request, reply) => {
+    const { roomId, targetUserId } = request.params as { roomId: string; targetUserId: string }
+    const state = await getRoomState(app.redis, roomId)
+    if (!state) return reply.status(404).send({ error: 'Room not found' })
+    if (state.hostUserId !== request.userId) return reply.status(403).send({ error: 'Only host can remove players' })
+    if (state.status !== 'waiting') return reply.status(400).send({ error: 'Game already started' })
+    if (targetUserId === request.userId) return reply.status(400).send({ error: 'Cannot remove yourself' })
+
+    state.participants = state.participants.filter(p => p.userId !== targetUserId)
+    await setRoomState(app.redis, state)
+    await publish(app.redis, roomId, { type: 'player_removed', userId: targetUserId })
+    sendToLocal(roomId, targetUserId, { type: 'you_were_removed' })
+    return reply.status(204).send()
+  })
+
   // WS /v1/rooms/:roomId/ws — real-time game connection
   app.get('/rooms/:roomId/ws', { websocket: true }, async (socket: WebSocket, request) => {
     // Authenticate via one-time ?ticket= query param fetched just before connecting.

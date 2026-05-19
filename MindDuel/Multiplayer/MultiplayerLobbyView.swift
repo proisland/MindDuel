@@ -357,10 +357,10 @@ struct MultiplayerLobbyView: View {
 
     private func playerRow(_ player: MultiplayerPlayer) -> some View {
         let room = store.currentRoom
+        let hostInRoom = isHost(room ?? MultiplayerRoom(id: "", mode: .pi, startLevel: 1, players: [], status: .lobby))
         let level: Int
         let score: Int
         if let slug = room?.serverModeSlug {
-            // Server-only mode: use slug-based progression for the current user only.
             level = player.isYou ? progression.level(forSlug: slug) : 1
             score = player.isYou ? progression.bestScore(forSlug: slug) : 0
         } else {
@@ -391,7 +391,16 @@ struct MultiplayerLobbyView: View {
                     .foregroundStyle(Color.mdText3)
             }
             Spacer()
-            if player.isReady {
+            if hostInRoom && !player.isYou && !player.isHost {
+                Button {
+                    removePlayer(player)
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Color.mdText3)
+                }
+                .buttonStyle(.plain)
+            } else if player.isReady {
                 MDPillTag(label: String(localized: "multiplayer_ready_label"), variant: .green)
             } else {
                 MDPillTag(label: String(localized: "multiplayer_waiting_label"), variant: .amber)
@@ -399,6 +408,14 @@ struct MultiplayerLobbyView: View {
         }
         .padding(.horizontal, MDSpacing.md)
         .padding(.vertical, MDSpacing.sm)
+    }
+
+    private func removePlayer(_ player: MultiplayerPlayer) {
+        guard let roomId = store.backendRoomId else { return }
+        store.currentRoom?.players.removeAll { $0.id == player.id }
+        Task {
+            try? await APIClient.shared.delete("ws/rooms/\(roomId)/players/\(player.id)")
+        }
     }
 
     private var inviteRow: some View {

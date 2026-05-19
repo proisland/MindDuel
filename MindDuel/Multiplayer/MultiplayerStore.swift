@@ -188,6 +188,17 @@ import UserNotifications
                 currentRoom?.players[idx].score = totalScore
             }
 
+        case .playerRemoved(let userId):
+            currentRoom?.players.removeAll { $0.id == userId }
+            currentRoom?.invitedUsernames.removeAll { username in
+                currentRoom?.players.contains(where: { $0.username == username }) == false
+            }
+
+        case .youWereRemoved, .roomCancelled:
+            wsClient.disconnect()
+            currentRoom = nil
+            backendRoomId = nil
+
         case .error:
             break
         }

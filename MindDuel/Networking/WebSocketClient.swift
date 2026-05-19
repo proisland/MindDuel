@@ -143,6 +143,9 @@ enum WSMessage: Decodable {
     case playerDisconnected(userId: String)
     case roundSummary(roundIndex: Int, participants: [WSParticipant])
     case turnTimeFactor(userId: String, timeFactor: Double, totalScore: Int)
+    case playerRemoved(userId: String)
+    case youWereRemoved
+    case roomCancelled
     case error(message: String)
 
     private enum TopKeys: String, CodingKey {
@@ -203,6 +206,12 @@ enum WSMessage: Decodable {
                 timeFactor: try c.decode(Double.self, forKey: .timeFactor),
                 totalScore: (try? c.decode(Int.self, forKey: .totalScore)) ?? 0
             )
+        case "player_removed":
+            self = .playerRemoved(userId: try c.decode(String.self, forKey: .userId))
+        case "you_were_removed":
+            self = .youWereRemoved
+        case "room_cancelled":
+            self = .roomCancelled
         case "error":
             self = .error(message: (try? c.decode(String.self, forKey: .message)) ?? "Unknown error")
         default:
