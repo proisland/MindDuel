@@ -1,5 +1,14 @@
 <a href="/admin/users" class="text-sm text-gray-500 hover:text-white mb-4 inline-block">← Back to users</a>
-<h1 class="text-2xl font-bold mb-6"><%= user.avatarEmoji %> @<%= user.username ?? '(no username)' %></h1>
+<div class="flex items-center gap-4 mb-6">
+  <% if (user.avatarUrl) { %>
+    <img src="<%= user.avatarUrl %>" alt="avatar"
+      class="w-14 h-14 rounded-full object-cover border border-gray-700"
+      onerror="this.style.display='none'">
+  <% } else { %>
+    <div class="w-14 h-14 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-xl"><%= user.avatarEmoji %></div>
+  <% } %>
+  <h1 class="text-2xl font-bold">@<%= user.username ?? '(no username)' %></h1>
+</div>
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
   <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-2 text-sm">
@@ -44,6 +53,12 @@
         class="text-sm px-3 py-1.5 bg-gray-700 hover:bg-green-800 rounded">
         <%= user.isUnlimited ? 'Remove unlimited' : 'Grant unlimited quota' %>
       </button>
+      <% if (user.avatarUrl) { %>
+      <button onclick="clearAvatar()"
+        class="text-sm px-3 py-1.5 bg-gray-700 hover:bg-orange-800 rounded">
+        Clear avatar image
+      </button>
+      <% } %>
     </div>
   </div>
 </div>
@@ -141,6 +156,12 @@ async function patch(data) {
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify(data)
   })
+  location.reload()
+}
+
+async function clearAvatar() {
+  if (!confirm('Remove this user\'s custom avatar image?')) return
+  await fetch('/admin/users/<%= user.id %>/avatar', { method: 'DELETE' })
   location.reload()
 }
 </script>

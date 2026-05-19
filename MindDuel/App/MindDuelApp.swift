@@ -97,7 +97,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
             Task { @MainActor in
                 MultiplayerStore.shared.pendingInvites.append(invite)
             }
-        } else if kind == "newFriend" || kind == "friendRequest" {
+        } else if kind == "friendRequest" {
+            Task { @MainActor in
+                await SocialStore.shared.refresh()
+                SocialStore.shared.shouldOpenFriendRequests = true
+            }
+        } else if kind == "newFriend" {
             Task { @MainActor in
                 await SocialStore.shared.refresh()
             }

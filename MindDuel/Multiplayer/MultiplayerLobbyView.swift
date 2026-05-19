@@ -4,6 +4,8 @@ struct MultiplayerLobbyView: View {
     let ownUsername: String
     let startAsHost: Bool
     var invitedUsername: String? = nil
+    /// Extra usernames to auto-invite after room creation (used by rematch).
+    var additionalInviteUsernames: [String] = []
 
     @ObservedObject private var store     = MultiplayerStore.shared
     @ObservedObject private var social    = SocialStore.shared
@@ -43,17 +45,26 @@ struct MultiplayerLobbyView: View {
             }
         }
         .onAppear {
-            // For the invite-accept flow (#56) MultiplayerStore.acceptInvite
-            // already seeded the room. Only fall back to seeding here if we
-            // still have nothing — covers fresh "Create" and legacy "Join".
             if startAsHost {
                 if store.currentRoom == nil {
-                    store.createRoom(mode: .pi, ownUsername: ownUsername, invitedUsername: invitedUsername)
+                    Task {
+                        try? await store.createRealRoom(
+                            mode: .pi,
+                            ownUsername: ownUsername,
+                            invitedUsername: invitedUsername
+                        )
+                        roomName = store.currentRoom?.customName ?? ""
+                        for username in additionalInviteUsernames {
+                            store.inviteFriend(username: username, playerID: "pending_\(username)")
+                        }
+                    }
+                } else {
+                    roomName = store.currentRoom?.customName ?? ""
                 }
-            } else if store.currentRoom == nil {
-                store.joinMockRoom(ownUsername: ownUsername)
+            } else {
+                // Non-host: room already set by acceptInvite → joinRealRoom.
+                roomName = store.currentRoom?.customName ?? ""
             }
-            roomName = store.currentRoom?.customName ?? ""
         }
         .onDisappear {
             if store.currentRoom?.status == .lobby {
@@ -351,10 +362,10 @@ struct MultiplayerLobbyView: View {
 
     private func playerRow(_ player: MultiplayerPlayer) -> some View {
         let room = store.currentRoom
+        let hostInRoom = isHost(room ?? MultiplayerRoom(id: "", mode: .pi, startLevel: 1, players: [], status: .lobby))
         let level: Int
         let score: Int
         if let slug = room?.serverModeSlug {
-            // Server-only mode: use slug-based progression for the current user only.
             level = player.isYou ? progression.level(forSlug: slug) : 1
             score = player.isYou ? progression.bestScore(forSlug: slug) : 0
         } else {
@@ -372,7 +383,7 @@ struct MultiplayerLobbyView: View {
             }
         }
         return HStack(spacing: MDSpacing.sm) {
-            MDAvatar(username: player.username, size: .sm)
+            MDAvatar(username: player.username, size: .sm, avatarUrl: player.avatarUrl)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: MDSpacing.xxs) {
                     Text("\(player.username)").mdStyle(.caption).foregroundStyle(Color.mdText)
@@ -385,7 +396,16 @@ struct MultiplayerLobbyView: View {
                     .foregroundStyle(Color.mdText3)
             }
             Spacer()
-            if player.isReady {
+            if hostInRoom && !player.isYou && !player.isHost {
+                Button {
+                    removePlayer(player)
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Color.mdText3)
+                }
+                .buttonStyle(.plain)
+            } else if player.isReady {
                 MDPillTag(label: String(localized: "multiplayer_ready_label"), variant: .green)
             } else {
                 MDPillTag(label: String(localized: "multiplayer_waiting_label"), variant: .amber)
@@ -393,6 +413,14 @@ struct MultiplayerLobbyView: View {
         }
         .padding(.horizontal, MDSpacing.md)
         .padding(.vertical, MDSpacing.sm)
+    }
+
+    private func removePlayer(_ player: MultiplayerPlayer) {
+        guard let roomId = store.backendRoomId else { return }
+        store.currentRoom?.players.removeAll { $0.id == player.id }
+        Task {
+            try? await APIClient.shared.delete("ws/rooms/\(roomId)/players/\(player.id)")
+        }
     }
 
     private var inviteRow: some View {
@@ -429,15 +457,14 @@ struct MultiplayerLobbyView: View {
                 showGame = true
             }
             .disabled(progression.isQuotaExhausted || hasOnlyHost(room))
-        } else {
-            let youReady = room.players.first(where: { $0.isYou })?.isReady ?? false
-            MDButton(youReady ? .ghost : .primary,
-                     title: youReady
-                        ? String(localized: "multiplayer_waiting_for_host_label")
-                        : String(localized: "multiplayer_ready_action")) {
-                if !progression.isQuotaExhausted { store.toggleReady() }
+
+            MDButton(.danger, title: String(localized: "multiplayer_cancel_room_action")) {
+                store.cancelRoom()
+                dismiss()
             }
-            .disabled(youReady || progression.isQuotaExhausted)
+        } else {
+            MDButton(.ghost, title: String(localized: "multiplayer_waiting_for_host_label")) { }
+                .disabled(true)
         }
     }
 
@@ -534,7 +561,7 @@ struct MultiplayerLobbyView: View {
             else          { pickerSelection.insert(friend.username) }
         } label: {
             HStack(spacing: MDSpacing.sm) {
-                MDAvatar(username: friend.username, size: .sm)
+                MDAvatar(username: friend.username, size: .sm, avatarUrl: friend.avatarUrl)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(friend.username)")
                         .mdStyle(.caption)

@@ -8,6 +8,8 @@ struct OtherProfileView: View {
     @State private var showFlagExplanation = false
     @State private var showChallenge = false
     @State private var loadedProfile: PublicUserProfile? = nil
+    @State private var showReportAvatarConfirm = false
+    @State private var showReportAvatarSent = false
 
     private var isFriend: Bool { social.friendUsernames.contains(profile.username) }
     private var hasSentRequest: Bool { social.sentRequestUsernames.contains(profile.username) }
@@ -35,6 +37,15 @@ struct OtherProfileView: View {
                             MDAvatar(username: profile.username, size: .lg,
                                      customEmoji: profile.avatarEmoji == "🧠" ? nil : profile.avatarEmoji,
                                      avatarUrl: loadedProfile?.avatarUrl ?? profile.avatarUrl)
+                            .contextMenu {
+                                if (loadedProfile?.avatarUrl ?? profile.avatarUrl) != nil {
+                                    Button(role: .destructive) {
+                                        showReportAvatarConfirm = true
+                                    } label: {
+                                        Label(String(localized: "report_avatar_action"), systemImage: "exclamationmark.bubble")
+                                    }
+                                }
+                            }
                             HStack(spacing: MDSpacing.xxs) {
                                 Text("\(profile.username)")
                                     .mdStyle(.title2)
@@ -134,6 +145,21 @@ struct OtherProfileView: View {
         }
         .onAppear { loadProfile() }
         .animation(.easeInOut(duration: 0.2), value: showFlagExplanation)
+        .confirmationDialog(
+            String(localized: "report_avatar_confirm_title"),
+            isPresented: $showReportAvatarConfirm,
+            titleVisibility: .visible
+        ) {
+            Button(String(localized: "report_avatar_confirm_button"), role: .destructive) {
+                reportAvatar()
+            }
+            Button(String(localized: "cancel_action"), role: .cancel) { }
+        } message: {
+            Text(String(localized: "report_avatar_confirm_message"))
+        }
+        .alert(String(localized: "report_avatar_sent"), isPresented: $showReportAvatarSent) {
+            Button("OK", role: .cancel) { }
+        }
         .fullScreenCover(isPresented: $showChallenge) {
             MultiplayerLobbyView(ownUsername: ownUsername, startAsHost: true, invitedUsername: profile.username)
         }
@@ -170,6 +196,15 @@ struct OtherProfileView: View {
         Task {
             let result: PublicUserProfile? = try? await APIClient.shared.get("users/\(profile.username)")
             await MainActor.run { loadedProfile = result }
+        }
+    }
+
+    private func reportAvatar() {
+        Task {
+            let _: Empty? = try? await APIClient.shared.post(
+                "users/\(profile.username)/report-avatar", body: Empty()
+            )
+            await MainActor.run { showReportAvatarSent = true }
         }
     }
 

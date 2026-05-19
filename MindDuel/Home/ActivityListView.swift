@@ -83,10 +83,11 @@ struct ActivityListView: View {
     }
 
     private func gameRow(_ item: MultiplayerActivityItem) -> some View {
-        HStack(spacing: MDSpacing.sm) {
+        let opponentAvatarUrl = social.apiFriends.first { $0.username == item.opponentUsername }?.avatarUrl
+        return HStack(spacing: MDSpacing.sm) {
             Button { selectedUsername = item.opponentUsername } label: {
                 ZStack(alignment: .bottomTrailing) {
-                    MDAvatar(username: item.opponentUsername, size: .sm)
+                    MDAvatar(username: item.opponentUsername, size: .sm, avatarUrl: opponentAvatarUrl)
                     Circle()
                         .fill(item.didWin ? Color.mdGreen : Color.mdRed)
                         .frame(width: 8, height: 8)
@@ -141,7 +142,8 @@ struct ActivityListView: View {
                     : (item.user1?.username ?? "?")
                 Button { selectedUsername = friendUsername } label: {
                     ZStack(alignment: .bottomTrailing) {
-                        MDAvatar(username: item.user1?.username ?? "?", size: .sm)
+                        MDAvatar(username: item.user1?.username ?? "?", size: .sm,
+                                 avatarUrl: item.user1?.avatarUrl)
                         Image(systemName: "person.2.fill")
                             .font(.system(size: 6, weight: .bold))
                             .foregroundStyle(.white)
@@ -168,7 +170,8 @@ struct ActivityListView: View {
                 let streakUser = item.user?.username ?? (item.isMine == true ? ownUsername : "")
                 Button { if item.isMine != true, !streakUser.isEmpty { selectedUsername = streakUser } } label: {
                     ZStack(alignment: .bottomTrailing) {
-                        MDAvatar(username: streakUser.isEmpty ? ownUsername : streakUser, size: .sm)
+                        MDAvatar(username: streakUser.isEmpty ? ownUsername : streakUser, size: .sm,
+                                 avatarUrl: item.user?.avatarUrl)
                         Text("🔥").font(.system(size: 11)).offset(x: 3, y: 3)
                     }
                 }

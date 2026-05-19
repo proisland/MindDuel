@@ -7,9 +7,6 @@ import UserNotifications
 
     @Published var currentRoom: MultiplayerRoom?
     @Published var backgroundRooms: [MultiplayerRoom] = [] { didSet { persistBackgroundRooms() } }
-    /// Pending multiplayer invites (#56). The home-screen badge counts these
-    /// and the "Bli med" entry surfaces them as a list. Seeded with mock
-    /// data on first launch so the feature is testable.
     @Published var pendingInvites: [MultiplayerInvite] = []
 
     /// Live WebSocket connection for the current room.
@@ -19,17 +16,21 @@ import UserNotifications
 
     // MARK: – API room creation / join
 
-    /// Creates a real room via the backend.
-    /// Pass `serverSlug` when the selected mode is a server-only mode (no GameMode enum case).
-    func createRealRoom(mode: GameMode, serverSlug: String? = nil, ownUsername: String) async throws {
+    /// Creates a real room via the backend and connects WS.
+    func createRealRoom(mode: GameMode, serverSlug: String? = nil, ownUsername: String,
+                        name: String = "", questionsPerRound: Int = 3,
+                        invitedUsername: String? = nil) async throws {
         let modeSlug = serverSlug ?? mode.slug
-        struct Body: Encodable { let mode: String; let maxPlayers: Int }
+        struct Body: Encodable { let mode: String; let startLevel: Int; let name: String; let questionsPerRound: Int }
         let room: RoomResponse = try await APIClient.shared.post(
             "ws/rooms",
-            body: Body(mode: modeSlug, maxPlayers: 4)
+            body: Body(mode: modeSlug, startLevel: 1, name: name, questionsPerRound: questionsPerRound)
         )
-        createRoom(mode: mode, ownUsername: ownUsername)
+        createLocalRoom(mode: mode, ownUsername: ownUsername, roomCode: room.code,
+                        name: name, questionsPerRound: questionsPerRound,
+                        invitedUsername: invitedUsername)
         backendRoomId = room.id
+        currentRoom?.backendId = room.id
         wsClient.connect(roomId: room.id)
         observeWS()
     }
@@ -43,8 +44,12 @@ import UserNotifications
             MultiplayerPlayer(
                 id: p.userId,
                 username: p.username,
+                avatarUrl: p.avatarUrl,
                 isHost: p.userId == info.hostId,
-                isReady: p.userId == info.hostId
+                isReady: true,  // All backend participants have accepted and joined
+                lives: p.lives,
+                skips: p.skips,
+                score: p.score
             )
         }
 
@@ -57,7 +62,11 @@ import UserNotifications
             players.append(me)
         }
 
-        currentRoom = MultiplayerRoom(id: info.code, mode: mode, startLevel: 1, players: players, status: .lobby)
+        var room = MultiplayerRoom(id: info.code, mode: mode, startLevel: 1, players: players, status: .lobby)
+        room.customName = info.name ?? ""
+        room.questionsPerTurn = info.questionsPerRound ?? 3
+        room.backendId = info.id
+        currentRoom = room
         backendRoomId = info.id
         wsClient.connect(roomId: info.id)
         observeWS()
@@ -83,47 +92,161 @@ import UserNotifications
 
     private func handle(wsMessage msg: WSMessage) {
         switch msg {
-        case .joined(_, let players):
-            for p in players {
-                if !(currentRoom?.players.contains(where: { $0.id == p.userId }) ?? false) {
-                    let player = MultiplayerPlayer(id: p.userId, username: p.username, isHost: false, isReady: false)
+
+        case .roomState(let state):
+            applyRoomState(state)
+
+        case .playerJoined(let userId, let participants):
+            if !(currentRoom?.players.contains(where: { $0.id == userId }) ?? false) {
+                if let joined = participants.first(where: { $0.userId == userId }) {
+                    var player = MultiplayerPlayer(
+                        id: joined.userId, username: joined.username,
+                        avatarUrl: joined.avatarUrl, isHost: false, isReady: true,
+                        lives: joined.lives, skips: joined.skips, score: joined.score
+                    )
+                    let ownUsername = currentRoom?.players.first(where: { $0.isYou })?.username ?? ""
+                    if joined.username.lowercased() == ownUsername.lowercased() { player.isYou = true }
                     currentRoom?.players.append(player)
                 }
             }
-        case .playerLeft(let userId):
-            currentRoom?.players.removeAll { $0.id == userId }
-        case .roundStarted(let idx, _):
+            syncParticipantStats(participants)
+
+        case .gameStarted(let state):
+            applyRoomState(state)
             currentRoom?.status = .playing
-            _ = idx
-        case .answerResult(let userId, let correct, _):
+            seedRoundProblems()
+
+        case .answerResult(let userId, let isCorrect, let lives, _, let totalScore):
             if let idx = currentRoom?.players.firstIndex(where: { $0.id == userId }) {
-                if !correct { currentRoom?.players[idx].lives = max(0, (currentRoom?.players[idx].lives ?? 0) - 1) }
-            }
-        case .roundEnded(let scores):
-            currentRoom?.status = .lobby
-            for s in scores {
-                if let idx = currentRoom?.players.firstIndex(where: { $0.id == s.userId }) {
-                    currentRoom?.players[idx].piBestScore = Int(s.score)
+                currentRoom?.players[idx].lives = lives
+                if totalScore > 0 { currentRoom?.players[idx].score = totalScore }
+                if !isCorrect && lives == 0 {
+                    currentRoom?.players[idx].isEliminated = true
                 }
             }
-        case .gameEnded:
+
+        case .playerOut(let userId):
+            if let idx = currentRoom?.players.firstIndex(where: { $0.id == userId }) {
+                currentRoom?.players[idx].isEliminated = true
+                currentRoom?.players[idx].lives = 0
+            }
+
+        case .skipUsed(let userId, let skips):
+            if let idx = currentRoom?.players.firstIndex(where: { $0.id == userId }) {
+                currentRoom?.players[idx].skips = skips
+                if skips == 0 {
+                    currentRoom?.players[idx].isEliminated = true
+                }
+            }
+
+        case .gameOver(let winnerId, let participants):
+            syncParticipantStats(participants)
             currentRoom?.status = .finished
+            if let id = winnerId, let idx = currentRoom?.players.firstIndex(where: { $0.id == id }) {
+                // winner is identified by id — UI uses activePlayers.count == 1 logic
+                _ = idx
+            }
             wsClient.disconnect()
+            if let room = currentRoom { recordActivity(room) }
+
+        case .turnChanged(let activeUserId, let turnIndex):
+            // Map backend turnIndex (into participants array) to our activePlayers index.
+            // We track whose turn it is by finding the active player matching activeUserId.
+            if let idx = currentRoom?.players.firstIndex(where: { $0.id == activeUserId }) {
+                let activeCount = currentRoom?.activePlayers.count ?? 1
+                if activeCount > 0 {
+                    let activeIdx = currentRoom?.activePlayers.firstIndex(where: { $0.id == activeUserId }) ?? 0
+                    currentRoom?.currentTurnIndex = activeIdx
+                }
+                _ = idx; _ = turnIndex
+            }
+            // Advance question state for new turn
+            currentRoom?.currentTurnQuestionsAnswered = 0
+            currentRoom?.currentQuestionIndex = 0
+
+        case .yourTurn:
+            cancelGameReminderNotification()
+            seedRoundProblems()
+
+        case .playerDisconnected(let userId):
+            if let idx = currentRoom?.players.firstIndex(where: { $0.id == userId }) {
+                currentRoom?.players[idx].isEliminated = true
+            }
+
+        case .roundSummary(let roundIndex, let participants):
+            syncParticipantStats(participants)
+            let summary = RoundSummary(
+                roundIndex: roundIndex,
+                problems: currentRoom?.roundProblems ?? [],
+                answers: currentRoom?.roundAnswers ?? [],
+                players: currentRoom?.players ?? []
+            )
+            lastRoundSummary = summary
+            currentRoom?.currentRoundIndex = roundIndex + 1
+            currentRoom?.roundAnswers = []
+
+        case .turnTimeFactor(let userId, _, let totalScore):
+            if let idx = currentRoom?.players.firstIndex(where: { $0.id == userId }) {
+                currentRoom?.players[idx].score = totalScore
+            }
+
+        case .playerRemoved(let userId):
+            currentRoom?.players.removeAll { $0.id == userId }
+            currentRoom?.invitedUsernames.removeAll { username in
+                currentRoom?.players.contains(where: { $0.username == username }) == false
+            }
+
+        case .youWereRemoved, .roomCancelled:
+            wsClient.disconnect()
+            currentRoom = nil
+            backendRoomId = nil
+
         case .error:
             break
         }
     }
+
+    /// Apply a full room state received from the server.
+    private func applyRoomState(_ state: WSRoomState) {
+        guard var room = currentRoom else { return }
+        room.currentTurnIndex = {
+            // Convert backend turnIndex (into participants array) to activePlayers index
+            let active = room.activePlayers
+            let current = state.participants[safe: state.turnIndex]
+            return active.firstIndex(where: { $0.id == current?.userId }) ?? 0
+        }()
+        room.questionsPerTurn = state.questionsPerRound ?? room.questionsPerTurn
+        if let name = state.name, !name.isEmpty { room.customName = name }
+        if let roundIdx = state.currentRoundIndex { room.currentRoundIndex = roundIdx }
+        syncParticipantStats(state.participants, in: &room)
+        currentRoom = room
+    }
+
+    /// Update local player stats from server's participant list.
+    private func syncParticipantStats(_ participants: [WSParticipant]) {
+        guard var room = currentRoom else { return }
+        syncParticipantStats(participants, in: &room)
+        currentRoom = room
+    }
+
+    private func syncParticipantStats(_ participants: [WSParticipant], in room: inout MultiplayerRoom) {
+        for p in participants {
+            if let idx = room.players.firstIndex(where: { $0.id == p.userId }) {
+                room.players[idx].lives = p.lives
+                room.players[idx].skips = p.skips
+                room.players[idx].score = p.score
+                room.players[idx].isEliminated = !p.isActive
+            }
+        }
+    }
+
     var pendingInviteCount: Int { pendingInvites.count }
 
     /// Accept a pending invite and join the room via the backend.
     func acceptInvite(_ invite: MultiplayerInvite, ownUsername: String) {
         pendingInvites.removeAll { $0.id == invite.id }
         Task {
-            do {
-                try await joinRealRoom(code: invite.roomCode, ownUsername: ownUsername)
-            } catch {
-                joinMockRoom(ownUsername: ownUsername, mode: invite.mode)
-            }
+            try await joinRealRoom(code: invite.roomCode, ownUsername: ownUsername)
         }
     }
 
@@ -132,9 +255,6 @@ import UserNotifications
     }
     @Published var recentActivity: [MultiplayerActivityItem] = [] { didSet { persistRecentActivity() } }
     @Published var lastGameEvent: GameEvent?
-    /// #96: when a full round (every active player has completed their turn)
-    /// finishes, this is set to the round's answer log so the GameView can
-    /// surface a summary modal. Cleared by `dismissRoundSummary()`.
     @Published var lastRoundSummary: RoundSummary? = nil
 
     struct RoundSummary {
@@ -145,9 +265,6 @@ import UserNotifications
     }
 
     private var wsObserveTask: Task<Void, Never>?
-    private var botReadyTask: Task<Void, Never>?
-    private var botTurnTask: Task<Void, Never>?
-    private var backgroundSimTask: Task<Void, Never>?
 
     private static let backgroundRoomsKey = "multiplayer.backgroundRooms"
     private static let recentActivityKey  = "multiplayer.recentActivity"
@@ -194,26 +311,19 @@ import UserNotifications
 
     // MARK: – Lobby
 
-    func createRoom(mode: GameMode, ownUsername: String, invitedUsername: String? = nil) {
-        let code = String(UUID().uuidString.prefix(4).uppercased())
+    /// Creates a local room object without a backend room (used internally by createRealRoom).
+    private func createLocalRoom(mode: GameMode, ownUsername: String, roomCode: String,
+                                 name: String = "", questionsPerRound: Int = 3,
+                                 invitedUsername: String? = nil) {
         var host = MultiplayerPlayer(id: "me", username: ownUsername, isHost: true, isReady: true, isYou: true)
         applyOwnStats(to: &host)
-        currentRoom = MultiplayerRoom(id: code, mode: mode, startLevel: 1, players: [host], status: .lobby)
+        var room = MultiplayerRoom(id: roomCode, mode: mode, startLevel: 1, players: [host], status: .lobby)
+        room.customName = name
+        room.questionsPerTurn = questionsPerRound
+        currentRoom = room
         if let invited = invitedUsername {
-            inviteFriend(username: invited, playerID: "u_\(invited)")
+            inviteFriend(username: invited, playerID: "pending_\(invited)")
         }
-    }
-
-    func joinMockRoom(ownUsername: String, mode: GameMode = .pi) {
-        var host = MultiplayerPlayer(id: "u1", username: "magnus", isHost: true,  isReady: true)
-        host.piLevel = 7;  host.mathLevel = 5;  host.piBestScore = 1240; host.mathBestScore = 980
-        var you  = MultiplayerPlayer(id: "me", username: ownUsername, isHost: false, isReady: false, isYou: true)
-        applyOwnStats(to: &you)
-        var bot2 = MultiplayerPlayer(id: "u2", username: "alex",    isHost: false, isReady: false)
-        bot2.piLevel = 4;  bot2.mathLevel = 8;  bot2.piBestScore = 620;  bot2.mathBestScore = 1510
-        currentRoom = MultiplayerRoom(id: "A3BF", mode: mode, startLevel: 1,
-                                      players: [host, you, bot2], status: .lobby)
-        seedBotReadyStates()
     }
 
     func inviteFriend(username: String, playerID: String) {
@@ -222,25 +332,17 @@ import UserNotifications
         if !(currentRoom?.invitedUsernames.contains(username) ?? false) {
             currentRoom?.invitedUsernames.append(username)
         }
-        var player = MultiplayerPlayer(id: playerID, username: username, isHost: false, isReady: false)
-        let seed = abs(username.hashValue)
-        player.piLevel      = 1 + seed % 12
-        player.mathLevel    = 1 + (seed / 13) % 12
-        player.piBestScore  = (seed % 1500)
-        player.mathBestScore = ((seed / 17) % 1500)
+        let player = MultiplayerPlayer(id: playerID, username: username, isHost: false, isReady: false)
         currentRoom?.players.append(player)
         if let roomId = backendRoomId {
             Task {
                 struct Body: Encodable { let username: String }
                 _ = try? await APIClient.shared.post("ws/rooms/\(roomId)/invite", body: Body(username: username)) as Empty
             }
-        } else {
-            simulatePlayerReady(playerID: playerID)
         }
     }
 
-    /// Snapshot the local user's progression stats onto the player record
-    /// so the lobby (#21) and any peers see consistent numbers for the round.
+    /// Snapshot the local user's progression stats onto the player record.
     private func applyOwnStats(to player: inout MultiplayerPlayer) {
         let p = ProgressionStore.shared
         player.piLevel       = p.piLevel
@@ -265,70 +367,33 @@ import UserNotifications
         player.grammarBestScore = p.grammarBestScore
     }
 
-    private func simulatePlayerReady(playerID: String) {
-        botReadyTask?.cancel()
-        botReadyTask = Task {
-            try? await Task.sleep(nanoseconds: 1_800_000_000)
-            guard !Task.isCancelled else { return }
-            if let idx = currentRoom?.players.firstIndex(where: { $0.id == playerID }) {
-                currentRoom?.players[idx].isReady = true
-            }
-        }
-    }
-
-    private func seedBotReadyStates() {
-        botReadyTask?.cancel()
-        botReadyTask = Task {
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
-            guard !Task.isCancelled else { return }
-            if let idx = currentRoom?.players.firstIndex(where: { $0.id == "u1" }) {
-                currentRoom?.players[idx].isReady = true
-            }
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            guard !Task.isCancelled else { return }
-            if let idx = currentRoom?.players.firstIndex(where: { $0.id == "u2" }) {
-                currentRoom?.players[idx].isReady = true
-            }
-            // If user already pressed Ready before bots, auto-start now
-            let youReady = currentRoom?.players.first(where: { $0.isYou })?.isReady == true
-            let isHost   = currentRoom?.players.first(where: { $0.isYou })?.isHost == true
-            if allReady && youReady && !isHost {
-                try? await Task.sleep(nanoseconds: 300_000_000)
-                guard !Task.isCancelled else { return }
-                startGame()
-            }
-        }
-    }
-
     func toggleReady() {
         guard let idx = currentRoom?.players.firstIndex(where: { $0.isYou }) else { return }
         currentRoom?.players[idx].isReady.toggle()
-        let nowReady = currentRoom?.players[idx].isReady == true
-        if nowReady && allReady {
-            let isHost = currentRoom?.players[idx].isHost == true
-            if !isHost {
-                Task {
-                    try? await Task.sleep(nanoseconds: 1_000_000_000)
-                    guard !Task.isCancelled else { return }
-                    startGame()
-                }
-            }
-        }
     }
 
     var allReady: Bool { currentRoom?.players.allSatisfy(\.isReady) ?? false }
 
     func startGame() {
-        // #81: drop invitees who never accepted so the turn loop isn't blocked.
-        // Their usernames are preserved on the room (`invitedUsernames`) so the
-        // Active Games row can still show participants for host-created rooms
-        // that were started before everyone responded (#109).
-        if var room = currentRoom {
-            let dropped = room.players.filter { !$0.isHost && !$0.isReady }.map(\.username)
-            room.invitedUsernames = Array(Set(room.invitedUsernames + dropped))
-            room.players.removeAll { !$0.isHost && !$0.isReady }
-            currentRoom = room
+        guard let room = currentRoom else { return }
+        let name = room.customName
+        let qpr = room.questionsPerTurn
+
+        // Drop invited players who haven't joined
+        if var r = currentRoom {
+            let dropped = r.players.filter { !$0.isHost && !$0.isReady && r.invitedUsernames.contains($0.username) }
+            r.invitedUsernames = Array(Set(r.invitedUsernames + dropped.map(\.username)))
+            r.players.removeAll { !$0.isHost && !$0.isReady }
+            currentRoom = r
         }
+
+        if backendRoomId != nil {
+            // Real room: send WS start_game with final settings
+            let modeSlug = room.serverModeSlug ?? room.mode.slug
+            wsClient.send(.startGame(name: name, questionsPerRound: qpr, mode: modeSlug))
+        }
+
+        // Optimistic local transition
         currentRoom?.status = .playing
         currentRoom?.currentTurnIndex = 0
         currentRoom?.currentTurnQuestionsAnswered = 0
@@ -336,16 +401,12 @@ import UserNotifications
         currentRoom?.currentRoundIndex = 1
         currentRoom?.roundAnswers = []
         seedRoundProblems()
-        scheduleBotTurn()
     }
 
     func dismissRoundSummary() {
         lastRoundSummary = nil
     }
 
-    /// #93: generate the round's shared problems on the host. Every player
-    /// (incl. mock bots) reads from the same list so questions are
-    /// identical across the room.
     private func seedRoundProblems() {
         guard var room = currentRoom else { return }
         let count = max(1, room.questionsPerTurn)
@@ -370,54 +431,127 @@ import UserNotifications
 
     func dismissGame() {
         guard let room = currentRoom else { return }
-        botTurnTask?.cancel()
-        botTurnTask = nil
         if room.status == .playing {
             if !backgroundRooms.contains(where: { $0.id == room.id }) {
                 backgroundRooms.append(room)
             }
-            // Register at OS level immediately — survives app kill.
-            // Delay 1s if already user's turn, else 30s for bots to finish.
             scheduleGameReminderNotification(delay: room.isMyTurn ? 1 : 30)
-            startBackgroundSimulation(roomID: room.id)
+        }
+        // Keep WS alive briefly then disconnect
+        Task {
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            wsClient.disconnect()
         }
         currentRoom = nil
     }
 
     func rejoin(roomID: String) {
-        backgroundSimTask?.cancel()
-        backgroundSimTask = nil
         cancelGameReminderNotification()
         if let idx = backgroundRooms.firstIndex(where: { $0.id == roomID }) {
             currentRoom = backgroundRooms.remove(at: idx)
-            scheduleBotTurn()
+            // Reconnect WS — prefer the persisted backendId so rejoin works
+            // after an app restart when backendRoomId (per-session) is nil.
+            if let roomId = currentRoom?.backendId ?? backendRoomId {
+                backendRoomId = roomId
+                wsClient.connect(roomId: roomId)
+                observeWS()
+            }
         }
     }
 
     func leaveRoom() {
         wsObserveTask?.cancel()
         wsObserveTask = nil
-        botReadyTask?.cancel()
-        botReadyTask = nil
-        botTurnTask?.cancel()
-        botTurnTask = nil
-        backgroundSimTask?.cancel()
-        backgroundSimTask = nil
         cancelGameReminderNotification()
         if let id = currentRoom?.id {
             backgroundRooms.removeAll { $0.id == id }
         }
+        wsClient.disconnect()
         currentRoom = nil
+        backendRoomId = nil
     }
 
     func leaveBackgroundRoom(id: String) {
         backgroundRooms.removeAll { $0.id == id }
     }
 
-    // MARK: – Standalone solo (Pi/Math) sessions
+    /// Cancel the current room (host only). Calls DELETE /ws/rooms/:backendId
+    /// then clears local state exactly like leaveRoom().
+    func cancelRoom() {
+        guard let roomId = backendRoomId ?? currentRoom?.backendId else {
+            leaveRoom(); return
+        }
+        Task {
+            try? await APIClient.shared.delete("ws/rooms/\(roomId)")
+        }
+        leaveRoom()
+    }
 
-    /// Removes any existing standalone solo save for the given mode or server slug
-    /// before a new save is appended, so only one save per mode exists at a time.
+    /// Syncs active backend rooms into backgroundRooms without touching
+    /// standalone-solo sessions or the currently active room.
+    func fetchActiveRooms(ownUsername: String) async {
+        struct ActiveRoomEntry: Decodable {
+            let id: String
+            let code: String
+            let mode: String
+            let hostId: String
+            let name: String?
+            let questionsPerRound: Int?
+            let state: String
+            let participants: [WSParticipant]
+            let turnIndex: Int
+            let currentRoundIndex: Int?
+        }
+        struct ActiveRoomsResponse: Decodable { let rooms: [ActiveRoomEntry] }
+        guard let response = try? await APIClient.shared.get("ws/rooms/active") as ActiveRoomsResponse
+        else { return }
+
+        let currentCode = currentRoom?.id
+        var updated = backgroundRooms.filter { $0.isStandaloneSolo }
+
+        for entry in response.rooms {
+            guard entry.code != currentCode else { continue }
+            let mode = GameMode(slug: entry.mode) ?? .pi
+            var players: [MultiplayerPlayer] = entry.participants.map { p in
+                var player = MultiplayerPlayer(
+                    id: p.userId, username: p.username,
+                    avatarUrl: p.avatarUrl, isHost: p.userId == entry.hostId,
+                    isReady: true, lives: p.lives, skips: p.skips, score: p.score
+                )
+                player.isEliminated = !p.isActive
+                return player
+            }
+            if let idx = players.firstIndex(where: {
+                $0.username.lowercased() == ownUsername.lowercased()
+            }) { players[idx].isYou = true }
+
+            let status: RoomStatus = entry.state == "active" ? .playing : .lobby
+            if let existingIdx = backgroundRooms.firstIndex(where: { $0.id == entry.code }) {
+                var existing = backgroundRooms[existingIdx]
+                existing.players = players
+                existing.status = status
+                existing.currentTurnIndex = entry.turnIndex
+                if let ri = entry.currentRoundIndex { existing.currentRoundIndex = ri }
+                existing.backendId = entry.id
+                updated.append(existing)
+            } else {
+                var room = MultiplayerRoom(id: entry.code, mode: mode, startLevel: 1,
+                                          players: players, status: status)
+                room.customName = entry.name ?? ""
+                room.questionsPerTurn = entry.questionsPerRound ?? 3
+                room.currentTurnIndex = entry.turnIndex
+                room.currentRoundIndex = entry.currentRoundIndex ?? 1
+                room.backendId = entry.id
+                room.lastActivityAt = Date()
+                updated.append(room)
+            }
+        }
+
+        backgroundRooms = updated  // single assignment → single persist call
+    }
+
+    // MARK: – Standalone solo (Pi/Math/etc.) sessions
+
     private func removeExistingStandaloneSave(mode: GameMode? = nil, serverSlug: String? = nil) {
         if let slug = serverSlug {
             backgroundRooms.removeAll { $0.isStandaloneSolo && $0.serverModeSlug == slug }
@@ -426,7 +560,6 @@ import UserNotifications
         }
     }
 
-    /// Save a standalone solo Pi session to backgroundRooms. Returns the new room id.
     func saveStandaloneSoloPi(ownUsername: String,
                               lives: Int, skips: Int,
                               score: Int, correctCount: Int,
@@ -434,10 +567,8 @@ import UserNotifications
         let id = "SOLO-" + String(UUID().uuidString.prefix(4).uppercased())
         var player = MultiplayerPlayer(id: "me", username: ownUsername,
                                        isHost: true, isReady: true, isYou: true)
-        player.lives = lives
-        player.skips = skips
-        player.score = score
-        player.correctCount = correctCount
+        player.lives = lives; player.skips = skips
+        player.score = score; player.correctCount = correctCount
         var room = MultiplayerRoom(id: id, mode: .pi, startLevel: 1,
                                    players: [player], status: .playing)
         room.myPiDigitIndex = currentDigit
@@ -448,53 +579,24 @@ import UserNotifications
         return id
     }
 
-    /// Save a standalone solo Geography session to backgroundRooms.
     func saveStandaloneSoloGeo(ownUsername: String,
                                lives: Int, skips: Int,
                                score: Int, correctCount: Int,
                                startLevel: Int) -> String {
-        let id = "SOLO-" + String(UUID().uuidString.prefix(4).uppercased())
-        var player = MultiplayerPlayer(id: "me", username: ownUsername,
-                                       isHost: true, isReady: true, isYou: true)
-        player.lives = lives
-        player.skips = skips
-        player.score = score
-        player.correctCount = correctCount
-        var room = MultiplayerRoom(id: id, mode: .geography, startLevel: startLevel,
-                                   players: [player], status: .playing)
-        room.isStandaloneSolo = true
-        room.lastActivityAt = Date()
-        removeExistingStandaloneSave(mode: .geography)
-        backgroundRooms.append(room)
-        return id
+        saveStandaloneSoloFeature(mode: .geography, ownUsername: ownUsername,
+                                  lives: lives, skips: skips, score: score,
+                                  correctCount: correctCount, startLevel: startLevel)
     }
 
-    /// Save a standalone solo Chemistry session to backgroundRooms.
     func saveStandaloneSoloChem(ownUsername: String,
                                 lives: Int, skips: Int,
                                 score: Int, correctCount: Int,
                                 startLevel: Int) -> String {
-        let id = "SOLO-" + String(UUID().uuidString.prefix(4).uppercased())
-        var player = MultiplayerPlayer(id: "me", username: ownUsername,
-                                       isHost: true, isReady: true, isYou: true)
-        player.lives = lives
-        player.skips = skips
-        player.score = score
-        player.correctCount = correctCount
-        var room = MultiplayerRoom(id: id, mode: .chemistry, startLevel: startLevel,
-                                   players: [player], status: .playing)
-        room.isStandaloneSolo = true
-        room.lastActivityAt = Date()
-        removeExistingStandaloneSave(mode: .chemistry)
-        backgroundRooms.append(room)
-        return id
+        saveStandaloneSoloFeature(mode: .chemistry, ownUsername: ownUsername,
+                                  lives: lives, skips: skips, score: score,
+                                  correctCount: correctCount, startLevel: startLevel)
     }
 
-    /// #133: solo session save for the remaining feature modes
-    /// (brainTraining, science, history, physics, sport). Each takes the
-    /// same parameter shape as the math/chem/geo savers and tags the room
-    /// with the right mode so the resume routing in ActiveGamesView /
-    /// HomeView can dispatch back to the correct game view.
     func saveStandaloneSoloBrainTraining(ownUsername: String,
                                          lives: Int, skips: Int,
                                          score: Int, correctCount: Int,
@@ -556,10 +658,8 @@ import UserNotifications
         let id = "SOLO-" + String(UUID().uuidString.prefix(4).uppercased())
         var player = MultiplayerPlayer(id: "me", username: ownUsername,
                                        isHost: true, isReady: true, isYou: true)
-        player.lives = lives
-        player.skips = skips
-        player.score = score
-        player.correctCount = correctCount
+        player.lives = lives; player.skips = skips
+        player.score = score; player.correctCount = correctCount
         var room = MultiplayerRoom(id: id, mode: mode, startLevel: startLevel,
                                    players: [player], status: .playing)
         room.isStandaloneSolo = true
@@ -569,28 +669,15 @@ import UserNotifications
         return id
     }
 
-    /// Save a standalone solo Grammar session to backgroundRooms.
     func saveStandaloneSoloGrammar(ownUsername: String,
                                    lives: Int, skips: Int,
                                    score: Int, correctCount: Int,
                                    startLevel: Int) -> String {
-        let id = "SOLO-" + String(UUID().uuidString.prefix(4).uppercased())
-        var player = MultiplayerPlayer(id: "me", username: ownUsername,
-                                       isHost: true, isReady: true, isYou: true)
-        player.lives = lives
-        player.skips = skips
-        player.score = score
-        player.correctCount = correctCount
-        var room = MultiplayerRoom(id: id, mode: .grammar, startLevel: startLevel,
-                                   players: [player], status: .playing)
-        room.isStandaloneSolo = true
-        room.lastActivityAt = Date()
-        removeExistingStandaloneSave(mode: .grammar)
-        backgroundRooms.append(room)
-        return id
+        saveStandaloneSoloFeature(mode: .grammar, ownUsername: ownUsername,
+                                  lives: lives, skips: skips, score: score,
+                                  correctCount: correctCount, startLevel: startLevel)
     }
 
-    /// Save a standalone solo Knowledge (server-only mode) session to backgroundRooms.
     func saveStandaloneSoloKnowledge(slug: String, name: String, ownUsername: String,
                                       lives: Int, skips: Int,
                                       score: Int, correctCount: Int,
@@ -598,10 +685,8 @@ import UserNotifications
         let id = "SOLO-" + String(UUID().uuidString.prefix(4).uppercased())
         var player = MultiplayerPlayer(id: "me", username: ownUsername,
                                        isHost: true, isReady: true, isYou: true)
-        player.lives = lives
-        player.skips = skips
-        player.score = score
-        player.correctCount = correctCount
+        player.lives = lives; player.skips = skips
+        player.score = score; player.correctCount = correctCount
         var room = MultiplayerRoom(id: id, mode: .pi, startLevel: startLevel,
                                    players: [player], status: .playing)
         room.serverModeSlug = slug
@@ -613,36 +698,21 @@ import UserNotifications
         return id
     }
 
-    /// Save a standalone solo Math session to backgroundRooms. Returns the new room id.
     func saveStandaloneSoloMath(ownUsername: String,
                                 lives: Int, skips: Int,
                                 score: Int, correctCount: Int,
                                 startLevel: Int) -> String {
-        let id = "SOLO-" + String(UUID().uuidString.prefix(4).uppercased())
-        var player = MultiplayerPlayer(id: "me", username: ownUsername,
-                                       isHost: true, isReady: true, isYou: true)
-        player.lives = lives
-        player.skips = skips
-        player.score = score
-        player.correctCount = correctCount
-        var room = MultiplayerRoom(id: id, mode: .math, startLevel: startLevel,
-                                   players: [player], status: .playing)
-        room.isStandaloneSolo = true
-        room.lastActivityAt = Date()
-        removeExistingStandaloneSave(mode: .math)
-        backgroundRooms.append(room)
-        return id
+        saveStandaloneSoloFeature(mode: .math, ownUsername: ownUsername,
+                                  lives: lives, skips: skips, score: score,
+                                  correctCount: correctCount, startLevel: startLevel)
     }
 
-    /// Remove and return a standalone solo room by exact ID (used when resuming).
     func popStandaloneSolo(roomID: String) -> MultiplayerRoom? {
         guard let idx = backgroundRooms.firstIndex(where: { $0.id == roomID && $0.isStandaloneSolo })
         else { return nil }
         return backgroundRooms.remove(at: idx)
     }
 
-    /// Remove and return a standalone solo room by mode — fallback when the ID has drifted
-    /// after a re-save (e.g. restoreSavedSessionIfNeeded creates a new room with a new UUID).
     func popStandaloneSoloByMode(_ mode: GameMode) -> MultiplayerRoom? {
         guard let idx = backgroundRooms.firstIndex(where: {
             $0.isStandaloneSolo && $0.mode == mode && $0.serverModeSlug == nil
@@ -655,13 +725,43 @@ import UserNotifications
     func submitAnswer(correct: Bool, answerTime: Double) {
         guard var room = currentRoom, room.isMyTurn else { return }
         ProgressionStore.shared.consumeQuestion()
-        recordRoundAnswer(to: &room, playerIdx: room.players.firstIndex(where: { $0.isYou }) ?? 0,
+
+        let playerIdx = room.players.firstIndex(where: { $0.isYou }) ?? 0
+        recordRoundAnswer(to: &room, playerIdx: playerIdx,
                           correct: correct, skipped: false, answerTime: answerTime)
-        applyResult(to: &room, playerID: "me", correct: correct, answerTime: answerTime)
+
+        // Optimistic local update
+        if correct {
+            let pts = Int(50.0 / max(0.5, answerTime))
+            room.players[playerIdx].score += pts
+            room.players[playerIdx].correctCount += 1
+        } else {
+            room.players[playerIdx].lives = max(0, room.players[playerIdx].lives - 1)
+            if room.players[playerIdx].lives == 0 {
+                room.players[playerIdx].isEliminated = true
+            }
+        }
+        room.lastActivityAt = Date()
         advanceQuestionOrTurn(&room)
         currentRoom = room
+
+        // Send to backend — server drives turn changes
+        wsClient.send(.submitAnswer(
+            questionRef: piQuestionRef(room: room),
+            userAnswer: correct ? "1" : "0",
+            answerTimeMs: Int(max(200, answerTime * 1000)),
+            clientReportsCorrect: correct
+        ))
+
         if room.status == .finished { recordActivity(room) }
-        else { scheduleBotTurn() }
+    }
+
+    /// For Pi mode: the absolute digit index is the question reference the server validates.
+    private func piQuestionRef(room: MultiplayerRoom) -> String {
+        if room.mode == .pi {
+            return "\(room.myPiDigitIndex + room.currentTurnQuestionsAnswered)"
+        }
+        return ""
     }
 
     func useSkip() {
@@ -673,8 +773,10 @@ import UserNotifications
         if room.players[idx].skips == 0 { room.players[idx].isEliminated = true }
         advanceQuestionOrTurn(&room)
         currentRoom = room
+
+        wsClient.send(.useSkip)
+
         if room.status == .finished { recordActivity(room) }
-        else { scheduleBotTurn() }
     }
 
     // MARK: – Notifications
@@ -700,76 +802,9 @@ import UserNotifications
 
     // MARK: – Private helpers
 
-    private func scheduleBotTurn() {
-        botTurnTask?.cancel()
-        guard let room = currentRoom,
-              !room.isMyTurn,
-              room.status == .playing,
-              room.winner == nil else { return }
-
-        let delay = UInt64(Double.random(in: 1_500_000_000...3_500_000_000))
-        botTurnTask = Task {
-            try? await Task.sleep(nanoseconds: delay)
-            guard !Task.isCancelled else { return }
-            executeBotTurn()
-        }
-    }
-
-    private func executeBotTurn() {
-        guard var room = currentRoom,
-              !room.isMyTurn,
-              room.status == .playing,
-              let bot = room.currentPlayer,
-              let idx = room.players.firstIndex(where: { $0.id == bot.id }) else { return }
-
-        let correct = Double.random(in: 0...1) > 0.28
-        let answerTime = Double.random(in: 0.8...3.5)
-        let prevLives = room.players[idx].lives
-        recordRoundAnswer(to: &room, playerIdx: idx, correct: correct, skipped: false, answerTime: answerTime)
-        applyResult(to: &room, playerIdx: idx, correct: correct, answerTime: answerTime)
-
-        if !correct && room.players[idx].lives < prevLives {
-            lastGameEvent = GameEvent(
-                message: String(format: String(localized: "game_event_lost_life_format"), bot.username),
-                isPositive: true
-            )
-        }
-
-        advanceQuestionOrTurn(&room)
-        currentRoom = room
-
-        if room.status == .finished {
-            recordActivity(room)
-        } else {
-            if room.isMyTurn { sendTurnNotification() }
-            scheduleBotTurn()
-        }
-    }
-
-    private func applyResult(to room: inout MultiplayerRoom, playerID: String, correct: Bool, answerTime: Double) {
-        guard let idx = room.players.firstIndex(where: { $0.id == playerID }) else { return }
-        applyResult(to: &room, playerIdx: idx, correct: correct, answerTime: answerTime)
-    }
-
-    private func applyResult(to room: inout MultiplayerRoom, playerIdx: Int, correct: Bool, answerTime: Double) {
-        if correct {
-            let pts = Int(50.0 / max(0.5, answerTime))
-            room.players[playerIdx].score += pts
-            room.players[playerIdx].correctCount += 1
-        } else {
-            room.players[playerIdx].lives = max(0, room.players[playerIdx].lives - 1)
-            if room.players[playerIdx].lives == 0 {
-                room.players[playerIdx].isEliminated = true
-            }
-        }
-        room.lastActivityAt = Date()
-    }
-
     private func advanceTurn(_ room: inout MultiplayerRoom) {
         let active = room.activePlayers
         let isMultiplayer = room.players.count > 1
-        // Solo game: only finish when the player is eliminated (active is empty)
-        // Multiplayer: finish when one player remains (they're the winner)
         if active.isEmpty || (isMultiplayer && active.count == 1) {
             room.status = .finished
             return
@@ -777,21 +812,13 @@ import UserNotifications
         room.currentTurnIndex = (room.currentTurnIndex + 1) % max(1, active.count)
     }
 
-    /// #95: handle the "answer N questions before passing" flow. Advances
-    /// the question pointer and only hands off control to the next player
-    /// once the current player has answered `questionsPerTurn` questions.
-    /// When a full round (every active player has finished their turn)
-    /// completes, snapshots the round answers for the summary view (#96)
-    /// and seeds the next round's shared problems (#93).
     private func advanceQuestionOrTurn(_ room: inout MultiplayerRoom) {
         room.currentTurnQuestionsAnswered += 1
         let perTurn = max(1, room.questionsPerTurn)
         if room.currentTurnQuestionsAnswered < perTurn && !(room.currentPlayer?.isEliminated ?? false) {
-            // Same player still has questions left this turn.
             room.currentQuestionIndex = room.currentTurnQuestionsAnswered
             return
         }
-        // Player has finished their turn.
         let prevTurnIndex = room.currentTurnIndex
         advanceTurn(&room)
         room.currentTurnQuestionsAnswered = 0
@@ -799,9 +826,6 @@ import UserNotifications
 
         guard room.status == .playing else { return }
 
-        // Detect end-of-round: the new turn index wrapped back to (or before)
-        // the previous, meaning every active player has now had a turn this
-        // round. We snapshot the round before clearing it.
         let active = room.activePlayers
         let wrapped = active.isEmpty || (room.currentTurnIndex <= prevTurnIndex)
         if wrapped {
@@ -815,8 +839,6 @@ import UserNotifications
             room.roundAnswers = []
             currentRoom = room
             seedRoundProblems()
-            // seedRoundProblems mutates currentRoom, copy back so caller's
-            // `currentRoom = room` doesn't overwrite it.
             if let updated = currentRoom { room = updated }
         }
     }
@@ -825,12 +847,7 @@ import UserNotifications
         guard playerIdx >= 0, playerIdx < room.players.count else { return }
         let player = room.players[playerIdx]
         let qIndex = min(room.currentTurnQuestionsAnswered, max(0, room.questionsPerTurn - 1))
-        let prompt: String
-        if qIndex < room.roundProblems.count {
-            prompt = room.roundProblems[qIndex].prompt
-        } else {
-            prompt = ""
-        }
+        let prompt = qIndex < room.roundProblems.count ? room.roundProblems[qIndex].prompt : ""
         room.roundAnswers.append(RoundAnswer(
             playerID: player.id,
             username: player.username,
@@ -842,63 +859,11 @@ import UserNotifications
         ))
     }
 
-    private func startBackgroundSimulation(roomID: String) {
-        backgroundSimTask?.cancel()
-        backgroundSimTask = Task {
-            while true {
-                guard !Task.isCancelled else { return }
-                guard let idx = backgroundRooms.firstIndex(where: { $0.id == roomID }) else { return }
-                let room = backgroundRooms[idx]
-                guard room.status == .playing else { return }
-                // Solo rooms (multiplayer or standalone): nothing to simulate; the "turn"
-                // belongs to the human and we already scheduled the reminder notification.
-                guard room.players.count > 1 else { return }
-                if room.isMyTurn {
-                    sendTurnNotification()
-                    return
-                }
-                let delay = UInt64(Double.random(in: 1_200_000_000...2_500_000_000))
-                try? await Task.sleep(nanoseconds: delay)
-                guard !Task.isCancelled else { return }
-                guard let roomIdx = backgroundRooms.firstIndex(where: { $0.id == roomID }) else { return }
-                var updatedRoom = backgroundRooms[roomIdx]
-                guard updatedRoom.status == .playing,
-                      let bot = updatedRoom.currentPlayer,
-                      !bot.isYou,
-                      let botIdx = updatedRoom.players.firstIndex(where: { $0.id == bot.id }) else {
-                    if backgroundRooms[roomIdx].isMyTurn { sendTurnNotification() }
-                    return
-                }
-                let correct = Double.random(in: 0...1) > 0.28
-                let answerTime = Double.random(in: 0.8...3.5)
-                recordRoundAnswer(to: &updatedRoom, playerIdx: botIdx, correct: correct, skipped: false, answerTime: answerTime)
-                applyResult(to: &updatedRoom, playerIdx: botIdx, correct: correct, answerTime: answerTime)
-                // Background simulation has no foreground room to mirror,
-                // so the simpler advanceTurn is fine here — round summary
-                // will surface the next time the user rejoins.
-                updatedRoom.currentTurnQuestionsAnswered += 1
-                if updatedRoom.currentTurnQuestionsAnswered >= max(1, updatedRoom.questionsPerTurn) {
-                    advanceTurn(&updatedRoom)
-                    updatedRoom.currentTurnQuestionsAnswered = 0
-                    updatedRoom.currentQuestionIndex = 0
-                } else {
-                    updatedRoom.currentQuestionIndex = updatedRoom.currentTurnQuestionsAnswered
-                }
-                backgroundRooms[roomIdx] = updatedRoom
-                if updatedRoom.status == .finished {
-                    backgroundRooms.remove(at: roomIdx)
-                    recordActivity(updatedRoom)
-                    return
-                }
-            }
-        }
-    }
-
     private func recordActivity(_ room: MultiplayerRoom) {
         guard let me = room.players.first(where: { $0.isYou }) else { return }
         let opponent = room.players.first(where: { !$0.isYou })
         let item = MultiplayerActivityItem(
-            opponentUsername: opponent?.username ?? "bot",
+            opponentUsername: opponent?.username ?? "–",
             mode: room.mode,
             didWin: room.winner?.isYou == true,
             score: me.score,
@@ -910,25 +875,16 @@ import UserNotifications
         ProgressionStore.shared.recordMultiplayerScore(mode: room.mode, score: me.score, correctCount: me.correctCount)
     }
 
-    /// Sets the winner taunt on the most recent activity item (called after the winner picks a taunt).
     @MainActor func setTauntOnLatestActivity(_ taunt: String) {
         guard !recentActivity.isEmpty else { return }
         recentActivity[0].winnerTaunt = taunt
     }
+}
 
-    private func sendTurnNotification() {
-        Task {
-            let center = UNUserNotificationCenter.current()
-            let granted = (try? await center.requestAuthorization(options: [.alert, .sound])) ?? false
-            guard granted else { return }
-            let content = UNMutableNotificationContent()
-            content.title = String(localized: "notification_your_turn_title")
-            content.body = String(localized: "notification_your_turn_body")
-            content.sound = .default
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
-            let request = UNNotificationRequest(identifier: UUID().uuidString,
-                                                content: content, trigger: trigger)
-            try? await center.add(request)
-        }
+// MARK: – Array safe subscript
+
+private extension Array {
+    subscript(safe index: Int) -> Element? {
+        indices.contains(index) ? self[index] : nil
     }
 }

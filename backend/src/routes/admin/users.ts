@@ -1,5 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
+import { DeleteObjectCommand } from '@aws-sdk/client-s3'
+import { config } from '../../config'
 import { revokeAllRefreshTokens } from '../../lib/tokens'
 
 const patchBody = z.object({
@@ -113,6 +115,28 @@ export default async function adminUsersRoutes(app: FastifyInstance) {
       levelStats: levelStatsFormatted,
       quota: quotaDisplay,
     })
+  })
+
+  // DELETE /admin/users/:id/avatar — remove custom uploaded avatar
+  app.delete('/:id/avatar', async (request, reply) => {
+    const { id } = request.params as { id: string }
+    const user = await (app.prisma.user as any).findUnique({
+      where: { id }, select: { avatarUrl: true },
+    })
+    if (!user) return reply.status(404).send({ error: 'Not found' })
+
+    if (user.avatarUrl) {
+      const prefix = config.s3.publicUrl + '/'
+      if (user.avatarUrl.startsWith(prefix)) {
+        const key = user.avatarUrl.slice(prefix.length)
+        try {
+          await app.s3.send(new DeleteObjectCommand({ Bucket: config.s3.bucket, Key: key }))
+        } catch { /* non-fatal */ }
+      }
+      await (app.prisma.user as any).update({ where: { id }, data: { avatarUrl: null } })
+    }
+
+    return reply.send({ ok: true })
   })
 
   // PATCH /admin/users/:id (JSON API for HTMX)

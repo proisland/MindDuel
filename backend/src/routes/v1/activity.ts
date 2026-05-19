@@ -62,8 +62,8 @@ export default async function activityRoutes(app: FastifyInstance) {
         OR: [{ senderId: { in: allIds } }, { receiverId: { in: allIds } }],
       },
       include: {
-        sender:   { select: { id: true, username: true, avatarEmoji: true } },
-        receiver: { select: { id: true, username: true, avatarEmoji: true } },
+        sender:   { select: { id: true, username: true, avatarEmoji: true, avatarUrl: true } } as any,
+        receiver: { select: { id: true, username: true, avatarEmoji: true, avatarUrl: true } } as any,
       },
       orderBy: { createdAt: 'desc' },
       take: 20,
@@ -79,7 +79,7 @@ export default async function activityRoutes(app: FastifyInstance) {
         currentStreak: { gte: 3 },
         lastPlayedDate: { in: [today, yesterday] },
       },
-      include: { user: { select: { id: true, username: true, avatarEmoji: true } } },
+      include: { user: { select: { id: true, username: true, avatarEmoji: true, avatarUrl: true } } as any },
       orderBy: { currentStreak: 'desc' },
       take: 10,
     })
@@ -105,8 +105,8 @@ export default async function activityRoutes(app: FastifyInstance) {
         id: `friend-${f.senderId}-${f.receiverId}`,
         type: 'new_friend',
         createdAt: f.createdAt.toISOString(),
-        user1: { username: user1.username ?? '?', avatarEmoji: user1.avatarEmoji },
-        user2: { username: user2.username ?? '?', avatarEmoji: user2.avatarEmoji },
+        user1: { username: user1.username ?? '?', avatarEmoji: user1.avatarEmoji, avatarUrl: (user1 as any).avatarUrl ?? null },
+        user2: { username: user2.username ?? '?', avatarEmoji: user2.avatarEmoji, avatarUrl: (user2 as any).avatarUrl ?? null },
         isMe,
       }
     })
@@ -115,7 +115,7 @@ export default async function activityRoutes(app: FastifyInstance) {
       id: `streak-${p.userId}-${p.mode}`,
       type: 'streak',
       createdAt: p.updatedAt.toISOString(),
-      user: { username: p.user.username ?? '?', avatarEmoji: p.user.avatarEmoji },
+      user: { username: p.user.username ?? '?', avatarEmoji: p.user.avatarEmoji, avatarUrl: (p.user as any).avatarUrl ?? null },
       streakCount: p.currentStreak,
       modeName: modeNameMap.get(p.mode) ?? p.mode,
       isMine: p.userId === request.userId,
@@ -170,9 +170,9 @@ export default async function activityRoutes(app: FastifyInstance) {
 
     if (eligibleOpponentIds.length === 0) return reply.send({ streaks: [] })
 
-    const users = await app.prisma.user.findMany({
+    const users: any[] = await (app.prisma.user as any).findMany({
       where: { id: { in: eligibleOpponentIds } },
-      select: { id: true, username: true, avatarEmoji: true },
+      select: { id: true, username: true, avatarEmoji: true, avatarUrl: true },
     })
     const userMap = new Map(users.map(u => [u.id, u]))
 
@@ -181,6 +181,7 @@ export default async function activityRoutes(app: FastifyInstance) {
         opponentId: id,
         opponentUsername: userMap.get(id)?.username ?? '?',
         opponentAvatarEmoji: userMap.get(id)?.avatarEmoji ?? '🧠',
+        opponentAvatarUrl: (userMap.get(id) as any)?.avatarUrl ?? null,
         streak: streaks.get(id) ?? 0,
       }))
       .sort((a, b) => b.streak - a.streak)

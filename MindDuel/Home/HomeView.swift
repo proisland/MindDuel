@@ -187,6 +187,10 @@ struct HomeView: View {
                 progression.checkResetQuota()
                 if !hasSeenOnboarding { showOnboarding = true }
                 Task { await DailyChallengeStore.shared.fetch() }
+                consumeFriendRequestDeepLink()
+            }
+            .onChange(of: social.shouldOpenFriendRequests) { shouldOpen in
+                if shouldOpen { consumeFriendRequestDeepLink() }
             }
             .fullScreenCover(item: $activeDestination) { dest in
             switch dest {
@@ -567,6 +571,12 @@ struct HomeView: View {
         }
     }
 
+    private func consumeFriendRequestDeepLink() {
+        guard social.shouldOpenFriendRequests else { return }
+        social.shouldOpenFriendRequests = false
+        activeDestination = .profile
+    }
+
     private func startOrResume(_ mode: GameMode) {
         if let room = multiplayer.backgroundRooms.first(where: {
             $0.isStandaloneSolo && $0.mode == mode && $0.serverModeSlug == nil && $0.status == .playing
@@ -643,7 +653,8 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: MDSpacing.sm) {
                 ZStack(alignment: .bottomTrailing) {
-                    MDAvatar(username: item.opponentUsername, size: .sm)
+                    MDAvatar(username: item.opponentUsername, size: .sm,
+                             avatarUrl: social.apiFriends.first { $0.username == item.opponentUsername }?.avatarUrl)
                     Circle()
                         .fill(item.didWin ? Color.mdGreen : Color.mdRed)
                         .frame(width: 11, height: 11)
@@ -693,7 +704,8 @@ struct HomeView: View {
             switch item.type {
             case .newFriend:
                 ZStack(alignment: .bottomTrailing) {
-                    MDAvatar(username: item.user1?.username ?? "?", size: .sm)
+                    MDAvatar(username: item.user1?.username ?? "?", size: .sm,
+                             avatarUrl: item.user1?.avatarUrl)
                     Image(systemName: "person.2.fill")
                         .font(.system(size: 6, weight: .bold))
                         .foregroundStyle(.white)
@@ -735,7 +747,8 @@ struct HomeView: View {
                 }
             case .streak:
                 ZStack(alignment: .bottomTrailing) {
-                    MDAvatar(username: item.user?.username ?? "?", size: .sm)
+                    MDAvatar(username: item.user?.username ?? "?", size: .sm,
+                             avatarUrl: item.user?.avatarUrl)
                     Text("🔥")
                         .font(.system(size: 11))
                         .offset(x: 3, y: 3)

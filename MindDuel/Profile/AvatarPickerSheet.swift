@@ -9,6 +9,7 @@ struct AvatarPickerSheet: View {
     @ObservedObject private var store = AvatarStore.shared
     @Environment(\.dismiss) private var dismiss
     @State private var photoItem: PhotosPickerItem? = nil
+    @State private var showTooLargeAlert = false
 
     var body: some View {
         ZStack {
@@ -31,6 +32,37 @@ struct AvatarPickerSheet: View {
                         .frame(maxWidth: .infinity)
                         .padding(.top, MDSpacing.md)
 
+                        // Preset avatars
+                        if !store.presets.isEmpty {
+                            sectionLabel(String(localized: "avatar_picker_presets_section"))
+                            LazyVGrid(
+                                columns: Array(repeating: GridItem(.flexible(), spacing: MDSpacing.sm), count: 4),
+                                spacing: MDSpacing.sm
+                            ) {
+                                ForEach(store.presets) { preset in
+                                    let isSelected = store.avatarUrl == preset.url && store.imageData == nil
+                                    Button {
+                                        store.selectPreset(preset)
+                                    } label: {
+                                        AsyncImage(url: URL(string: preset.url)) { phase in
+                                            if let img = phase.image {
+                                                img.resizable().scaledToFill()
+                                            } else {
+                                                Color.mdSurface2
+                                            }
+                                        }
+                                        .frame(width: 60, height: 60)
+                                        .clipShape(Circle())
+                                        .overlay(Circle().stroke(
+                                            isSelected ? Color.mdAccent : Color.clear,
+                                            lineWidth: 2.5
+                                        ))
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+
                         sectionLabel(String(localized: "avatar_picker_photo_section"))
                         PhotosPicker(selection: $photoItem, matching: .images) {
                             HStack(spacing: MDSpacing.sm) {
@@ -52,10 +84,17 @@ struct AvatarPickerSheet: View {
                         }
                         .buttonStyle(.plain)
 
-                        if store.emoji != nil || store.imageData != nil {
+                        if store.emoji != nil || store.imageData != nil || store.avatarUrl != nil {
                             MDButton(.danger, title: String(localized: "avatar_picker_reset")) {
                                 store.emoji = nil
                                 store.imageData = nil
+                                store.avatarUrl = nil
+                                Task {
+                                    struct Body: Encodable { let avatarUrl: String? }
+                                    let _: Empty? = try? await APIClient.shared.patch(
+                                        "me", body: Body(avatarUrl: nil)
+                                    )
+                                }
                             }
                         }
                     }
@@ -63,20 +102,30 @@ struct AvatarPickerSheet: View {
                 }
             }
         }
+        .onAppear {
+            Task { await store.fetchPresets() }
+        }
         .onChange(of: photoItem) { item in
             guard let item else { return }
             Task {
                 if let data = try? await item.loadTransferable(type: Data.self) {
-                    // Compress to keep stored avatar small.
                     let resized = compressed(data: data)
+                    guard resized.count <= 2 * 1024 * 1024 else {
+                        await MainActor.run { showTooLargeAlert = true }
+                        return
+                    }
                     await MainActor.run {
                         store.emoji = nil
                         store.imageData = resized
                     }
-                    // Upload in background so other users see the photo.
                     await store.uploadAvatar(imageData: resized)
                 }
             }
+        }
+        .alert(String(localized: "avatar_too_large_title"), isPresented: $showTooLargeAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(String(localized: "avatar_too_large_message"))
         }
     }
 

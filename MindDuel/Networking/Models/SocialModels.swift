@@ -18,6 +18,20 @@ struct FriendRequestsResponse: Decodable {
     let received: [APIFriendRequest]
 }
 
+struct FriendSuggestion: Decodable, Identifiable {
+    let id: String
+    let username: String
+    let avatarEmoji: String
+    let avatarUrl: String?
+    let isPremium: Bool
+    let mutualFriendsCount: Int
+    let sharedModesCount: Int
+}
+
+struct FriendSuggestionsResponse: Decodable {
+    let suggestions: [FriendSuggestion]
+}
+
 struct APIFriendRequest: Decodable {
     let id: String
     let fromUserId: String
@@ -25,6 +39,7 @@ struct APIFriendRequest: Decodable {
     let fromUsername: String?
     let toUsername: String?
     let fromAvatarEmoji: String?
+    let fromAvatarUrl: String?
     let createdAt: Date
 }
 
@@ -54,6 +69,7 @@ struct UserSearchResult: Decodable, Identifiable {
 struct SocialFeedUserSnippet: Codable {
     let username: String
     let avatarEmoji: String
+    let avatarUrl: String?
 }
 
 enum SocialFeedItemType: String, Codable {
@@ -98,5 +114,7 @@ struct RoomInfo: Decodable {
     let hostId: String
     let maxPlayers: Int
     let state: String
-    let participants: [WSPlayer]?
+    let name: String?
+    let questionsPerRound: Int?
+    let participants: [WSParticipant]?
 }

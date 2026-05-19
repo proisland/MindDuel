@@ -5,8 +5,10 @@ import SwiftUI
 /// pure presentation and just needs the room data + a couple of callbacks.
 struct MultiplayerFinishedView: View {
     let room: MultiplayerRoom
+    let ownUsername: String
     let onShowBreakdown: (MultiplayerPlayer) -> Void
     let onLeave: () -> Void
+    let onRematch: (() -> Void)?
 
     @State private var sentTaunt: String? = nil
 
@@ -50,9 +52,17 @@ struct MultiplayerFinishedView: View {
 
                 Spacer()
 
-                MDButton(.primary, title: String(localized: "back_to_home_action"), action: onLeave)
-                    .padding(.horizontal, MDSpacing.lg)
-                    .padding(.bottom, MDSpacing.xl)
+                VStack(spacing: MDSpacing.sm) {
+                    if let rematch = onRematch,
+                       room.players.first(where: { $0.isYou })?.isHost == true {
+                        MDButton(.primary, title: String(localized: "multiplayer_rematch_action"), action: rematch)
+                    }
+                    MDButton(onRematch != nil ? .ghost : .primary,
+                             title: String(localized: "back_to_home_action"),
+                             action: onLeave)
+                }
+                .padding(.horizontal, MDSpacing.lg)
+                .padding(.bottom, MDSpacing.xl)
             }
         }
     }
@@ -112,7 +122,7 @@ struct MultiplayerFinishedView: View {
                 .mdStyle(.bodyMd)
                 .foregroundStyle(rank == 0 ? Color.mdAmber : Color.mdText3)
                 .frame(width: 20, alignment: .center)
-            MDAvatar(username: player.username, size: .sm)
+            MDAvatar(username: player.username, size: .sm, avatarUrl: player.avatarUrl)
             Text("\(player.username)")
                 .mdStyle(.caption)
                 .foregroundStyle(Color.mdText)

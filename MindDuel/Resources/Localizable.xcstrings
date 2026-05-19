@@ -512,6 +512,23 @@
         }
       }
     },
+    "avatar_picker_presets_section" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PRESET AVATARS"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FORHÅNDSVALGTE AVATARER"
+          }
+        }
+      }
+    },
     "avatar_picker_choose_photo" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -593,6 +610,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Velg avatar"
+          }
+        }
+      }
+    },
+    "avatar_too_large_message" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please choose a smaller image (max 2 MB)."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Velg et mindre bilde (maks 2 MB)."
+          }
+        }
+      }
+    },
+    "avatar_too_large_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image too large"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bildet er for stort"
           }
         }
       }
@@ -1688,6 +1739,64 @@
         }
       }
     },
+    "friend_suggestion_mutual_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld mutual friend"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld mutual friends"
+                }
+              }
+            }
+          }
+        },
+        "nb" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld felles venn"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld felles venner"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "friend_suggestions_section_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Friend suggestions"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Venneforslag"
+          }
+        }
+      }
+    },
     "friend_request_sent_label" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2557,6 +2666,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bli med i MindDuel-spillet mitt"
+          }
+        }
+      }
+    },
+    "multiplayer_cancel_room_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel room"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avbryt rom"
+          }
+        }
+      }
+    },
+    "multiplayer_rematch_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rematch"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Omkamp"
           }
         }
       }
@@ -3700,6 +3843,91 @@
         }
       }
     },
+    "report_avatar_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report avatar"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rapporter avatar"
+          }
+        }
+      }
+    },
+    "report_avatar_confirm_button" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rapporter"
+          }
+        }
+      }
+    },
+    "report_avatar_confirm_message" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will send a report to our moderators for review."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dette sender en rapport til moderatorene våre for gjennomgang."
+          }
+        }
+      }
+    },
+    "report_avatar_confirm_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report avatar?"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rapporter avatar?"
+          }
+        }
+      }
+    },
+    "report_avatar_sent" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report sent"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rapport sendt"
+          }
+        }
+      }
+    },
     "remove_friend_action" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4359,6 +4587,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Søk etter brukernavn"
+          }
+        }
+      }
+    },
+    "sent_friend_requests_section" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent requests"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sendte forespørsler"
           }
         }
       }
@@ -5569,6 +5814,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hei,"
+          }
+        }
+      }
+    },
+    "withdraw_friend_request_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Withdraw"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trekk tilbake"
           }
         }
       }
