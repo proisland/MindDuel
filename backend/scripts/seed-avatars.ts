@@ -10,7 +10,6 @@
  * Existing avatars (matched by labelNo) are skipped.
  */
 
-import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { randomUUID } from 'node:crypto'
