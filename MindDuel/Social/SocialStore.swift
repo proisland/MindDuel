@@ -142,12 +142,17 @@ extension UserProfile {
     @Published private(set) var apiFriends: [APIFriend] = []
     @Published private(set) var apiPendingRequests: [APIFriendRequest] = []
     @Published private(set) var socialFeed: [SocialFeedItem] = []
+    @Published private(set) var friendSuggestions: [FriendSuggestion] = []
 
     // Legacy local state kept for UI compatibility
     @Published private(set) var friendUsernames: Set<String> = []
     @Published private(set) var sentRequestUsernames: Set<String> = []
     @Published private(set) var pendingRequests: [UserProfile] = []
     @Published private(set) var friends: [UserProfile] = []
+
+    /// Set to true from AppDelegate when user taps a friendRequest push notification.
+    /// HomeView consumes this by opening ProfileView, then resets it to false.
+    @Published var shouldOpenFriendRequests: Bool = false
 
     private init() {}
 
@@ -157,7 +162,8 @@ extension UserProfile {
         async let friendsTask: FriendsResponse? = try? APIClient.shared.get("friends")
         async let requestsTask: FriendRequestsResponse? = try? APIClient.shared.get("friends/requests")
         async let feedTask: SocialFeedResponse? = try? APIClient.shared.get("activity/feed")
-        let (friendsResp, requestsResp, feedResp) = await (friendsTask, requestsTask, feedTask)
+        async let suggestionsTask: FriendSuggestionsResponse? = try? APIClient.shared.get("friends/suggestions")
+        let (friendsResp, requestsResp, feedResp, suggestionsResp) = await (friendsTask, requestsTask, feedTask, suggestionsTask)
 
         let fetchedFriends = friendsResp?.friends ?? []
         apiFriends = fetchedFriends
@@ -169,6 +175,7 @@ extension UserProfile {
             pendingRequests = reqs.received.map { UserProfile(from: $0) }
         }
         socialFeed = feedResp?.feed ?? []
+        friendSuggestions = suggestionsResp?.suggestions ?? []
     }
 
     // MARK: – Queries
@@ -254,25 +261,6 @@ extension UserProfile {
     // MARK: – No-op stubs kept for call-site compatibility
 
     func seedMockRequestIfNeeded() {}
-
-    /// Schedule a local notification when a new friend request arrives (#105).
-    func notifyIncomingFriendRequest(from username: String) {
-        Task {
-            let center = UNUserNotificationCenter.current()
-            let granted = (try? await center.requestAuthorization(options: [.alert, .sound])) ?? false
-            guard granted else { return }
-            let content = UNMutableNotificationContent()
-            content.title = String(localized: "notification_friend_request_title")
-            content.body  = String(format: String(localized: "notification_friend_request_body"),
-                                   username)
-            content.sound = .default
-            content.userInfo = ["kind": "friendRequest", "username": username]
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
-            let request = UNNotificationRequest(identifier: "friendRequest-\(username)",
-                                                content: content, trigger: trigger)
-            try? await center.add(request)
-        }
-    }
 
     func simulateIncomingRequest() { Task { await refresh() } }
 

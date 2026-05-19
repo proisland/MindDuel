@@ -413,6 +413,14 @@ struct ScoreboardView: View {
                     weeklyLeaderboardRow(entry: entry)
                 }
             }
+
+            // Friend suggestions — shown at the bottom when available
+            if !social.friendSuggestions.isEmpty {
+                sectionHeader(String(localized: "friend_suggestions_section_title"))
+                ForEach(social.friendSuggestions.prefix(5)) { suggestion in
+                    suggestionRow(suggestion: suggestion)
+                }
+            }
         }
     }
 
@@ -476,6 +484,64 @@ struct ScoreboardView: View {
                 leaderboardRow(rank: item.rank, profile: item.profile, isOwn: item.isOwn)
             }
         }
+    }
+
+    // MARK: – Suggestion row
+
+    @ViewBuilder
+    private func suggestionRow(suggestion: FriendSuggestion) -> some View {
+        HStack(spacing: MDSpacing.sm) {
+            MDAvatar(username: suggestion.username, size: .sm,
+                     customEmoji: suggestion.avatarEmoji == "🧠" ? nil : suggestion.avatarEmoji,
+                     avatarUrl: suggestion.avatarUrl)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: MDSpacing.xxs) {
+                    Text(suggestion.username)
+                        .mdStyle(.caption)
+                        .foregroundStyle(Color.mdText)
+                        .lineLimit(1)
+                    if suggestion.isPremium {
+                        MDPillTag(label: String(localized: "premium_label"), variant: .amber)
+                    }
+                }
+                if suggestion.mutualFriendsCount > 0 {
+                    Text(String(format: String(localized: "friend_suggestion_mutual_format"),
+                                suggestion.mutualFriendsCount))
+                        .mdStyle(.micro)
+                        .foregroundStyle(Color.mdText3)
+                }
+            }
+            Spacer()
+            if social.sentRequestUsernames.contains(suggestion.username) {
+                Text(String(localized: "friend_request_pending_short"))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.mdText3)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Capsule().fill(Color.white.opacity(0.05)))
+            } else {
+                Button {
+                    social.sendFriendRequest(to: suggestion.username)
+                } label: {
+                    HStack(spacing: 3) {
+                        Image(systemName: "person.badge.plus")
+                            .font(.system(size: 11, weight: .bold))
+                        Text(String(localized: "add_friend_short_action"))
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundStyle(Color.mdAccent)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Capsule().fill(Color.mdAccentSoft))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, MDSpacing.md)
+        .padding(.vertical, MDSpacing.sm)
+        .background(Color.mdSurface2)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdBorder2, lineWidth: 0.5))
     }
 
     // MARK: – Shared helpers

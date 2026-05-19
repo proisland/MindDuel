@@ -132,7 +132,7 @@ export default async function friendsRoutes(app: FastifyInstance) {
       return reply.status(201).send({ friendshipCreated: true })
     }
 
-    await app.prisma.friendRequest.create({
+    const createdRequest = await app.prisma.friendRequest.create({
       data: { fromUserId: request.userId, toUserId: target.id },
     })
 
@@ -140,7 +140,11 @@ export default async function friendsRoutes(app: FastifyInstance) {
     const senderName = sender?.username ?? 'Noen'
     app.prisma.pushToken.findMany({ where: { userId: target.id } }).then(tokens => {
       tokens.forEach(({ deviceToken }) =>
-        sendPush(deviceToken, 'Venneforespørsel', `${senderName} vil være venner med deg`, { kind: 'friendRequest' }).catch(() => {}),
+        sendPush(deviceToken, 'Venneforespørsel', `${senderName} vil være venner med deg`, {
+          kind: 'friendRequest',
+          fromUsername: senderName,
+          requestId: createdRequest.id,
+        }).catch(() => {}),
       )
     }).catch(() => {})
 
@@ -198,5 +202,105 @@ export default async function friendsRoutes(app: FastifyInstance) {
     })
 
     return reply.status(204).send()
+  })
+
+  // GET /v1/friends/suggestions — friends-of-friends ranked by mutual friends + shared modes
+  app.get('/suggestions', auth, async (request, reply) => {
+    // My friend IDs
+    const myFriendships = await app.prisma.friendship.findMany({
+      where: { OR: [{ senderId: request.userId }, { receiverId: request.userId }] },
+      select: { senderId: true, receiverId: true },
+    })
+    const myFriendIds = new Set(
+      myFriendships.map(f => f.senderId === request.userId ? f.receiverId : f.senderId),
+    )
+
+    if (myFriendIds.size === 0) return reply.send({ suggestions: [] })
+
+    // All friendships involving my friends (gives 2nd-degree candidates)
+    const fofFriendships = await app.prisma.friendship.findMany({
+      where: {
+        OR: [
+          { senderId: { in: Array.from(myFriendIds) } },
+          { receiverId: { in: Array.from(myFriendIds) } },
+        ],
+      },
+      select: { senderId: true, receiverId: true },
+    })
+
+    // Count mutual friends per candidate
+    const mutualCountMap = new Map<string, number>()
+    for (const f of fofFriendships) {
+      const candidateId = myFriendIds.has(f.senderId) ? f.receiverId : f.senderId
+      if (candidateId === request.userId || myFriendIds.has(candidateId)) continue
+      mutualCountMap.set(candidateId, (mutualCountMap.get(candidateId) ?? 0) + 1)
+    }
+
+    if (mutualCountMap.size === 0) return reply.send({ suggestions: [] })
+
+    // Filter out users with existing pending requests (sent or received)
+    const pendingRequests = await app.prisma.friendRequest.findMany({
+      where: { OR: [{ fromUserId: request.userId }, { toUserId: request.userId }] },
+      select: { fromUserId: true, toUserId: true },
+    })
+    const pendingIds = new Set(
+      pendingRequests.map(r => r.fromUserId === request.userId ? r.toUserId : r.fromUserId),
+    )
+    const candidateIds = Array.from(mutualCountMap.keys()).filter(id => !pendingIds.has(id))
+    if (candidateIds.length === 0) return reply.send({ suggestions: [] })
+
+    // My progression modes
+    const myProgressions = await app.prisma.progression.findMany({
+      where: { userId: request.userId },
+      select: { mode: true },
+    })
+    const myModes = new Set(myProgressions.map(p => p.mode))
+
+    // Candidates' progression modes
+    const candidateProgressions = await app.prisma.progression.findMany({
+      where: { userId: { in: candidateIds } },
+      select: { userId: true, mode: true },
+    })
+    const candidateModeMap = new Map<string, Set<string>>()
+    for (const p of candidateProgressions) {
+      if (!candidateModeMap.has(p.userId)) candidateModeMap.set(p.userId, new Set())
+      candidateModeMap.get(p.userId)!.add(p.mode)
+    }
+
+    // Score and sort candidates
+    const scored = candidateIds
+      .map(id => {
+        const mutualCount = mutualCountMap.get(id) ?? 0
+        const modes = candidateModeMap.get(id) ?? new Set()
+        const sharedModes = [...myModes].filter(m => modes.has(m)).length
+        return { id, score: mutualCount * 3 + sharedModes, mutualCount, sharedModes }
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10)
+
+    // Fetch user details, filtering out flagged/suspended
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const users: any[] = await app.prisma.user.findMany({
+      where: { id: { in: scored.map(s => s.id) }, isFlagged: false, isSuspended: false },
+      select: { id: true, username: true, avatarEmoji: true, avatarUrl: true, isPremium: true },
+    })
+    const userMap = new Map(users.map(u => [u.id, u]))
+
+    const suggestions = scored
+      .filter(s => userMap.has(s.id))
+      .map(s => {
+        const u = userMap.get(s.id)!
+        return {
+          id: u.id,
+          username: u.username,
+          avatarEmoji: u.avatarEmoji,
+          avatarUrl: u.avatarUrl ?? null,
+          isPremium: u.isPremium,
+          mutualFriendsCount: s.mutualCount,
+          sharedModesCount: s.sharedModes,
+        }
+      })
+
+    return reply.send({ suggestions })
   })
 }

@@ -18,6 +18,20 @@ struct FriendRequestsResponse: Decodable {
     let received: [APIFriendRequest]
 }
 
+struct FriendSuggestion: Decodable, Identifiable {
+    let id: String
+    let username: String
+    let avatarEmoji: String
+    let avatarUrl: String?
+    let isPremium: Bool
+    let mutualFriendsCount: Int
+    let sharedModesCount: Int
+}
+
+struct FriendSuggestionsResponse: Decodable {
+    let suggestions: [FriendSuggestion]
+}
+
 struct APIFriendRequest: Decodable {
     let id: String
     let fromUserId: String

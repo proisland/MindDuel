@@ -187,6 +187,10 @@ struct HomeView: View {
                 progression.checkResetQuota()
                 if !hasSeenOnboarding { showOnboarding = true }
                 Task { await DailyChallengeStore.shared.fetch() }
+                consumeFriendRequestDeepLink()
+            }
+            .onChange(of: social.shouldOpenFriendRequests) { shouldOpen in
+                if shouldOpen { consumeFriendRequestDeepLink() }
             }
             .fullScreenCover(item: $activeDestination) { dest in
             switch dest {
@@ -565,6 +569,12 @@ struct HomeView: View {
                 action: { startOrResumeServer(sm) }
             )
         }
+    }
+
+    private func consumeFriendRequestDeepLink() {
+        guard social.shouldOpenFriendRequests else { return }
+        social.shouldOpenFriendRequests = false
+        activeDestination = .profile
     }
 
     private func startOrResume(_ mode: GameMode) {
