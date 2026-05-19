@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { randomUUID } from 'node:crypto'
 import { config } from '../../config'
-import { deleteS3Key, uploadJpegToS3 } from '../../lib/s3'
+import { deleteS3Key, uploadImageToS3 } from '../../lib/s3'
 
 const createBody = z.object({
   data:      z.string().min(1),
@@ -46,16 +46,8 @@ export default async function adminAvatarsRoutes(app: FastifyInstance) {
       sortOrder = (last?.sortOrder ?? -1) + 1
     }
 
-    const key = `preset-avatars/${randomUUID()}.jpg`
-    let url: string
-    try {
-      app.log.info({ key, bucket: config.s3.bucket, endpoint: config.s3.endpoint }, 'avatar upload start')
-      url = await uploadJpegToS3(app.s3, key, imageBuffer)
-      app.log.info({ key }, 'avatar upload ok')
-    } catch (err) {
-      app.log.error({ err, key }, 'avatar S3 upload failed')
-      return reply.status(500).send({ error: 'S3 upload failed', detail: String(err) })
-    }
+    const keyBase = `preset-avatars/${randomUUID()}`
+    const url = await uploadImageToS3(app.s3, keyBase, imageBuffer)
 
     const avatar = await (app.prisma as any).presetAvatar.create({
       data: {
