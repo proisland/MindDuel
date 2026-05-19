@@ -27,3 +27,23 @@ export async function uploadJpegToS3(s3: S3Client, key: string, data: Buffer): P
   }))
   return `${config.s3.publicUrl}/${key}`
 }
+
+export function detectImageType(buf: Buffer): { contentType: string; ext: string } {
+  const header = buf.slice(0, 5).toString('utf8')
+  if (header.startsWith('<svg') || header.startsWith('<?xml')) {
+    return { contentType: 'image/svg+xml', ext: 'svg' }
+  }
+  return { contentType: 'image/jpeg', ext: 'jpg' }
+}
+
+export async function uploadImageToS3(s3: S3Client, keyWithoutExt: string, data: Buffer): Promise<string> {
+  const { contentType, ext } = detectImageType(data)
+  const key = `${keyWithoutExt}.${ext}`
+  await s3.send(new PutObjectCommand({
+    Bucket: config.s3.bucket,
+    Key: key,
+    Body: data,
+    ContentType: contentType,
+  }))
+  return `${config.s3.publicUrl}/${key}`
+}
