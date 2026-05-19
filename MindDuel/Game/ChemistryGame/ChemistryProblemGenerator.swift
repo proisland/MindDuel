@@ -53,13 +53,12 @@ enum ChemistryProblemGenerator {
 
     private static func pool(forLevel level: Int) -> [Raw] {
         if let cached = QuestionPackCache.shared.questions(for: "chem") {
-            let filtered = cached.filter { $0.level == level }
-            if !filtered.isEmpty {
-                return filtered.map { q in
-                    Raw(prompt: q.prompt, correct: q.answer,
-                        distractors: q.options.filter { $0 != q.answer })
-                }
+            let fromCache = cached.compactMap { q -> Raw? in
+                guard q.level == level else { return nil }
+                return Raw(prompt: q.prompt, correct: q.answer,
+                           distractors: q.options.filter { $0 != q.answer })
             }
+            if !fromCache.isEmpty { return fromCache }
         }
         let elements = ElementData.elements(forLevel: level)
         var pool: [Raw] = []

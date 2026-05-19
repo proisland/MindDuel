@@ -6,16 +6,17 @@ export default async function usersRoutes(app: FastifyInstance) {
   // POST /v1/users/:username/report-avatar
   app.post('/:username/report-avatar', auth, async (request, reply) => {
     const { username } = request.params as { username: string }
-    const target = await (app.prisma.user as any).findUnique({
-      where: { username },
-      select: { id: true, username: true, avatarUrl: true },
-    })
+    const [target, reporter] = await Promise.all([
+      (app.prisma.user as any).findUnique({
+        where: { username },
+        select: { id: true, username: true, avatarUrl: true },
+      }),
+      (app.prisma.user as any).findUnique({
+        where: { id: request.userId },
+        select: { username: true },
+      }),
+    ])
     if (!target) return reply.status(404).send({ error: 'User not found' })
-
-    const reporter = await (app.prisma.user as any).findUnique({
-      where: { id: request.userId },
-      select: { username: true },
-    })
 
     await (app.prisma.feedback as any).create({
       data: {
