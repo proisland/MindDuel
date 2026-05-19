@@ -142,6 +142,7 @@ extension UserProfile {
     // Live data from API (empty until refreshed)
     @Published private(set) var apiFriends: [APIFriend] = []
     @Published private(set) var apiPendingRequests: [APIFriendRequest] = []
+    @Published private(set) var apiSentRequests: [APIFriendRequest] = []
     @Published private(set) var socialFeed: [SocialFeedItem] = []
     @Published private(set) var friendSuggestions: [FriendSuggestion] = []
 
@@ -172,6 +173,7 @@ extension UserProfile {
         friendUsernames = Set(fetchedFriends.map(\.username))
         if let reqs = requestsResp {
             apiPendingRequests = reqs.received
+            apiSentRequests = reqs.sent
             sentRequestUsernames = Set(reqs.sent.compactMap(\.toUsername))
             pendingRequests = reqs.received.map { UserProfile(from: $0) }
         }
@@ -249,6 +251,15 @@ extension UserProfile {
         }
     }
 
+    func withdrawRequest(to username: String) {
+        guard let req = apiSentRequests.first(where: { $0.toUsername == username }) else { return }
+        apiSentRequests.removeAll { $0.id == req.id }
+        sentRequestUsernames.remove(username)
+        Task {
+            try? await APIClient.shared.delete("friends/requests/\(req.id)")
+        }
+    }
+
     func removeFriend(username: String) {
         guard let friend = apiFriends.first(where: { $0.username == username }) else { return }
         apiFriends.removeAll { $0.id == friend.id }
@@ -268,6 +279,7 @@ extension UserProfile {
     func resetForTesting() {
         apiFriends = []
         apiPendingRequests = []
+        apiSentRequests = []
         friendUsernames = []
         sentRequestUsernames = []
         pendingRequests = []

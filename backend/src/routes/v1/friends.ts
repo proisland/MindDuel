@@ -189,6 +189,16 @@ export default async function friendsRoutes(app: FastifyInstance) {
     return reply.send({ accepted: body.data.accept })
   })
 
+  // DELETE /v1/friends/requests/:requestId — withdraw a sent request
+  app.delete('/requests/:requestId', auth, async (request, reply) => {
+    const { requestId } = request.params as { requestId: string }
+    const req = await app.prisma.friendRequest.findUnique({ where: { id: requestId } })
+    if (!req) return reply.status(404).send({ error: 'Request not found' })
+    if (req.fromUserId !== request.userId) return reply.status(403).send({ error: 'Forbidden' })
+    await app.prisma.friendRequest.delete({ where: { id: requestId } })
+    return reply.status(204).send()
+  })
+
   // DELETE /v1/friends/:userId — remove a friend
   app.delete('/:userId', auth, async (request, reply) => {
     const { userId: friendId } = request.params as { userId: string }

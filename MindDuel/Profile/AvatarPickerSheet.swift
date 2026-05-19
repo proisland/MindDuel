@@ -9,6 +9,7 @@ struct AvatarPickerSheet: View {
     @ObservedObject private var store = AvatarStore.shared
     @Environment(\.dismiss) private var dismiss
     @State private var photoItem: PhotosPickerItem? = nil
+    @State private var showTooLargeAlert = false
 
     var body: some View {
         ZStack {
@@ -108,16 +109,23 @@ struct AvatarPickerSheet: View {
             guard let item else { return }
             Task {
                 if let data = try? await item.loadTransferable(type: Data.self) {
-                    // Compress to keep stored avatar small.
                     let resized = compressed(data: data)
+                    guard resized.count <= 2 * 1024 * 1024 else {
+                        await MainActor.run { showTooLargeAlert = true }
+                        return
+                    }
                     await MainActor.run {
                         store.emoji = nil
                         store.imageData = resized
                     }
-                    // Upload in background so other users see the photo.
                     await store.uploadAvatar(imageData: resized)
                 }
             }
+        }
+        .alert(String(localized: "avatar_too_large_title"), isPresented: $showTooLargeAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(String(localized: "avatar_too_large_message"))
         }
     }
 

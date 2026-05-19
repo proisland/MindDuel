@@ -3,6 +3,30 @@ import type { FastifyInstance } from 'fastify'
 export default async function usersRoutes(app: FastifyInstance) {
   const auth = { onRequest: [app.authenticate] }
 
+  // POST /v1/users/:username/report-avatar
+  app.post('/:username/report-avatar', auth, async (request, reply) => {
+    const { username } = request.params as { username: string }
+    const target = await (app.prisma.user as any).findUnique({
+      where: { username },
+      select: { id: true, username: true, avatarUrl: true },
+    })
+    if (!target) return reply.status(404).send({ error: 'User not found' })
+
+    const reporter = await (app.prisma.user as any).findUnique({
+      where: { id: request.userId },
+      select: { username: true },
+    })
+
+    await (app.prisma.feedback as any).create({
+      data: {
+        userId: request.userId,
+        message: `[Avatar report] @${reporter?.username ?? request.userId} reported @${target.username} for an inappropriate avatar.\nAvatar URL: ${target.avatarUrl ?? '(none)'}`,
+      },
+    })
+
+    return reply.status(204).send()
+  })
+
   // GET /v1/users/search?q=... — search by username prefix
   app.get('/search', auth, async (request, reply) => {
     const { q } = request.query as { q?: string }

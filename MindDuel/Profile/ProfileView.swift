@@ -288,6 +288,43 @@ struct ProfileView: View {
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdBorder2, lineWidth: 0.5))
             }
 
+            // Sent requests waiting for response
+            if !social.apiSentRequests.isEmpty {
+                VStack(spacing: MDSpacing.xxs) {
+                    Text(String(localized: "sent_friend_requests_section"))
+                        .mdStyle(.micro)
+                        .foregroundStyle(Color.mdText3)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    ForEach(social.apiSentRequests, id: \.id) { req in
+                        HStack(spacing: MDSpacing.sm) {
+                            MDAvatar(username: req.toUsername ?? "?", size: .sm)
+                            Text(req.toUsername ?? "?")
+                                .mdStyle(.caption)
+                                .foregroundStyle(Color.mdText)
+                            Spacer()
+                            Button {
+                                social.withdrawRequest(to: req.toUsername ?? "")
+                            } label: {
+                                Text(String(localized: "withdraw_friend_request_action"))
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(Color.mdText3)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(Color.mdSurface2)
+                                    .clipShape(Capsule())
+                                    .overlay(Capsule().stroke(Color.mdBorder2, lineWidth: 0.5))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, MDSpacing.md)
+                        .padding(.vertical, MDSpacing.sm)
+                        .background(Color.mdSurface2)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.mdBorder2, lineWidth: 0.5))
+                    }
+                }
+            }
+
             // Accepted friends (horizontal scroll)
             if social.friends.isEmpty {
                 if social.pendingRequests.isEmpty {
